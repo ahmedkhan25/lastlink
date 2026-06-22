@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@lastlink/ui";
 import { gql, getApiUrl } from "../lib/api.js";
+import { VideoComposer } from "./VideoComposer.js";
 
 interface Group { id: string; name: string }
 type Tab = "video" | "audio" | "letter";
@@ -65,9 +66,11 @@ export function Compose() {
             Compose a message
           </h1>
         </div>
-        <button className="ll-btn grad" onClick={save} disabled={status === "saving" || !body.trim()}>
-          {status === "saved" ? "Saved ✓" : "Save message"}
-        </button>
+        {tab === "letter" && (
+          <button className="ll-btn grad" onClick={save} disabled={status === "saving" || !body.trim()}>
+            {status === "saved" ? "Saved ✓" : "Save message"}
+          </button>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24 }}>
@@ -93,9 +96,10 @@ export function Compose() {
               {err && <div style={{ fontSize: 13, color: "var(--err)", marginTop: 8 }}>{err}</div>}
             </>
           )}
-          {tab !== "letter" && (
+          {tab === "video" && <VideoComposer title={title} groupId={groupId} />}
+          {tab === "audio" && (
             <div style={{ padding: 40, border: "1px dashed var(--line)", borderRadius: "var(--r-3)", textAlign: "center", color: "var(--ink-3)" }}>
-              {tab === "video" ? "Video recording (Mux) lands in M2." : "Audio recording is post-MVP."}
+              Audio recording is post-MVP.
             </div>
           )}
         </div>
