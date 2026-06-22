@@ -63,7 +63,10 @@ export function VideoComposer({ title, groupId }: { title: string; groupId: stri
     }
     try {
       const endpoint = await ensureUploadUrl();
-      const up = UpChunk.createUpload({ endpoint, file: blob as File });
+      // UpChunk requires a File (not a bare Blob) — wrap the recording.
+      const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+      const file = blob instanceof File ? blob : new File([blob], `recording.${ext}`, { type: blob.type || "video/webm" });
+      const up = UpChunk.createUpload({ endpoint, file });
       up.on("progress", (e) => setProgress(Math.round((e as CustomEvent<number>).detail)));
       up.on("success", () => startProcessing());
       up.on("error", (e) => {

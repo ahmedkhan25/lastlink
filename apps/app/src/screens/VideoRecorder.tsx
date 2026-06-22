@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@lastlink/ui";
 
 // Cross-browser recording mime. Prefer WebM (reliable on Chrome/Firefox);
@@ -33,21 +33,26 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    navigator.mediaDevices
-      .getUserMedia({ video: { width: 1280, height: 720 }, audio: true })
-      .then((stream) => {
-        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
-        streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      })
-      .catch(() => setError("Camera/microphone access was denied. Check browser permissions."));
-    return () => {
-      cancelled = true;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
   }, []);
+
+  const startCamera = useCallback(async () => {
+    stopCamera();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: true });
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch {
+      setError("Camera/microphone access was denied. Check browser permissions.");
+    }
+  }, [stopCamera]);
+
+  useEffect(() => {
+    startCamera();
+    return () => stopCamera();
+  }, [startCamera, stopCamera]);
 
   useEffect(() => {
     if (!recording) return;
@@ -66,6 +71,7 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
       const blob = new Blob(chunksRef.current, { type: rec.mimeType || "video/webm" });
       setRecordedBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
+      stopCamera(); // turn the camera off so it's clearly the recording, not a live feed
     };
     rec.start(1000); // emit a chunk per second so data is captured reliably
     recorderRef.current = rec;
@@ -83,6 +89,7 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
     setPreviewUrl(null);
     setRecordedBlob(null);
     setElapsed(0);
+    startCamera(); // re-acquire the camera for another take
   }
 
   if (error) {
@@ -105,6 +112,11 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
         {recording && (
           <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.5)", color: "white", padding: "5px 12px", borderRadius: 999, fontSize: 13 }}>
             <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#9A3A2E" }} /> {fmt(elapsed)}
+          </div>
+        )}
+        {previewUrl && (
+          <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.5)", color: "white", padding: "5px 12px", borderRadius: 999, fontSize: 13 }}>
+            <Icon name="play" size={12} color="white" /> Your recording
           </div>
         )}
       </div>
