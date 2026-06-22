@@ -21,3 +21,18 @@ export async function gql<T>(query: string, variables?: Record<string, unknown>)
   if (json.errors?.length) throw new Error(json.errors[0]!.message);
   return json.data as T;
 }
+
+/** POST JSON to a sensitive Express endpoint (auth via session cookie). */
+export async function postApi<T = unknown>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${getApiUrl()}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "content-type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const e = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(e.error ?? `HTTP ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}

@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
+import { gql, postApi } from "../lib/api.js";
+
+const ADD_ADVOCATES = `mutation {
+  a: insert_app_advocates_one(object: {slot: "A", full_name: "Sarah Rourke", relationship: "Sister", email: "sarah.r@email.com", invite_status: "accepted", identity_verified: true}) { id }
+  b: insert_app_advocates_one(object: {slot: "B", full_name: "Michael Tanaka", relationship: "Family attorney", email: "m.tanaka@firm.com", invite_status: "pending"}) { id }
+}`;
 
 const STEPS = ["Welcome", "Identity", "Contacts", "Message", "Advocates", "Done"];
 
@@ -175,12 +181,20 @@ function AdvocatesStep({ onNext }: { onNext: () => void }) {
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="ll-btn" onClick={onNext}>Continue</button></div>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button className="ll-btn" onClick={async () => { try { await gql(ADD_ADVOCATES); } catch { /* already added */ } onNext(); }}>Continue</button>
+      </div>
     </div>
   );
 }
 
 function Done({ onDone }: { onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  async function finish() {
+    setBusy(true);
+    try { await postApi("/api/account/seal"); } catch { /* non-fatal for demo */ }
+    onDone();
+  }
   return (
     <div style={{ maxWidth: 600, textAlign: "center" }}>
       <div style={{ width: 96, height: 96, borderRadius: "50%", background: "var(--brand-grad)", display: "grid", placeItems: "center", margin: "0 auto 24px" }}>
@@ -190,7 +204,9 @@ function Done({ onDone }: { onDone: () => void }) {
       <p style={{ fontSize: 18, color: "var(--ink-2)", lineHeight: 1.55, margin: "16px 0 28px" }}>
         Your LastLink is active and sealed. Come back anytime to add a message, refine your audience, or update an advocate. We won't bother you.
       </p>
-      <button className="ll-btn grad" onClick={onDone}>Go to your overview <Icon name="arrow" size={16} color="white" /></button>
+      <button className="ll-btn grad" onClick={finish} disabled={busy}>
+        {busy ? "Sealing…" : "Go to your overview"} <Icon name="arrow" size={16} color="white" />
+      </button>
     </div>
   );
 }

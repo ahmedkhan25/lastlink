@@ -6,6 +6,7 @@ import { logEvent } from "./audit.js";
 import { auth } from "./auth.js";
 import { graphqlProxy } from "./graphql-proxy.js";
 import { saveLetter } from "./messages.js";
+import { sealAccount } from "./account.js";
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.post("/graphql", graphqlProxy);
 
 // Sensitive consequence endpoints (Express, never Hasura).
 app.post("/api/messages/:id/letter", saveLetter);
+app.post("/api/account/seal", sealAccount);
 
 app.get("/health", async (_req, res) => {
   try {
