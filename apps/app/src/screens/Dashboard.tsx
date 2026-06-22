@@ -18,6 +18,7 @@ const Q = `query {
 }`;
 
 const TYPE_ICON: Record<string, IconName> = { video: "video", audio: "mic", letter: "pen" };
+const DELETE_MSG = `mutation($id: uuid!) { delete_app_messages_by_pk(id: $id) { id } }`;
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -28,6 +29,16 @@ export function Dashboard() {
     gql<Data>(Q).then((r) => active && setD(r));
     return () => { active = false; };
   }, []);
+
+  async function removeMessage(id: string, title: string) {
+    if (!window.confirm(`Delete "${title}"? This can't be undone.`)) return;
+    setD((prev) => (prev ? { ...prev, app_messages: prev.app_messages.filter((m) => m.id !== id) } : prev));
+    try {
+      await gql(DELETE_MSG, { id });
+    } catch {
+      gql<Data>(Q).then(setD); // restore on failure
+    }
+  }
 
   const reg = d?.app_registrants[0];
   const firstName = reg?.legal_name?.split(" ")[0] ?? "there";
@@ -79,9 +90,20 @@ export function Dashboard() {
                 <div className="serif" style={{ fontSize: 20, fontWeight: 500 }}>{m.title ?? "Untitled message"}</div>
                 <div style={{ fontSize: 13, color: "var(--ink-3)", textTransform: "capitalize" }}>{m.type}</div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: ok ? "var(--ok)" : "var(--warn)" }}>
-                <Icon name={ok ? "check" : "pen"} size={14} color={ok ? "var(--ok)" : "var(--warn)"} />
-                {ok ? "Ready" : "Draft"}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: ok ? "var(--ok)" : "var(--warn)" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Icon name={ok ? "check" : "pen"} size={14} color={ok ? "var(--ok)" : "var(--warn)"} />
+                  {ok ? "Ready" : "Draft"}
+                </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeMessage(m.id, m.title ?? "this message"); }}
+                  title="Delete message"
+                  style={{ background: "none", border: "none", color: "var(--ink-4)", cursor: "pointer", fontSize: 12 }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--err)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--ink-4)")}
+                >
+                  Delete
+                </button>
                 <Icon name="chev" size={16} color="var(--ink-4)" />
               </div>
             </li>
