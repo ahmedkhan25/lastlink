@@ -59,8 +59,12 @@ export function VideoComposer({ title, groupId }: { title: string; groupId: stri
       const up = UpChunk.createUpload({ endpoint, file: blob as File });
       up.on("progress", (e) => setProgress(Math.round((e as CustomEvent<number>).detail)));
       up.on("success", () => startProcessing());
-      up.on("error", () => setStatus("error"));
-    } catch {
+      up.on("error", (e) => {
+        console.error("[lastlink] upload error", (e as CustomEvent).detail);
+        setStatus("error");
+      });
+    } catch (e) {
+      console.error("[lastlink] upload init failed", e);
       setStatus("error");
     }
   }
@@ -83,14 +87,24 @@ export function VideoComposer({ title, groupId }: { title: string; groupId: stri
     return (
       <div style={{ padding: 40, border: "1px solid var(--line)", borderRadius: "var(--r-3)", textAlign: "center" }}>
         <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>
-          {status === "uploading" ? `Uploading… ${progress}%` : "Processing your video"}
+          {status === "uploading" ? `Uploading securely to LastLink… ${progress}%` : "Preparing your video"}
         </div>
         <div style={{ fontSize: 13, color: "var(--ink-3)" }}>
-          {status === "uploading" ? "Securely uploading to Mux." : "Mux is transcoding + generating captions… a moment."}
+          {status === "uploading" ? "Your recording is being saved, encrypted." : "Securing your message and generating captions… just a moment."}
         </div>
         <div style={{ height: 6, borderRadius: 3, background: "var(--line)", marginTop: 16, overflow: "hidden" }}>
           <div style={{ height: "100%", width: status === "uploading" ? `${progress}%` : "100%", background: "var(--brand-grad)", transition: "width 200ms" }} />
         </div>
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <div style={{ padding: 40, border: "1px solid var(--line)", borderRadius: "var(--r-3)", textAlign: "center" }}>
+        <div style={{ fontSize: 15, fontWeight: 500, color: "var(--err)", marginBottom: 8 }}>That didn't save. Let's try again.</div>
+        <div style={{ fontSize: 13, color: "var(--ink-3)", marginBottom: 16 }}>Your recording wasn't saved — nothing was lost on our end.</div>
+        <button className="ll-btn" onClick={() => { idRef.current = null; setProgress(0); setStatus("idle"); setMode("choose"); }}>Try again</button>
       </div>
     );
   }

@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@lastlink/ui";
 
-// Cross-browser recording mime — prefer mp4/h264 (iOS Safari), fall back to webm.
+// Cross-browser recording mime. Prefer WebM (reliable on Chrome/Firefox);
+// fall back to MP4/H.264 which is what Safari/iOS records. Chrome's MP4
+// recording is flaky and can produce unplayable blobs, so WebM goes first.
 function pickMimeType(): string | undefined {
   const candidates = [
-    "video/mp4;codecs=avc1",
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp8,opus",
     "video/webm",
+    "video/mp4;codecs=avc1",
+    "video/mp4",
   ];
   const supported = typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported;
   return supported ? candidates.find((c) => MediaRecorder.isTypeSupported(c)) : undefined;
@@ -64,7 +67,7 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
       setRecordedBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
     };
-    rec.start();
+    rec.start(1000); // emit a chunk per second so data is captured reliably
     recorderRef.current = rec;
     setElapsed(0);
     setRecording(true);
