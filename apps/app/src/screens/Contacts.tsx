@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@lastlink/ui";
 import { gql } from "../lib/api.js";
+import { useConfirm } from "../components/ConfirmProvider.js";
 
 interface Contact {
   id: string;
@@ -21,6 +22,7 @@ export function Contacts() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ full_name: "", relationship: "", email: "" });
+  const confirm = useConfirm();
 
   async function refresh() {
     const data = await gql<{ app_contacts: Contact[] }>(LIST);
@@ -42,13 +44,16 @@ export function Contacts() {
   }
 
   async function remove(c: Contact) {
-    if (!window.confirm(`Remove ${c.full_name} from your contacts?`)) return;
+    const ok = await confirm({
+      title: `Remove ${c.full_name}?`,
+      message: "They'll no longer receive a message from you. You can add them again anytime.",
+      confirmLabel: "Remove contact",
+      tone: "danger",
+    });
+    if (!ok) return;
     setContacts((cs) => cs.filter((x) => x.id !== c.id)); // optimistic
-    try {
-      await gql(REMOVE, { id: c.id });
-    } catch {
-      await refresh(); // restore on failure
-    }
+    await gql(REMOVE, { id: c.id }).catch(() => {});
+    await refresh(); // authoritative reconcile with the DB
   }
 
   return (

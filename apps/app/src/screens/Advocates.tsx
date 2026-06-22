@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@lastlink/ui";
 import { gql } from "../lib/api.js";
+import { useConfirm } from "../components/ConfirmProvider.js";
 
 interface Advocate {
   id: string;
@@ -26,16 +27,24 @@ const TIMELINE = [
 export function Advocates() {
   const [advocates, setAdvocates] = useState<Advocate[]>([]);
   const [loading, setLoading] = useState(true);
+  const confirm = useConfirm();
 
   function load() {
-    gql<{ app_advocates: Advocate[] }>(LIST).then((d) => { setAdvocates(d.app_advocates); setLoading(false); });
+    return gql<{ app_advocates: Advocate[] }>(LIST).then((d) => { setAdvocates(d.app_advocates); setLoading(false); });
   }
   useEffect(() => { let a = true; gql<{ app_advocates: Advocate[] }>(LIST).then((d) => a && (setAdvocates(d.app_advocates), setLoading(false))); return () => { a = false; }; }, []);
 
   async function remove(a: Advocate) {
-    if (!window.confirm(`Remove ${a.full_name} as an advocate?`)) return;
+    const ok = await confirm({
+      title: `Remove ${a.full_name}?`,
+      message: "An advocate confirms your passing before any message is released. You'll want to designate a replacement.",
+      confirmLabel: "Remove advocate",
+      tone: "danger",
+    });
+    if (!ok) return;
     setAdvocates((xs) => xs.filter((x) => x.id !== a.id));
-    try { await gql(REMOVE, { id: a.id }); } catch { load(); }
+    await gql(REMOVE, { id: a.id }).catch(() => {});
+    await load(); // authoritative reconcile with the DB
   }
 
   return (

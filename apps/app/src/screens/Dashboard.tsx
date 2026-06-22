@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon, type IconName } from "@lastlink/ui";
 import { gql } from "../lib/api.js";
+import { useConfirm } from "../components/ConfirmProvider.js";
 
 interface Data {
   app_registrants: { legal_name: string; account_state: string }[];
@@ -23,6 +24,7 @@ const DELETE_MSG = `mutation($id: uuid!) { delete_app_messages_by_pk(id: $id) { 
 export function Dashboard() {
   const navigate = useNavigate();
   const [d, setD] = useState<Data | null>(null);
+  const confirm = useConfirm();
 
   useEffect(() => {
     let active = true;
@@ -31,13 +33,16 @@ export function Dashboard() {
   }, []);
 
   async function removeMessage(id: string, title: string) {
-    if (!window.confirm(`Delete "${title}"? This can't be undone.`)) return;
+    const ok = await confirm({
+      title: "Delete this message?",
+      message: `"${title}" will be permanently deleted. This can't be undone.`,
+      confirmLabel: "Delete message",
+      tone: "danger",
+    });
+    if (!ok) return;
     setD((prev) => (prev ? { ...prev, app_messages: prev.app_messages.filter((m) => m.id !== id) } : prev));
-    try {
-      await gql(DELETE_MSG, { id });
-    } catch {
-      gql<Data>(Q).then(setD); // restore on failure
-    }
+    await gql(DELETE_MSG, { id }).catch(() => {});
+    await gql<Data>(Q).then(setD); // authoritative reconcile with the DB
   }
 
   const reg = d?.app_registrants[0];
