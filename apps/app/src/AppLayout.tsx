@@ -1,5 +1,6 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, Navigate, useNavigate } from "react-router-dom";
 import { Logo, Icon, type IconName } from "@lastlink/ui";
+import { useSession, signOut } from "./lib/auth.js";
 
 const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: "/dashboard", label: "Dashboard", icon: "home" },
@@ -9,6 +10,17 @@ const NAV: { to: string; label: string; icon: IconName }[] = [
 ];
 
 export function AppLayout() {
+  const { data: session, isPending } = useSession();
+  const navigate = useNavigate();
+
+  if (isPending) {
+    return <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--ink-3)" }}>Loading…</div>;
+  }
+  if (!session) return <Navigate to="/signin" replace />;
+
+  const displayName = session.user.name || session.user.email;
+  const initial = (displayName || "?").charAt(0).toUpperCase();
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", height: "100%" }}>
       <aside
@@ -80,11 +92,16 @@ export function AppLayout() {
                 fontSize: 13,
               }}
             >
-              D
+              {initial}
             </div>
-            <div style={{ fontSize: 12 }}>
-              <div style={{ fontWeight: 500 }}>Daniel R.</div>
-              <div style={{ color: "var(--ink-3)" }}>Premium · Verified</div>
+            <div style={{ fontSize: 12, flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
+              <button
+                onClick={() => signOut().then(() => navigate("/signin"))}
+                style={{ background: "none", border: "none", padding: 0, color: "var(--ink-3)", fontSize: 12 }}
+              >
+                Sign out
+              </button>
             </div>
           </div>
         </div>

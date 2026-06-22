@@ -8,8 +8,10 @@ import { Onboarding } from "./screens/Onboarding.js";
 import { Contacts } from "./screens/Contacts.js";
 import { Compose } from "./screens/Compose.js";
 import { Advocates } from "./screens/Advocates.js";
+import { SignIn } from "./screens/SignIn.js";
 
 const router = createBrowserRouter([
+  { path: "/signin", element: <SignIn /> },
   { path: "/onboarding", element: <Onboarding /> },
   {
     path: "/",
