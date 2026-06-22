@@ -98,7 +98,7 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
     <div>
       <div style={{ position: "relative", borderRadius: "var(--r-4)", overflow: "hidden", aspectRatio: "16/9", background: "#241D17" }}>
         {previewUrl ? (
-          <video src={previewUrl} controls playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <video src={previewUrl} controls autoPlay muted loop playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
         )}
@@ -123,7 +123,9 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
           </>
         )}
         <button className="ll-btn ghost" onClick={onCancel}>Cancel</button>
-        <span style={{ fontSize: 12, color: "var(--ink-3)", marginLeft: "auto" }}>No time limit. Take your time.</span>
+        <span style={{ fontSize: 12, color: "var(--ink-3)", marginLeft: "auto" }}>
+          {recordedBlob ? `Recorded ${(recordedBlob.size / 1024 / 1024).toFixed(2)} MB` : "No time limit. Take your time."}
+        </span>
       </div>
     </div>
   );

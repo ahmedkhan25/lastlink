@@ -20,6 +20,7 @@ export function VideoComposer({ title, groupId }: { title: string; groupId: stri
   const [progress, setProgress] = useState(0);
   const [playbackId, setPlaybackId] = useState<string>();
   const [tokens, setTokens] = useState<Tokens>();
+  const [errorMsg, setErrorMsg] = useState("");
   const idRef = useRef<string | null>(null);
 
   async function ensureUploadUrl(): Promise<string> {
@@ -54,17 +55,28 @@ export function VideoComposer({ title, groupId }: { title: string; groupId: stri
   async function uploadRecorded(blob: Blob) {
     setStatus("uploading");
     setProgress(0);
+    setErrorMsg("");
+    if (!blob || blob.size === 0) {
+      setErrorMsg("The recording was empty (0 bytes).");
+      setStatus("error");
+      return;
+    }
     try {
       const endpoint = await ensureUploadUrl();
       const up = UpChunk.createUpload({ endpoint, file: blob as File });
       up.on("progress", (e) => setProgress(Math.round((e as CustomEvent<number>).detail)));
       up.on("success", () => startProcessing());
       up.on("error", (e) => {
-        console.error("[lastlink] upload error", (e as CustomEvent).detail);
+        const d = (e as CustomEvent).detail as { message?: string } | string | undefined;
+        const msg = typeof d === "string" ? d : (d?.message ?? JSON.stringify(d));
+        console.error("[lastlink] upload error", d);
+        setErrorMsg(`Upload: ${msg}`);
         setStatus("error");
       });
     } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
       console.error("[lastlink] upload init failed", e);
+      setErrorMsg(`Init: ${msg}`);
       setStatus("error");
     }
   }
@@ -103,7 +115,8 @@ export function VideoComposer({ title, groupId }: { title: string; groupId: stri
     return (
       <div style={{ padding: 40, border: "1px solid var(--line)", borderRadius: "var(--r-3)", textAlign: "center" }}>
         <div style={{ fontSize: 15, fontWeight: 500, color: "var(--err)", marginBottom: 8 }}>That didn't save. Let's try again.</div>
-        <div style={{ fontSize: 13, color: "var(--ink-3)", marginBottom: 16 }}>Your recording wasn't saved — nothing was lost on our end.</div>
+        <div style={{ fontSize: 13, color: "var(--ink-3)", marginBottom: 8 }}>Your recording wasn't saved — nothing was lost on our end.</div>
+        {errorMsg && <div className="mono" style={{ fontSize: 11, color: "var(--ink-4)", marginBottom: 16, wordBreak: "break-word" }}>{errorMsg}</div>}
         <button className="ll-btn" onClick={() => { idRef.current = null; setProgress(0); setStatus("idle"); setMode("choose"); }}>Try again</button>
       </div>
     );
