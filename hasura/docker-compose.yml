@@ -1,0 +1,21 @@
+# Hasura GraphQL Engine — runs locally in Docker, points at the Neon database.
+# Run from repo root:
+#   docker compose --env-file .env -f hasura/docker-compose.yml up -d
+services:
+  hasura:
+    image: hasura/graphql-engine:v2.48.0
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      ## Neon is the database (no local Postgres).
+      HASURA_GRAPHQL_DATABASE_URL: "${DATABASE_URL_DIRECT}"
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: "${DATABASE_URL_DIRECT}"
+      HASURA_GRAPHQL_ADMIN_SECRET: "${HASURA_GRAPHQL_ADMIN_SECRET}"
+      ## Dev console on; disable in production.
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: "startup, http-log, webhook-log, websocket-log, query-log"
+      ## JWT mode wired in the M0 auth step (Better Auth JWKS):
+      # HASURA_GRAPHQL_JWT_SECRET: '{"type":"RS256","jwk_url":"http://host.docker.internal:10000/.well-known/jwks.json"}'
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: "anonymous"

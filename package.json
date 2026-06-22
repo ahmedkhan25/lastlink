@@ -1,0 +1,20 @@
+{
+  "name": "lastlink",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "db:apply": "psql \"$DATABASE_URL_DIRECT\" -v ON_ERROR_STOP=1 -f db/schema.sql",
+    "db:seed": "tsx scripts/seed.ts",
+    "hasura:up": "docker compose -f hasura/docker-compose.yml up -d",
+    "hasura:down": "docker compose -f hasura/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "tsx": "^4.19.0"
+  }
+}
