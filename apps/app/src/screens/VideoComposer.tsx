@@ -1,9 +1,13 @@
 import { useRef, useState } from "react";
 import MuxUploader from "@mux/mux-uploader-react";
 import MuxPlayer from "@mux/mux-player-react";
+import * as UpChunk from "@mux/upchunk";
+import { Icon } from "@lastlink/ui";
 import { gql, postApi } from "../lib/api.js";
+import { VideoRecorder } from "./VideoRecorder.js";
 
 interface Tokens { playback: string; thumbnail: string; storyboard: string }
+type Mode = "choose" | "record" | "upload";
 type Status = "idle" | "uploading" | "processing" | "ready" | "error";
 
 const CREATE = `mutation($title: String, $group_id: uuid) {
@@ -11,14 +15,14 @@ const CREATE = `mutation($title: String, $group_id: uuid) {
 }`;
 
 export function VideoComposer({ title, groupId }: { title: string; groupId: string }) {
+  const [mode, setMode] = useState<Mode>("choose");
   const [status, setStatus] = useState<Status>("idle");
+  const [progress, setProgress] = useState(0);
   const [playbackId, setPlaybackId] = useState<string>();
   const [tokens, setTokens] = useState<Tokens>();
   const idRef = useRef<string | null>(null);
 
-  // MuxUploader calls this to obtain the direct-upload URL; we lazily create
-  // the message + Mux upload here and remember the id for polling.
-  async function getUploadUrl(): Promise<string> {
+  async function ensureUploadUrl(): Promise<string> {
     let id = idRef.current;
     if (!id) {
       const c = await gql<{ insert_app_messages_one: { id: string } }>(CREATE, { title, group_id: groupId || null });
@@ -29,7 +33,7 @@ export function VideoComposer({ title, groupId }: { title: string; groupId: stri
     return uploadUrl;
   }
 
-  async function onSuccess() {
+  async function startProcessing() {
     setStatus("processing");
     const id = idRef.current!;
     for (let i = 0; i < 24; i++) {
@@ -41,37 +45,83 @@ export function VideoComposer({ title, groupId }: { title: string; groupId: stri
         setStatus("ready");
         return;
       }
-      if (r.status === "errored") { setStatus("error"); return; }
+      if (r.status === "errored") return setStatus("error");
       await new Promise((res) => setTimeout(res, 4000));
     }
     setStatus("error");
+  }
+
+  async function uploadRecorded(blob: Blob) {
+    setStatus("uploading");
+    setProgress(0);
+    try {
+      const endpoint = await ensureUploadUrl();
+      const up = UpChunk.createUpload({ endpoint, file: blob as File });
+      up.on("progress", (e) => setProgress(Math.round((e as CustomEvent<number>).detail)));
+      up.on("success", () => startProcessing());
+      up.on("error", () => setStatus("error"));
+    } catch {
+      setStatus("error");
+    }
   }
 
   if (status === "ready" && playbackId && tokens) {
     return (
       <div>
         <div style={{ borderRadius: "var(--r-4)", overflow: "hidden", aspectRatio: "16/9", background: "#241D17" }}>
-          <MuxPlayer
-            playbackId={playbackId}
-            tokens={{ playback: tokens.playback, thumbnail: tokens.thumbnail, storyboard: tokens.storyboard }}
-            accentColor="#6B2CB0"
-            style={{ height: "100%", width: "100%" }}
-          />
+          <MuxPlayer playbackId={playbackId} tokens={tokens} accentColor="#6B2CB0" style={{ height: "100%", width: "100%" }} />
         </div>
-        <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 8 }}>Ready · sealed · plays only with a signed token</div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: "var(--ink-3)" }}>
+          <span>Ready · sealed · plays only with a signed token</span>
+          <button className="ll-btn ghost" onClick={() => { idRef.current = null; setStatus("idle"); setMode("choose"); }}>Record another</button>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div>
-      <MuxUploader endpoint={getUploadUrl} onSuccess={onSuccess} onUploadStart={() => setStatus("uploading")} style={{ ["--uploader-font-family" as string]: "var(--font-sans)" }} />
-      <div style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 12 }}>
-        {status === "uploading" && "Uploading…"}
-        {status === "processing" && "Mux is processing your video (captions + renditions)… this takes a moment."}
-        {status === "error" && <span style={{ color: "var(--err)" }}>Something went wrong. Try again.</span>}
-        {status === "idle" && "Drop a video (or pick a file). It uploads resumably and is stored encrypted by Mux."}
+  if (status === "uploading" || status === "processing") {
+    return (
+      <div style={{ padding: 40, border: "1px solid var(--line)", borderRadius: "var(--r-3)", textAlign: "center" }}>
+        <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>
+          {status === "uploading" ? `Uploading… ${progress}%` : "Processing your video"}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--ink-3)" }}>
+          {status === "uploading" ? "Securely uploading to Mux." : "Mux is transcoding + generating captions… a moment."}
+        </div>
+        <div style={{ height: 6, borderRadius: 3, background: "var(--line)", marginTop: 16, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: status === "uploading" ? `${progress}%` : "100%", background: "var(--brand-grad)", transition: "width 200ms" }} />
+        </div>
       </div>
+    );
+  }
+
+  if (mode === "record") return <VideoRecorder onRecorded={uploadRecorded} onCancel={() => setMode("choose")} />;
+
+  if (mode === "upload") {
+    return (
+      <div>
+        <MuxUploader endpoint={ensureUploadUrl} onSuccess={() => startProcessing()} onUploadStart={() => setStatus("uploading")} />
+        <button className="ll-btn ghost" onClick={() => setMode("choose")} style={{ marginTop: 10 }}>← Back</button>
+      </div>
+    );
+  }
+
+  // choose
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <Choice icon="video" title="Record a video" sub="Use your camera, right here" onClick={() => setMode("record")} primary />
+      <Choice icon="arrow" title="Upload a file" sub="Drag in an existing recording" onClick={() => setMode("upload")} />
     </div>
+  );
+}
+
+function Choice({ icon, title, sub, onClick, primary }: { icon: "video" | "arrow"; title: string; sub: string; onClick: () => void; primary?: boolean }) {
+  return (
+    <button onClick={onClick}
+      style={{ textAlign: "left", padding: 24, border: "1px solid var(--line)", borderRadius: "var(--r-3)", background: primary ? "var(--brand-grad-soft)" : "var(--surface)", cursor: "pointer", display: "flex", flexDirection: "column", gap: 8 }}>
+      <Icon name={icon} size={24} color="var(--brand-purple)" />
+      <div style={{ fontSize: 16, fontWeight: 500 }}>{title}</div>
+      <div style={{ fontSize: 13, color: "var(--ink-3)" }}>{sub}</div>
+    </button>
   );
 }

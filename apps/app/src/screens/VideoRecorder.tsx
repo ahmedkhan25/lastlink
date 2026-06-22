@@ -1,0 +1,127 @@
+import { useEffect, useRef, useState } from "react";
+import { Icon } from "@lastlink/ui";
+
+// Cross-browser recording mime — prefer mp4/h264 (iOS Safari), fall back to webm.
+function pickMimeType(): string | undefined {
+  const candidates = [
+    "video/mp4;codecs=avc1",
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm",
+  ];
+  const supported = typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported;
+  return supported ? candidates.find((c) => MediaRecorder.isTypeSupported(c)) : undefined;
+}
+
+function fmt(s: number): string {
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}
+
+export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blob) => void; onCancel: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const [recording, setRecording] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    navigator.mediaDevices
+      .getUserMedia({ video: { width: 1280, height: 720 }, audio: true })
+      .then((stream) => {
+        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
+        streamRef.current = stream;
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      })
+      .catch(() => setError("Camera/microphone access was denied. Check browser permissions."));
+    return () => {
+      cancelled = true;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!recording) return;
+    const id = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(id);
+  }, [recording]);
+
+  function start() {
+    const stream = streamRef.current;
+    if (!stream) return;
+    chunksRef.current = [];
+    const mimeType = pickMimeType();
+    const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    rec.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: rec.mimeType || "video/webm" });
+      setRecordedBlob(blob);
+      setPreviewUrl(URL.createObjectURL(blob));
+    };
+    rec.start();
+    recorderRef.current = rec;
+    setElapsed(0);
+    setRecording(true);
+  }
+
+  function stop() {
+    recorderRef.current?.stop();
+    setRecording(false);
+  }
+
+  function reset() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setRecordedBlob(null);
+    setElapsed(0);
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 32, border: "1px solid var(--line)", borderRadius: "var(--r-3)", textAlign: "center" }}>
+        <div style={{ color: "var(--err)", marginBottom: 12 }}>{error}</div>
+        <button className="ll-btn secondary" onClick={onCancel}>Back</button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ position: "relative", borderRadius: "var(--r-4)", overflow: "hidden", aspectRatio: "16/9", background: "#241D17" }}>
+        {previewUrl ? (
+          <video src={previewUrl} controls playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
+        )}
+        {recording && (
+          <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.5)", color: "white", padding: "5px 12px", borderRadius: 999, fontSize: 13 }}>
+            <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#9A3A2E" }} /> {fmt(elapsed)}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: 10, marginTop: 14, alignItems: "center" }}>
+        {!previewUrl && !recording && (
+          <button className="ll-btn grad" onClick={start}><Icon name="video" size={16} color="white" /> Start recording</button>
+        )}
+        {recording && (
+          <button className="ll-btn" onClick={stop} style={{ background: "var(--err)" }}>Stop recording</button>
+        )}
+        {previewUrl && (
+          <>
+            <button className="ll-btn grad" onClick={() => recordedBlob && onRecorded(recordedBlob)}>Use this video</button>
+            <button className="ll-btn secondary" onClick={reset}>Re-record</button>
+          </>
+        )}
+        <button className="ll-btn ghost" onClick={onCancel}>Cancel</button>
+        <span style={{ fontSize: 12, color: "var(--ink-3)", marginLeft: "auto" }}>No time limit. Take your time.</span>
+      </div>
+    </div>
+  );
+}

@@ -66,6 +66,9 @@ importers:
       '@mux/mux-uploader-react':
         specifier: ^1.0.0
         version: 1.5.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@mux/upchunk':
+        specifier: ^3.0.0
+        version: 3.5.0
       better-auth:
         specifier: ^1.2.0
         version: 1.6.20(pg@8.22.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
