@@ -5,6 +5,7 @@ import { query } from "./db.js";
 import { logEvent } from "./audit.js";
 import { auth } from "./auth.js";
 import { graphqlProxy } from "./graphql-proxy.js";
+import { saveLetter } from "./messages.js";
 
 const app = express();
 
@@ -33,6 +34,9 @@ app.use(express.json());
 
 // The single browser→Hasura path.
 app.post("/graphql", graphqlProxy);
+
+// Sensitive consequence endpoints (Express, never Hasura).
+app.post("/api/messages/:id/letter", saveLetter);
 
 app.get("/health", async (_req, res) => {
   try {

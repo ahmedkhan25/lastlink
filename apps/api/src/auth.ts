@@ -1,4 +1,6 @@
 import { betterAuth } from "better-auth";
+import { fromNodeHeaders } from "better-auth/node";
+import type { IncomingHttpHeaders } from "node:http";
 import { pool, query } from "./db.js";
 import { env } from "./env.js";
 import { logEvent } from "./audit.js";
@@ -44,4 +46,15 @@ export async function registrantIdForUser(userId: string): Promise<string | null
     [userId],
   );
   return rows[0]?.id ?? null;
+}
+
+/** Guard for sensitive Express routes: returns the registrant identity or null. */
+export async function requireRegistrant(
+  headers: IncomingHttpHeaders,
+): Promise<{ userId: string; registrantId: string } | null> {
+  const session = await auth.api.getSession({ headers: fromNodeHeaders(headers) });
+  if (!session?.user) return null;
+  const registrantId = await registrantIdForUser(session.user.id);
+  if (!registrantId) return null;
+  return { userId: session.user.id, registrantId };
 }

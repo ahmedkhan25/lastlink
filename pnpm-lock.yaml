@@ -17,6 +17,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@lastlink/crypto':
+        specifier: workspace:*
+        version: link:../../packages/crypto
       '@lastlink/shared':
         specifier: workspace:*
         version: link:../../packages/shared
