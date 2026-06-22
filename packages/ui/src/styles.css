@@ -1,0 +1,190 @@
+/* ==========================================================================
+   LastLink — global tokens & base styles (ported from the design prototype).
+   Warm-bone palette, deep brown ink, brand purple→blue gradient used sparingly.
+   Imported by every Shadcn/Tailwind surface; the enterprise console uses MUI.
+   ========================================================================== */
+
+:root {
+  /* Warm neutrals */
+  --bone:        #FAF7F1;
+  --bone-soft:   #FCFAF6;
+  --ivory:       #FEFCF8;
+  --sand:        #EFE7D5;
+  --sand-soft:   #F5EFE0;
+
+  /* Ink — deep brown with a touch of warmth */
+  --ink:         #1F1814;
+  --ink-2:       #44362C;
+  --ink-3:       #7C6A5B;
+  --ink-4:       #B8A896;
+  --line:        rgba(31, 24, 20, 0.10);
+  --line-soft:   rgba(31, 24, 20, 0.05);
+
+  /* Brand — from butterfly mark */
+  --brand-purple: #6B2CB0;
+  --brand-purple-2: #8E4FCC;
+  --brand-blue:   #2E73DC;
+  --brand-blue-2: #5AA0F0;
+  --brand-grad:   linear-gradient(135deg, #6B2CB0 0%, #2E73DC 100%);
+  --brand-grad-soft: linear-gradient(135deg, rgba(107,44,176,0.10) 0%, rgba(46,115,220,0.10) 100%);
+
+  /* States */
+  --ok:          #2F7A55;
+  --warn:        #C0782A;
+  --err:         #9A3A2E;
+
+  /* Type */
+  --font-sans:   "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-serif:  "Cormorant Garamond", "Source Serif Pro", Georgia, serif;
+  --font-mono:   "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  /* Density (overridable) */
+  --density: 1;
+  --space-1: calc(4px  * var(--density));
+  --space-2: calc(8px  * var(--density));
+  --space-3: calc(12px * var(--density));
+  --space-4: calc(16px * var(--density));
+  --space-5: calc(24px * var(--density));
+  --space-6: calc(32px * var(--density));
+  --space-7: calc(48px * var(--density));
+  --space-8: calc(64px * var(--density));
+  --space-9: calc(96px * var(--density));
+  --space-10: calc(128px * var(--density));
+
+  /* Radii */
+  --r-1: 4px;
+  --r-2: 8px;
+  --r-3: 12px;
+  --r-4: 18px;
+  --r-pill: 999px;
+
+  /* Shadows — soft, warm */
+  --shadow-1: 0 1px 2px rgba(31,24,20,0.03), 0 1px 1px rgba(31,24,20,0.02);
+  --shadow-2: 0 4px 14px rgba(31,24,20,0.05), 0 1px 2px rgba(31,24,20,0.03);
+  --shadow-3: 0 24px 50px -16px rgba(31,24,20,0.16), 0 8px 20px rgba(31,24,20,0.05);
+}
+
+/* Palette themes — switchable via [data-palette] on root */
+[data-palette="bone"]  { --bg: var(--bone);  --surface: #FFFFFF; --surface-2: var(--bone-soft); }
+[data-palette="ivory"] { --bg: var(--ivory); --surface: #FFFFFF; --surface-2: var(--bone-soft); }
+[data-palette="dusk"] {
+  --bg: #14110E; --surface: #1C1813; --surface-2: #25201A;
+  --ink: #F4ECDD; --ink-2: #CDBFAB; --ink-3: #918172; --ink-4: #5E5448;
+  --line: rgba(244,236,221,0.10); --line-soft: rgba(244,236,221,0.05);
+}
+/* Default if no palette attribute */
+:root { --bg: var(--bone); --surface: #FFFFFF; --surface-2: var(--bone-soft); }
+
+[data-density="airy"]        { --density: 1.15; }
+[data-density="comfortable"] { --density: 1; }
+[data-density="compact"]     { --density: 0.85; }
+
+/* ----------------------------------------- BASE */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; }
+img { display: block; max-width: 100%; }
+
+.serif { font-family: var(--font-serif); font-weight: 500; letter-spacing: -0.005em; }
+.mono  { font-family: var(--font-mono); }
+
+.ll-grad-text {
+  background: var(--brand-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ll-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.ll-divider { height: 1px; background: var(--line); width: 100%; }
+
+.ll-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  transition: transform 120ms ease, box-shadow 200ms ease, background 200ms ease;
+  background: var(--ink);
+  color: var(--bone-soft);
+  white-space: nowrap;
+}
+.ll-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); }
+.ll-btn.secondary { background: transparent; border-color: var(--line); color: var(--ink); }
+.ll-btn.secondary:hover { background: var(--surface); }
+.ll-btn.grad { background: var(--brand-grad); color: white; }
+.ll-btn.ghost { background: transparent; color: var(--ink); padding: 8px 14px; }
+.ll-btn.ghost:hover { background: var(--surface); }
+.ll-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.ll-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 5px 12px;
+  letter-spacing: 0.01em;
+}
+.ll-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-grad); }
+
+.ll-img {
+  position: relative;
+  background:
+    repeating-linear-gradient(135deg, rgba(42,31,24,0.05) 0 1px, transparent 1px 14px),
+    var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ll-img .ll-img-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  max-width: 80%;
+}
+
+:focus-visible { outline: 2px solid var(--brand-blue); outline-offset: 2px; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: var(--r-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
