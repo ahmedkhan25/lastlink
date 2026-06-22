@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@lastlink/shared": "workspace:*",
+    "better-auth": "^1.2.0",
     "dotenv": "^16.4.0",
     "express": "^5.0.0",
     "pg": "^8.13.0"
