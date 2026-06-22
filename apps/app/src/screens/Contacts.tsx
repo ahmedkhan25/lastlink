@@ -15,6 +15,7 @@ const LIST = `query { app_contacts(order_by: {created_at: asc}) { id full_name r
 const ADD = `mutation Add($full_name: String!, $relationship: String, $email: String) {
   insert_app_contacts_one(object: {full_name: $full_name, relationship: $relationship, email: $email}) { id }
 }`;
+const REMOVE = `mutation Remove($id: uuid!) { delete_app_contacts_by_pk(id: $id) { id } }`;
 
 export function Contacts() {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -40,6 +41,16 @@ export function Contacts() {
     await refresh();
   }
 
+  async function remove(c: Contact) {
+    if (!window.confirm(`Remove ${c.full_name} from your contacts?`)) return;
+    setContacts((cs) => cs.filter((x) => x.id !== c.id)); // optimistic
+    try {
+      await gql(REMOVE, { id: c.id });
+    } catch {
+      await refresh(); // restore on failure
+    }
+  }
+
   return (
     <div style={{ padding: "56px 64px", maxWidth: 1100, margin: "0 auto" }}>
       <h1 className="serif" style={{ fontSize: 38, fontWeight: 500, letterSpacing: "-0.01em", margin: 0 }}>Contacts</h1>
@@ -61,7 +72,7 @@ export function Contacts() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left", fontSize: 11, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              <th style={th}>Name</th><th style={th}>Relationship</th><th style={th}>Email</th><th style={th}>Reach</th>
+              <th style={th}>Name</th><th style={th}>Relationship</th><th style={th}>Email</th><th style={th}>Reach</th><th style={th} />
             </tr>
           </thead>
           <tbody>
@@ -76,10 +87,18 @@ export function Contacts() {
                 <td style={{ ...td, color: "var(--ink-2)" }}>{c.relationship ?? "—"}</td>
                 <td style={{ ...td, color: "var(--ink-3)" }}>{c.email ?? "—"}</td>
                 <td style={td}><span className="ll-chip" style={{ fontSize: 11 }}>Email</span></td>
+                <td style={{ ...td, textAlign: "right" }}>
+                  <button onClick={() => remove(c)} title={`Remove ${c.full_name}`}
+                    style={{ background: "none", border: "none", color: "var(--ink-4)", padding: 4, cursor: "pointer" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--err)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--ink-4)")}>
+                    Remove
+                  </button>
+                </td>
               </tr>
             ))}
             {!loading && contacts.length === 0 && (
-              <tr><td style={{ ...td, color: "var(--ink-3)" }} colSpan={4}>No contacts yet — add the people you love above.</td></tr>
+              <tr><td style={{ ...td, color: "var(--ink-3)" }} colSpan={5}>No contacts yet — add the people you love above.</td></tr>
             )}
           </tbody>
         </table>
