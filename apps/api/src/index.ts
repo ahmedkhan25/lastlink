@@ -7,6 +7,7 @@ import { auth } from "./auth.js";
 import { graphqlProxy } from "./graphql-proxy.js";
 import { saveLetter } from "./messages.js";
 import { sealAccount } from "./account.js";
+import { uploadInit, mediaRefresh, playbackToken } from "./video.js";
 
 const app = express();
 
@@ -39,6 +40,10 @@ app.post("/graphql", graphqlProxy);
 // Sensitive consequence endpoints (Express, never Hasura).
 app.post("/api/messages/:id/letter", saveLetter);
 app.post("/api/account/seal", sealAccount);
+// Video (Mux). Local dev polls /media/refresh; prod adds the /webhooks/mux handler.
+app.post("/api/messages/:id/upload-init", uploadInit);
+app.post("/api/messages/:id/media/refresh", mediaRefresh);
+app.post("/api/messages/:id/playback-token", playbackToken);
 
 app.get("/health", async (_req, res) => {
   try {
