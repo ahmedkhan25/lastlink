@@ -105,9 +105,11 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
     <div>
       <div style={{ position: "relative", borderRadius: "var(--r-4)", overflow: "hidden", aspectRatio: "16/9", background: "#241D17" }}>
         {previewUrl ? (
-          <video src={previewUrl} controls autoPlay muted loop playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          // key forces a fresh <video> node — otherwise React reuses the live
+          // element, whose srcObject (stopped stream) would override src → black.
+          <video key="preview" src={previewUrl} controls autoPlay muted loop playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
+          <video key="live" ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
         )}
         {recording && (
           <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.5)", color: "white", padding: "5px 12px", borderRadius: 999, fontSize: 13 }}>
