@@ -21,6 +21,9 @@ export const env = {
   BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "dev-insecure-secret-change-me",
   API_BASE_URL: process.env.API_BASE_URL ?? "http://localhost:10000",
   APP_BASE_URL: process.env.APP_BASE_URL ?? "http://localhost:5273",
+  // Both dev hostnames resolve to the SPA; allow either so CORS/cookies work
+  // regardless of whether the browser uses localhost or 127.0.0.1.
+  APP_ORIGINS: (process.env.APP_ORIGINS ?? "http://localhost:5273,http://127.0.0.1:5273").split(","),
   HASURA_GRAPHQL_ENDPOINT: process.env.HASURA_GRAPHQL_ENDPOINT ?? "http://localhost:8080/v1/graphql",
   HASURA_GRAPHQL_ADMIN_SECRET: process.env.HASURA_GRAPHQL_ADMIN_SECRET ?? "",
   // Providers

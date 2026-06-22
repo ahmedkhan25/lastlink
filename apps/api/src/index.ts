@@ -8,9 +8,14 @@ import { graphqlProxy } from "./graphql-proxy.js";
 
 const app = express();
 
-// CORS for the registrant SPA (credentials = session cookie).
+// CORS for the registrant SPA (credentials = session cookie). Reflect the
+// request origin if it's an allowed dev origin (localhost OR 127.0.0.1).
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", env.APP_BASE_URL);
+  const origin = req.headers.origin;
+  if (origin && env.APP_ORIGINS.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+  }
   res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Headers", "content-type");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");

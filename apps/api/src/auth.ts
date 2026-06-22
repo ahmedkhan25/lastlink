@@ -8,7 +8,7 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.API_BASE_URL,
   basePath: "/api/auth",
-  trustedOrigins: [env.APP_BASE_URL],
+  trustedOrigins: env.APP_ORIGINS,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // demo: skip the email round-trip

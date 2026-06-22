@@ -1,6 +1,8 @@
 // Single place every API call resolves its base URL (see SKILL: getApiUrl()).
+// In dev this is "" — the Vite proxy forwards /api and /graphql to the API on
+// the same origin (first-party cookies, no CORS). In prod, set VITE_API_URL.
 export function getApiUrl(): string {
-  return import.meta.env.VITE_API_URL ?? "http://localhost:10000";
+  return import.meta.env.VITE_API_URL ?? "";
 }
 
 export interface GqlError {
