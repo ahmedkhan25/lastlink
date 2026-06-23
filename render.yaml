@@ -33,6 +33,8 @@ services:
     image:
       url: hasura/graphql-engine:v2.48.0
     envVars:
+      - key: PORT
+        value: "8080"            # Hasura binds 8080; match Render's health check + internal hostname
       - key: HASURA_GRAPHQL_ENABLE_CONSOLE
         value: "false"
       - key: HASURA_GRAPHQL_DEV_MODE
