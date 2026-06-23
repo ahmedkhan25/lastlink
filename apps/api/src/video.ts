@@ -6,7 +6,7 @@ import { requireRegistrant } from "./auth.js";
 import { logEvent } from "./audit.js";
 
 const mux = new Mux({ tokenId: env.MUX_TOKEN_ID, tokenSecret: env.MUX_TOKEN_SECRET });
-const CORS_ORIGIN = process.env.MUX_CORS_ORIGIN ?? "*"; // exact origin in prod
+const CORS_ORIGIN = process.env.MUX_CORS_ORIGIN ?? process.env.RENDER_EXTERNAL_URL ?? "*"; // exact origin in prod
 
 interface MediaRow {
   id: string;

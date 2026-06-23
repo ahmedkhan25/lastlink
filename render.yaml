@@ -1,0 +1,80 @@
+# LastLink — Render Blueprint (investor demo).
+# Single-origin: the Node web service builds the SPA and the Express API serves it,
+# so app + API + /graphql share one URL (first-party cookies). Hasura runs as a
+# private service pointed at Neon. Set secret env vars (sync:false) in the dashboard.
+#
+# Deploy: Render dashboard → New → Blueprint → connect ahmedkhan25/lastlink.
+services:
+  # ── Web: Express API + built registrant SPA ──────────────────────────────
+  - type: web
+    name: lastlink-web
+    runtime: node
+    region: virginia            # close to Neon (aws-us-east-1)
+    plan: starter               # free tier cold-starts; starter keeps it warm
+    buildCommand: corepack enable && pnpm install && pnpm -F @lastlink/app build
+    startCommand: pnpm -F @lastlink/api start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      # API → Hasura over Render's private network (service name : port)
+      - key: HASURA_GRAPHQL_ENDPOINT
+        value: http://lastlink-hasura:8080/v1/graphql
+      - fromGroup: lastlink
+
+  # ── Hasura GraphQL engine (private; console + introspection off) ──────────
+  - type: web
+    name: lastlink-hasura
+    runtime: image
+    region: virginia
+    plan: starter
+    image:
+      url: hasura/graphql-engine:v2.48.0
+    envVars:
+      - key: HASURA_GRAPHQL_ENABLE_CONSOLE
+        value: "false"
+      - key: HASURA_GRAPHQL_DEV_MODE
+        value: "false"
+      - key: HASURA_GRAPHQL_ENABLE_TELEMETRY
+        value: "false"
+      - key: HASURA_GRAPHQL_UNAUTHORIZED_ROLE
+        value: anonymous
+      - key: HASURA_GRAPHQL_DATABASE_URL
+        fromGroup: lastlink         # = DATABASE_URL_DIRECT value
+      - key: HASURA_GRAPHQL_METADATA_DATABASE_URL
+        fromGroup: lastlink
+      - key: HASURA_GRAPHQL_ADMIN_SECRET
+        fromGroup: lastlink
+
+# ── Shared secrets (set values in the Render dashboard; never commit them) ──
+envVarGroups:
+  - name: lastlink
+    envVars:
+      - key: DATABASE_URL
+        sync: false               # Neon pooled
+      - key: DATABASE_URL_DIRECT
+        sync: false               # Neon direct (also Hasura's DB url)
+      - key: HASURA_GRAPHQL_DATABASE_URL
+        sync: false               # paste the Neon direct url here too
+      - key: HASURA_GRAPHQL_METADATA_DATABASE_URL
+        sync: false
+      - key: HASURA_GRAPHQL_ADMIN_SECRET
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: LETTER_ENC_KEY
+        sync: false
+      - key: MUX_TOKEN_ID
+        sync: false
+      - key: MUX_TOKEN_SECRET
+        sync: false
+      - key: MUX_SIGNING_KEY_ID
+        sync: false
+      - key: MUX_SIGNING_KEY_PRIVATE
+        sync: false
+      - key: MUX_WEBHOOK_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false

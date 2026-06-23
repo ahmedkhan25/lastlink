@@ -1,4 +1,6 @@
 import express from "express";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { toNodeHandler } from "better-auth/node";
 import { env } from "./env.js";
 import { query } from "./db.js";
@@ -59,6 +61,15 @@ app.post("/internal/audit-smoke", async (req, res) => {
   const { rows } = await query("select id, action, data, occurred_at from audit.event_log order by id desc limit 3");
   res.json({ ok: true, recent: rows });
 });
+
+// Production single-origin: serve the built registrant SPA so app + API + /graphql
+// share one domain (first-party cookies; avoids the *.onrender.com PSL cookie issue).
+const spaDir = resolve(import.meta.dirname, "../../app/dist");
+if (existsSync(spaDir)) {
+  app.use(express.static(spaDir));
+  app.get("/*splat", (_req, res) => res.sendFile(resolve(spaDir, "index.html")));
+  console.log(`[lastlink-api] serving SPA from ${spaDir}`);
+}
 
 app.listen(env.PORT, "0.0.0.0", () => {
   console.log(`[lastlink-api] listening on :${env.PORT} (${env.NODE_ENV})`);

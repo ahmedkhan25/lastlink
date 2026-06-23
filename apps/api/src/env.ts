@@ -17,13 +17,17 @@ export const env = {
   PORT: Number(process.env.PORT ?? 10000),
   DATABASE_URL: required("DATABASE_URL"),
   HOLD_DURATION_MS: process.env.HOLD_DURATION_MS, // demo time-warp (optional)
-  // Auth + proxy
+  // Auth + proxy. On Render, RENDER_EXTERNAL_URL is the public origin (single-origin
+  // deploy: API serves the SPA, so app + API share this URL).
   BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "dev-insecure-secret-change-me",
-  API_BASE_URL: process.env.API_BASE_URL ?? "http://localhost:10000",
-  APP_BASE_URL: process.env.APP_BASE_URL ?? "http://localhost:5273",
-  // Both dev hostnames resolve to the SPA; allow either so CORS/cookies work
-  // regardless of whether the browser uses localhost or 127.0.0.1.
-  APP_ORIGINS: (process.env.APP_ORIGINS ?? "http://localhost:5273,http://127.0.0.1:5273").split(","),
+  API_BASE_URL: process.env.API_BASE_URL ?? process.env.RENDER_EXTERNAL_URL ?? "http://localhost:10000",
+  APP_BASE_URL: process.env.APP_BASE_URL ?? process.env.RENDER_EXTERNAL_URL ?? "http://localhost:5273",
+  // Allowed origins for CORS + Better Auth trusted origins.
+  APP_ORIGINS: (
+    process.env.APP_ORIGINS ??
+    process.env.RENDER_EXTERNAL_URL ??
+    "http://localhost:5273,http://127.0.0.1:5273"
+  ).split(","),
   HASURA_GRAPHQL_ENDPOINT: process.env.HASURA_GRAPHQL_ENDPOINT ?? "http://localhost:8080/v1/graphql",
   HASURA_GRAPHQL_ADMIN_SECRET: process.env.HASURA_GRAPHQL_ADMIN_SECRET ?? "",
   // Letter encryption (local AES; 64 hex chars). Demo default — override in real envs.
