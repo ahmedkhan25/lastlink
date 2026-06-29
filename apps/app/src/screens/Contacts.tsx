@@ -35,12 +35,28 @@ export function Contacts() {
     return () => { active = false; };
   }, []);
 
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   async function add(e: FormEvent) {
     e.preventDefault();
-    if (!form.full_name.trim()) return;
-    await gql(ADD, { full_name: form.full_name, relationship: form.relationship || null, email: form.email || null });
-    setForm({ full_name: "", relationship: "", email: "" });
-    await refresh();
+    if (!form.full_name.trim() || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await gql(ADD, { full_name: form.full_name, relationship: form.relationship || null, email: form.email || null });
+      setForm({ full_name: "", relationship: "", email: "" });
+      await refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not add contact";
+      // anonymous role / expired session → bounce to sign in
+      if (/not found in type|jwt|unauthor|anonymous/i.test(msg)) {
+        setError("Your session expired — please sign in again.");
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function remove(c: Contact) {
@@ -70,8 +86,9 @@ export function Contacts() {
           style={inputStyle} />
         <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
           style={inputStyle} />
-        <button className="ll-btn" type="submit"><Icon name="plus" size={14} color="white" /> Add contact</button>
+        <button className="ll-btn" type="submit" disabled={busy}><Icon name="plus" size={14} color="white" /> {busy ? "Adding…" : "Add contact"}</button>
       </form>
+      {error && <div style={{ fontSize: 13, color: "var(--err)", marginBottom: 16 }}>{error}</div>}
 
       <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
