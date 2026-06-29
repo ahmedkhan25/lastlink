@@ -5,7 +5,7 @@ import { signIn, signUp } from "../lib/auth.js";
 
 export function SignIn() {
   const [mode, setMode] = useState<"signin" | "signup">("signup");
-  const [name, setName] = useState("Daniel Rourke");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
