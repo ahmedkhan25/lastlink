@@ -80,13 +80,15 @@ export function Contacts() {
       </p>
 
       <form onSubmit={add} style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
-        <input placeholder="Full name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+        <input placeholder="Full name (required)" required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })}
           style={inputStyle} />
         <input placeholder="Relationship" value={form.relationship} onChange={(e) => setForm({ ...form, relationship: e.target.value })}
           style={inputStyle} />
         <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
           style={inputStyle} />
-        <button className="ll-btn" type="submit" disabled={busy}><Icon name="plus" size={14} color="white" /> {busy ? "Adding…" : "Add contact"}</button>
+        <button className="ll-btn" type="submit" disabled={busy || !form.full_name.trim()}>
+          <Icon name="plus" size={14} color="white" /> {busy ? "Adding…" : "Add contact"}
+        </button>
       </form>
       {error && <div style={{ fontSize: 13, color: "var(--err)", marginBottom: 16 }}>{error}</div>}
 
