@@ -23,17 +23,20 @@ export async function inviteAdvocate(req: Request, res: Response): Promise<void>
   const adv = r.rows[0];
   if (!adv) return void res.status(404).json({ error: "advocate not found" });
 
-  const acceptUrl = `${env.ADVOCATE_BASE_URL}/accept/${signAdvocateInvite(id)}`;
+  const token = signAdvocateInvite(id);
+  const acceptUrl = `${env.ADVOCATE_BASE_URL}/accept/${token}`;
   const result = await notifier.send({
     to: adv.email,
     email: advocateInviteEmail({ advocateName: adv.full_name, registrantName: adv.legal_name, acceptUrl }),
-    idempotencyKey: `advocate-invite-${id}`,
+    // Unique per send (token varies each call) → invites can be re-sent; true
+    // retries within the request still dedupe.
+    idempotencyKey: `advocate-invite-${token.slice(0, 24)}`,
   });
   if (result.sink) console.log(`[advocate-invite] (no email key) accept URL: ${acceptUrl}`);
   await query("update app.advocates set invite_status = 'pending', invited_at = now() where id = $1", [id]);
   await logEvent({ actorType: "registrant", actorId: who.userId, action: "advocate.invited", entityType: "advocate", entityId: id, data: { sink: result.sink } });
 
-  res.json({ ok: true, sentTo: adv.email, delivered: !result.sink });
+  res.json({ ok: true, sentTo: adv.email, delivered: !result.sink && !result.error, error: result.error });
 }
 
 // GET /advocate/invite/:token — advocate accept page payload (token-auth).

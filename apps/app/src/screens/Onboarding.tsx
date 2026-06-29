@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
 import { gql, postApi } from "../lib/api.js";
+import { useSession } from "../lib/auth.js";
 
 const ADD_ADVOCATES = `mutation($aEmail: String!, $bEmail: String!) {
   a: insert_app_advocates_one(object: {slot: "A", full_name: "Sarah Rourke", relationship: "Sister", email: $aEmail, invite_status: "pending"}) { id }
@@ -13,6 +14,9 @@ const STEPS = ["Welcome", "Identity", "Contacts", "Message", "Advocates", "Done"
 export function Onboarding() {
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
+  const { data: session } = useSession();
+  const fullName = session?.user?.name ?? "";
+  const firstName = fullName.split(" ")[0] || "there";
   const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
 
   return (
@@ -30,8 +34,8 @@ export function Onboarding() {
       </header>
 
       <div style={{ display: "grid", placeItems: "center", padding: 40, overflow: "auto" }}>
-        {step === 0 && <Welcome onNext={next} />}
-        {step === 1 && <Identity onNext={next} />}
+        {step === 0 && <Welcome onNext={next} firstName={firstName} />}
+        {step === 1 && <Identity onNext={next} fullName={fullName} />}
         {step === 2 && <ContactsStep onNext={next} />}
         {step === 3 && <MessageStep onNext={next} />}
         {step === 4 && <AdvocatesStep onNext={next} />}
@@ -41,7 +45,7 @@ export function Onboarding() {
   );
 }
 
-function Welcome({ onNext }: { onNext: () => void }) {
+function Welcome({ onNext, firstName }: { onNext: () => void; firstName: string }) {
   const cards: { icon: IconName; t: string; s: string }[] = [
     { icon: "fingerprint", t: "Verify your identity", s: "So no one can speak for you." },
     { icon: "users", t: "Build your contact list", s: "Family, friends, business." },
@@ -51,7 +55,7 @@ function Welcome({ onNext }: { onNext: () => void }) {
   return (
     <div style={{ maxWidth: 600, textAlign: "center" }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}><Logo size={48} stacked /></div>
-      <h1 className="serif" style={{ fontSize: 56, fontWeight: 500, letterSpacing: "-0.015em", margin: 0 }}>Welcome, Daniel.</h1>
+      <h1 className="serif" style={{ fontSize: 56, fontWeight: 500, letterSpacing: "-0.015em", margin: 0 }}>Welcome, {firstName}.</h1>
       <p style={{ fontSize: 18, color: "var(--ink-2)", lineHeight: 1.55, margin: "16px 0 28px" }}>
         The next ten minutes will give your loved ones a lifetime of certainty. We'll set you up in five quiet steps.
       </p>
@@ -80,16 +84,19 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Identity({ onNext }: { onNext: () => void }) {
+function Identity({ onNext, fullName }: { onNext: () => void; fullName: string }) {
+  const parts = fullName.trim().split(" ");
+  const firstName = parts[0] ?? "";
+  const lastName = parts.slice(1).join(" ");
   return (
     <div style={{ maxWidth: 760, width: "100%" }}>
       <h1 className="serif" style={{ fontSize: 40, fontWeight: 500, margin: 0 }}>First, let's confirm it's really you.</h1>
       <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 28px" }}>We verify identity so that no one else can ever register or speak on your behalf.</p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
-        <Field label="Legal first name" value="Daniel" />
-        <Field label="Legal last name" value="Rourke" />
-        <Field label="Date of birth" value="May 4, 1962" />
-        <Field label="Country of residence" value="United States" />
+        <Field label="Legal first name" value={firstName} />
+        <Field label="Legal last name" value={lastName} />
+        <Field label="Date of birth" value="" />
+        <Field label="Country of residence" value="" />
       </div>
       <div style={{ padding: 24, border: "1px dashed var(--line)", borderRadius: "var(--r-3)", background: "var(--surface)", display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
         <div style={{ width: 56, height: 56, borderRadius: "var(--r-3)", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center" }}>

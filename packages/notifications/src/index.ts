@@ -28,16 +28,22 @@ export class NotificationService {
     if (cfg.resendApiKey) this.resend = new Resend(cfg.resendApiKey);
   }
 
-  async send({ to, email, idempotencyKey }: SendInput): Promise<{ id?: string; sink: boolean }> {
+  async send({ to, email, idempotencyKey }: SendInput): Promise<{ id?: string; sink: boolean; error?: string }> {
     if (!this.resend) {
       // eslint-disable-next-line no-console
       console.log(`[notifications:log-sink] → ${to} · ${email.subject}`);
       return { sink: true };
     }
-    const res = await this.resend.emails.send(
+    // Resend returns { data, error } — it does not throw on send failures.
+    const { data, error } = await this.resend.emails.send(
       { from: this.from, to, subject: email.subject, html: email.html },
       idempotencyKey ? { idempotencyKey } : undefined,
     );
-    return { id: res.data?.id, sink: false };
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error(`[notifications] resend error → ${to}: ${error.message}`);
+      return { sink: false, error: error.message };
+    }
+    return { id: data?.id, sink: false };
   }
 }
