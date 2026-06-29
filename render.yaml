@@ -23,9 +23,10 @@ services:
         value: "24"
       - key: PORT
         value: "10000"
-      # API → Hasura over Render's private network (service name : port)
+      # API → Hasura. Public URL (admin-secret-gated; introspection/console off) —
+      # Render's private DNS between ungrouped web services didn't resolve.
       - key: HASURA_GRAPHQL_ENDPOINT
-        value: http://lastlink-hasura:8080/v1/graphql
+        value: https://lastlink-hasura.onrender.com/v1/graphql
       # Email links point at the deployed advocate/message surfaces.
       - key: ADVOCATE_BASE_URL
         value: https://lastlink-advocate.onrender.com
