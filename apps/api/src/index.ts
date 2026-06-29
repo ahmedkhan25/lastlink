@@ -10,6 +10,7 @@ import { graphqlProxy } from "./graphql-proxy.js";
 import { saveLetter } from "./messages.js";
 import { sealAccount } from "./account.js";
 import { uploadInit, mediaRefresh, playbackToken } from "./video.js";
+import { inviteAdvocate, getInvite, acceptInvite } from "./advocates.js";
 
 const app = express();
 
@@ -46,6 +47,11 @@ app.post("/api/account/seal", sealAccount);
 app.post("/api/messages/:id/upload-init", uploadInit);
 app.post("/api/messages/:id/media/refresh", mediaRefresh);
 app.post("/api/messages/:id/playback-token", playbackToken);
+
+// Advocate invite (registrant) + accept (token-based, no session).
+app.post("/api/advocates/:id/invite", inviteAdvocate);
+app.get("/advocate/invite/:token", getInvite);
+app.post("/advocate/invite/:token/accept", acceptInvite);
 
 app.get("/health", async (_req, res) => {
   try {

@@ -26,12 +26,18 @@ export const env = {
   APP_ORIGINS: (
     process.env.APP_ORIGINS ??
     process.env.RENDER_EXTERNAL_URL ??
-    "http://localhost:5273,http://127.0.0.1:5273"
+    "http://localhost:5273,http://127.0.0.1:5273,http://localhost:5274,http://localhost:5275,http://localhost:5276,http://localhost:5277"
   ).split(","),
   HASURA_GRAPHQL_ENDPOINT: process.env.HASURA_GRAPHQL_ENDPOINT ?? "http://localhost:8080/v1/graphql",
   HASURA_GRAPHQL_ADMIN_SECRET: process.env.HASURA_GRAPHQL_ADMIN_SECRET ?? "",
   // Letter encryption (local AES; 64 hex chars). Demo default — override in real envs.
   LETTER_ENC_KEY: process.env.LETTER_ENC_KEY ?? "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+  // Advocate invite/accept (separate token-based surface)
+  ADVOCATE_TOKEN_SECRET: process.env.ADVOCATE_TOKEN_SECRET ?? process.env.BETTER_AUTH_SECRET ?? "dev-advocate-secret",
+  ADVOCATE_BASE_URL: process.env.ADVOCATE_BASE_URL ?? "http://localhost:5274",
+  MESSAGE_BASE_URL: process.env.MESSAGE_BASE_URL ?? "http://localhost:5275",
+  // Email (Resend)
+  RESEND_FROM: process.env.RESEND_FROM ?? "LastLink <onboarding@resend.dev>",
   // Providers
   MUX_TOKEN_ID: process.env.MUX_TOKEN_ID ?? "",
   MUX_TOKEN_SECRET: process.env.MUX_TOKEN_SECRET ?? "",
