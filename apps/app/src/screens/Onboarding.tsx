@@ -4,9 +4,9 @@ import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
 import { gql, postApi } from "../lib/api.js";
 import { useSession } from "../lib/auth.js";
 
-const ADD_ADVOCATES = `mutation($aEmail: String!, $bEmail: String!) {
-  a: insert_app_advocates_one(object: {slot: "A", full_name: "Sarah Rourke", relationship: "Sister", email: $aEmail, invite_status: "pending"}) { id }
-  b: insert_app_advocates_one(object: {slot: "B", full_name: "Michael Tanaka", relationship: "Family attorney", email: $bEmail, invite_status: "pending"}) { id }
+const ADD_ADVOCATES = `mutation($aName: String!, $aEmail: String!, $bName: String!, $bEmail: String!) {
+  a: insert_app_advocates_one(object: {slot: "A", full_name: $aName, email: $aEmail, invite_status: "pending"}) { id }
+  b: insert_app_advocates_one(object: {slot: "B", full_name: $bName, email: $bEmail, invite_status: "pending"}) { id }
 }`;
 
 const STEPS = ["Welcome", "Identity", "Contacts", "Message", "Advocates", "Done"];
@@ -165,8 +165,8 @@ function MessageStep({ onNext }: { onNext: () => void }) {
 }
 
 function AdvocatesStep({ onNext }: { onNext: () => void }) {
-  const [a, setA] = useState({ name: "Sarah Rourke", email: "" });
-  const [b, setB] = useState({ name: "Michael Tanaka", email: "" });
+  const [a, setA] = useState({ name: "", email: "" });
+  const [b, setB] = useState({ name: "", email: "" });
   const [busy, setBusy] = useState(false);
 
   async function inviteAndContinue() {
