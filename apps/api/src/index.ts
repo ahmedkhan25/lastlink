@@ -18,11 +18,14 @@ const app = express();
 // request origin if it's an allowed dev origin (localhost OR 127.0.0.1).
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && env.APP_ORIGINS.includes(origin)) {
+  if (origin) {
+    // Reflect the origin so the token-based surfaces (advocate/message/enterprise,
+    // which never send cookies) work cross-origin. Only grant credentials —
+    // required for the registrant session cookie — to trusted origins.
     res.header("Access-Control-Allow-Origin", origin);
     res.header("Vary", "Origin");
+    if (env.APP_ORIGINS.includes(origin)) res.header("Access-Control-Allow-Credentials", "true");
   }
-  res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Headers", "content-type");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   if (req.method === "OPTIONS") {

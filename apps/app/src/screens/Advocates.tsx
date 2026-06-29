@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@lastlink/ui";
-import { gql } from "../lib/api.js";
+import { gql, postApi } from "../lib/api.js";
 import { useConfirm } from "../components/ConfirmProvider.js";
 
 interface Advocate {
@@ -33,6 +33,13 @@ export function Advocates() {
     return gql<{ app_advocates: Advocate[] }>(LIST).then((d) => { setAdvocates(d.app_advocates); setLoading(false); });
   }
   useEffect(() => { let a = true; gql<{ app_advocates: Advocate[] }>(LIST).then((d) => a && (setAdvocates(d.app_advocates), setLoading(false))); return () => { a = false; }; }, []);
+
+  const [sent, setSent] = useState<Record<string, boolean>>({});
+  async function invite(a: Advocate) {
+    await postApi(`/api/advocates/${a.id}/invite`).catch(() => {});
+    setSent((s) => ({ ...s, [a.id]: true }));
+    setAdvocates((xs) => xs.map((x) => (x.id === a.id ? { ...x, invite_status: "pending" } : x)));
+  }
 
   async function remove(a: Advocate) {
     const ok = await confirm({
@@ -76,6 +83,11 @@ export function Advocates() {
                 <div><span style={{ color: "var(--ink-3)" }}>Identity · </span>{a.identity_verified ? "Verified" : "Not yet"}</div>
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
+                {a.invite_status !== "accepted" && (
+                  <button className="ll-btn secondary" onClick={() => invite(a)} disabled={sent[a.id]}>
+                    {sent[a.id] ? "Invite sent ✓" : a.invite_status === "pending" ? "Resend invite" : "Send invite"}
+                  </button>
+                )}
                 <button className="ll-btn ghost" onClick={() => remove(a)}>Remove</button>
               </div>
             </div>

@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
 import { gql, postApi } from "../lib/api.js";
 
-const ADD_ADVOCATES = `mutation {
-  a: insert_app_advocates_one(object: {slot: "A", full_name: "Sarah Rourke", relationship: "Sister", email: "sarah.r@email.com", invite_status: "accepted", identity_verified: true}) { id }
-  b: insert_app_advocates_one(object: {slot: "B", full_name: "Michael Tanaka", relationship: "Family attorney", email: "m.tanaka@firm.com", invite_status: "pending"}) { id }
+const ADD_ADVOCATES = `mutation($aEmail: String!, $bEmail: String!) {
+  a: insert_app_advocates_one(object: {slot: "A", full_name: "Sarah Rourke", relationship: "Sister", email: $aEmail, invite_status: "pending"}) { id }
+  b: insert_app_advocates_one(object: {slot: "B", full_name: "Michael Tanaka", relationship: "Family attorney", email: $bEmail, invite_status: "pending"}) { id }
 }`;
 
 const STEPS = ["Welcome", "Identity", "Contacts", "Message", "Advocates", "Done"];
@@ -158,35 +158,55 @@ function MessageStep({ onNext }: { onNext: () => void }) {
 }
 
 function AdvocatesStep({ onNext }: { onNext: () => void }) {
-  const adv = [
-    { name: "Sarah Rourke", rel: "Sister", email: "sarah.r@email.com", state: "accepted" },
-    { name: "Michael Tanaka", rel: "Family attorney", email: "m.tanaka@firm.com", state: "pending" },
-  ];
+  const [a, setA] = useState({ name: "Sarah Rourke", email: "" });
+  const [b, setB] = useState({ name: "Michael Tanaka", email: "" });
+  const [busy, setBusy] = useState(false);
+
+  async function inviteAndContinue() {
+    setBusy(true);
+    try {
+      const r = await gql<{ a: { id: string }; b: { id: string } }>(ADD_ADVOCATES, {
+        aName: a.name, aEmail: a.email, bName: b.name, bEmail: b.email,
+      });
+      // Send each advocate their email invite (real email if Resend is configured).
+      await Promise.all([
+        postApi(`/api/advocates/${r.a.id}/invite`).catch(() => {}),
+        postApi(`/api/advocates/${r.b.id}/invite`).catch(() => {}),
+      ]);
+    } catch { /* already added — proceed */ }
+    onNext();
+  }
+
+  const ready = a.name && a.email && b.name && b.email;
   return (
     <div style={{ maxWidth: 760, width: "100%" }}>
       <h1 className="serif" style={{ fontSize: 40, fontWeight: 500, margin: 0 }}>Two people you trust most.</h1>
-      <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 24px" }}>Your advocates are the only two people who can confirm your passing and release your message.</p>
+      <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 24px" }}>
+        Your advocates are the only two people who can confirm your passing and release your message. We'll email each of them an invitation to accept.
+      </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
-        {adv.map((a) => (
-          <div key={a.name} style={{ display: "flex", alignItems: "center", gap: 16, padding: 20, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)" }}>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center", fontFamily: "var(--font-serif)", color: "var(--brand-purple)", fontWeight: 600 }}>{a.name[0]}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 500 }}>{a.name} <span style={{ color: "var(--ink-3)", fontWeight: 400 }}>· {a.rel}</span></div>
-              <div style={{ fontSize: 12, color: "var(--ink-3)" }}>{a.email}</div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: a.state === "accepted" ? "var(--ok)" : "var(--warn)" }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: a.state === "accepted" ? "var(--ok)" : "var(--warn)" }} />
-              Invited · {a.state}
+        {[{ v: a, set: setA, label: "First advocate" }, { v: b, set: setB, label: "Second advocate" }].map((row, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: 20, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)" }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center", fontFamily: "var(--font-serif)", color: "var(--brand-purple)", fontWeight: 600 }}>{(row.v.name[0] ?? "?").toUpperCase()}</div>
+            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10 }}>
+              <input value={row.v.name} onChange={(e) => row.set({ ...row.v, name: e.target.value })} placeholder="Full name"
+                style={inputStyle} />
+              <input value={row.v.email} type="email" onChange={(e) => row.set({ ...row.v, email: e.target.value })} placeholder={`${row.label} email`}
+                style={inputStyle} />
             </div>
           </div>
         ))}
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button className="ll-btn" onClick={async () => { try { await gql(ADD_ADVOCATES); } catch { /* already added */ } onNext(); }}>Continue</button>
+        <button className="ll-btn" onClick={inviteAndContinue} disabled={busy || !ready}>
+          {busy ? "Sending invites…" : "Send invites & continue"}
+        </button>
       </div>
     </div>
   );
 }
+
+const inputStyle = { padding: "11px 13px", border: "1px solid var(--line)", borderRadius: "var(--r-2)", background: "var(--bg)", fontSize: 14, width: "100%" } as const;
 
 function Done({ onDone }: { onDone: () => void }) {
   const [busy, setBusy] = useState(false);
