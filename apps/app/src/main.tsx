@@ -8,6 +8,7 @@ import { Onboarding } from "./screens/Onboarding.js";
 import { Contacts } from "./screens/Contacts.js";
 import { Compose } from "./screens/Compose.js";
 import { Advocates } from "./screens/Advocates.js";
+import { MessageView } from "./screens/MessageView.js";
 import { SignIn } from "./screens/SignIn.js";
 
 const router = createBrowserRouter([
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <Dashboard /> },
       { path: "compose", element: <Compose /> },
+      { path: "messages/:id", element: <MessageView /> },
       { path: "contacts", element: <Contacts /> },
       { path: "advocates", element: <Advocates /> },
     ],

@@ -15,6 +15,9 @@ interface Advocate {
 
 const LIST = `query { app_advocates(order_by: {slot: asc}) { id slot full_name relationship email invite_status identity_verified } }`;
 const REMOVE = `mutation($id: uuid!) { delete_app_advocates_by_pk(id: $id) { id } }`;
+const ADD = `mutation($slot: String!, $name: String!, $email: String!) {
+  insert_app_advocates_one(object: {slot: $slot, full_name: $name, email: $email, invite_status: "pending"}) { id }
+}`;
 
 const TIMELINE = [
   { n: "01", t: "Advocate A confirms", d: "Identity + death details, independently." },
@@ -33,6 +36,20 @@ export function Advocates() {
     return gql<{ app_advocates: Advocate[] }>(LIST).then((d) => { setAdvocates(d.app_advocates); setLoading(false); });
   }
   useEffect(() => { let a = true; gql<{ app_advocates: Advocate[] }>(LIST).then((d) => a && (setAdvocates(d.app_advocates), setLoading(false))); return () => { a = false; }; }, []);
+
+  const [form, setForm] = useState({ name: "", email: "" });
+  const [adding, setAdding] = useState(false);
+  async function add() {
+    const used = advocates.map((x) => x.slot);
+    const slot = ["A", "B"].find((s) => !used.includes(s));
+    if (!slot || !form.name.trim() || !form.email.trim()) return;
+    setAdding(true);
+    const r = await gql<{ insert_app_advocates_one: { id: string } }>(ADD, { slot, name: form.name, email: form.email });
+    await postApi(`/api/advocates/${r.insert_app_advocates_one.id}/invite`).catch(() => {});
+    setForm({ name: "", email: "" });
+    setAdding(false);
+    await load();
+  }
 
   const [sent, setSent] = useState<Record<string, boolean>>({});
   async function invite(a: Advocate) {
@@ -60,6 +77,17 @@ export function Advocates() {
       <p style={{ fontSize: 15, color: "var(--ink-3)", margin: "8px 0 28px", maxWidth: 620 }}>
         Two people who can confirm your passing. Both must agree, independently, before anything is released.
       </p>
+
+      {!loading && advocates.length < 2 && (
+        <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>
+          <input placeholder="Advocate's full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={addInput} />
+          <input placeholder="Advocate's email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={addInput} />
+          <button className="ll-btn" onClick={add} disabled={adding || !form.name.trim() || !form.email.trim()}>
+            <Icon name="plus" size={14} color="white" /> {adding ? "Inviting…" : "Add & invite advocate"}
+          </button>
+          <span style={{ fontSize: 12, color: "var(--ink-3)", width: "100%" }}>You can designate up to two. We'll email each an invitation to accept.</span>
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
         {loading && <div style={{ color: "var(--ink-3)" }}>Loading…</div>}
@@ -94,7 +122,7 @@ export function Advocates() {
           );
         })}
         {!loading && advocates.length === 0 && (
-          <div style={{ color: "var(--ink-3)", gridColumn: "1 / -1" }}>No advocates yet — add them during onboarding.</div>
+          <div style={{ color: "var(--ink-3)", gridColumn: "1 / -1" }}>No advocates yet — add your first one above.</div>
         )}
       </div>
 
@@ -114,3 +142,5 @@ export function Advocates() {
     </div>
   );
 }
+
+const addInput = { padding: "11px 14px", border: "1px solid var(--line)", borderRadius: "var(--r-2)", background: "var(--surface)", fontSize: 14, flex: "1 1 200px" } as const;

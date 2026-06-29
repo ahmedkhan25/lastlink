@@ -69,8 +69,12 @@ export function Dashboard() {
 
       <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24, padding: "24px 0", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", marginBottom: 56 }}>
         <Status icon="check" label="Identity verified" sub={reg ? reg.legal_name : "—"} ok />
-        <Status icon="shield" label="Advocates confirmed" sub={`${advAccepted} of ${d?.app_advocates.length ?? 0} accepted`} ok={advAccepted >= 2} />
-        <Status icon="lock" label="Messages sealed" sub={`${ready} ready · ${(d?.app_messages.length ?? 0) - ready} drafts`} ok={ready > 0} />
+        <Status icon="shield" label="Advocates confirmed"
+          sub={(d?.app_advocates.length ?? 0) === 0 ? "Add your advocates →" : `${advAccepted} of ${d?.app_advocates.length} accepted`}
+          ok={advAccepted >= 2} onClick={() => navigate("/advocates")} />
+        <Status icon="lock" label="Messages sealed"
+          sub={(d?.app_messages.length ?? 0) === 0 ? "Write your first →" : `${ready} ready · ${(d?.app_messages.length ?? 0) - ready} drafts`}
+          ok={ready > 0} onClick={() => navigate("/compose")} />
       </section>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
@@ -86,7 +90,7 @@ export function Dashboard() {
         {d?.app_messages.map((m) => {
           const ok = m.status === "ready";
           return (
-            <li key={m.id} onClick={() => navigate("/compose")}
+            <li key={m.id} onClick={() => navigate(`/messages/${m.id}`)}
               style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 20, alignItems: "center", padding: "18px 0", borderBottom: "1px solid var(--line-soft)", cursor: "pointer" }}>
               <div style={{ width: 40, height: 40, borderRadius: "var(--r-2)", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center" }}>
                 <Icon name={TYPE_ICON[m.type] ?? "pen"} size={16} color="var(--brand-purple)" />
@@ -127,13 +131,14 @@ export function Dashboard() {
   );
 }
 
-function Status({ icon, label, sub, ok }: { icon: IconName; label: string; sub: string; ok?: boolean }) {
+function Status({ icon, label, sub, ok, onClick }: { icon: IconName; label: string; sub: string; ok?: boolean; onClick?: () => void }) {
+  const link = !ok && onClick;
   return (
-    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+    <div onClick={onClick} style={{ display: "flex", gap: 12, alignItems: "flex-start", cursor: link ? "pointer" : "default" }}>
       <Icon name={icon} size={18} color={ok ? "var(--ok)" : "var(--ink-4)"} />
       <div>
         <div style={{ fontSize: 14, fontWeight: 500 }}>{label}</div>
-        <div style={{ fontSize: 12, color: "var(--ink-3)" }}>{sub}</div>
+        <div style={{ fontSize: 12, color: link ? "var(--brand-purple)" : "var(--ink-3)", fontWeight: link ? 500 : 400 }}>{sub}</div>
       </div>
     </div>
   );
