@@ -13,14 +13,12 @@ services:
     plan: starter               # free tier cold-starts; starter keeps it warm
     # 'corepack pnpm' runs pnpm directly (no 'corepack enable' — that fails on
     # Render's read-only /usr/bin).
-    # --prod=false forces devDependencies (vite, tsc) even though NODE_ENV=production
-    # (which pnpm otherwise uses to skip them).
-    buildCommand: corepack pnpm install --prod=false && corepack pnpm -F @lastlink/app build
+    # No NODE_ENV=production at build (it makes pnpm skip devDeps like vite/tsc).
+    # --force recreates node_modules, busting Render's restored prod-only cache.
+    buildCommand: corepack pnpm install --force && corepack pnpm -F @lastlink/app build
     startCommand: corepack pnpm -F @lastlink/api start
     healthCheckPath: /health
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: NODE_VERSION
         value: "24"
       - key: PORT
