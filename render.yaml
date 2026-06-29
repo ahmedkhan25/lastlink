@@ -11,12 +11,16 @@ services:
     runtime: node
     region: virginia            # close to Neon (aws-us-east-1)
     plan: starter               # free tier cold-starts; starter keeps it warm
-    buildCommand: corepack enable && pnpm install && pnpm -F @lastlink/app build
-    startCommand: pnpm -F @lastlink/api start
+    # 'corepack pnpm' runs pnpm directly (no 'corepack enable' — that fails on
+    # Render's read-only /usr/bin).
+    buildCommand: corepack pnpm install && corepack pnpm -F @lastlink/app build
+    startCommand: corepack pnpm -F @lastlink/api start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "24"
       - key: PORT
         value: "10000"
       # API → Hasura over Render's private network (service name : port)
@@ -33,9 +37,11 @@ services:
   - type: web
     name: lastlink-advocate
     runtime: static
-    buildCommand: corepack enable && pnpm install && pnpm -F @lastlink/advocate build
+    buildCommand: corepack pnpm install && corepack pnpm -F @lastlink/advocate build
     staticPublishPath: apps/advocate/dist
     envVars:
+      - key: NODE_VERSION
+        value: "24"
       - key: VITE_API_URL
         value: https://lastlink-web.onrender.com
     routes:
