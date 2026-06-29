@@ -22,7 +22,26 @@ services:
       # API → Hasura over Render's private network (service name : port)
       - key: HASURA_GRAPHQL_ENDPOINT
         value: http://lastlink-hasura:8080/v1/graphql
+      # Email links point at the deployed advocate/message surfaces.
+      - key: ADVOCATE_BASE_URL
+        value: https://lastlink-advocate.onrender.com
+      - key: MESSAGE_BASE_URL
+        value: https://lastlink-message.onrender.com
       - fromGroup: lastlink
+
+  # ── Advocate accept surface (static SPA, token-based → no cookies) ────────
+  - type: web
+    name: lastlink-advocate
+    runtime: static
+    buildCommand: corepack enable && pnpm install && pnpm -F @lastlink/advocate build
+    staticPublishPath: apps/advocate/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://lastlink-web.onrender.com
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
 
   # ── Hasura GraphQL engine (private; console + introspection off) ──────────
   - type: web
@@ -43,12 +62,10 @@ services:
         value: "false"
       - key: HASURA_GRAPHQL_UNAUTHORIZED_ROLE
         value: anonymous
-      - key: HASURA_GRAPHQL_DATABASE_URL
-        fromGroup: lastlink         # = DATABASE_URL_DIRECT value
-      - key: HASURA_GRAPHQL_METADATA_DATABASE_URL
-        fromGroup: lastlink
-      - key: HASURA_GRAPHQL_ADMIN_SECRET
-        fromGroup: lastlink
+      # Pulls the whole group: provides HASURA_GRAPHQL_DATABASE_URL,
+      # HASURA_GRAPHQL_METADATA_DATABASE_URL, HASURA_GRAPHQL_ADMIN_SECRET
+      # (other group keys are set but unused here — harmless).
+      - fromGroup: lastlink
 
 # ── Shared secrets (set values in the Render dashboard; never commit them) ──
 envVarGroups:
