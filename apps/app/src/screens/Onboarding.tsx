@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
-import { gql, postApi } from "../lib/api.js";
+import { gql, postApi, getApiUrl } from "../lib/api.js";
 import { useSession } from "../lib/auth.js";
+import { VideoComposer } from "./VideoComposer.js";
 
 const ADD_ADVOCATES = `mutation($aName: String!, $aEmail: String!, $bName: String!, $bEmail: String!) {
   a: insert_app_advocates_one(object: {slot: "A", full_name: $aName, email: $aEmail, invite_status: "pending"}) { id }
@@ -118,51 +119,108 @@ function Identity({ onNext, fullName }: { onNext: () => void; fullName: string }
   );
 }
 
-function GroupRow({ icon, color, name, count }: { icon: IconName; color: string; name: string; count: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: 18, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)" }}>
-      <div style={{ width: 40, height: 40, borderRadius: "var(--r-2)", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center" }}>
-        <Icon name={icon} size={18} color={color} />
-      </div>
-      <div style={{ flex: 1 }}><div style={{ fontWeight: 500 }}>{name}</div><div style={{ fontSize: 12, color: "var(--ink-3)" }}>{count}</div></div>
-      <button className="ll-btn secondary" style={{ fontSize: 13 }}>Add contacts</button>
-    </div>
-  );
-}
+interface OBContact { id: string; full_name: string; relationship: string | null; email: string | null }
+const LIST_CONTACTS = `query { app_contacts(order_by: {created_at: asc}) { id full_name relationship email } }`;
+const ADD_CONTACT = `mutation($n: String!, $r: String, $e: String) { insert_app_contacts_one(object: {full_name: $n, relationship: $r, email: $e}) { id } }`;
+const GROUPS = ["Family", "Close friends", "Business"];
 
 function ContactsStep({ onNext }: { onNext: () => void }) {
+  const [contacts, setContacts] = useState<OBContact[]>([]);
+  const [form, setForm] = useState({ name: "", rel: "Family", email: "" });
+  const [busy, setBusy] = useState(false);
+  const refresh = () => gql<{ app_contacts: OBContact[] }>(LIST_CONTACTS).then((d) => setContacts(d.app_contacts));
+  useEffect(() => { let a = true; gql<{ app_contacts: OBContact[] }>(LIST_CONTACTS).then((d) => a && setContacts(d.app_contacts)); return () => { a = false; }; }, []);
+
+  async function add(e: FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim() || busy) return;
+    setBusy(true);
+    await gql(ADD_CONTACT, { n: form.name, r: form.rel || null, e: form.email || null }).catch(() => {});
+    setForm({ name: "", rel: form.rel, email: "" });
+    setBusy(false);
+    await refresh();
+  }
+
   return (
     <div style={{ maxWidth: 760, width: "100%" }}>
       <h1 className="serif" style={{ fontSize: 40, fontWeight: 500, margin: 0 }}>Who should be told?</h1>
       <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 24px", maxWidth: 600 }}>Start with the people closest to you. You can add more anytime — there's no rush.</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
-        <GroupRow icon="heart" color="var(--brand-purple)" name="Family" count="12 people" />
-        <GroupRow icon="users" color="var(--brand-blue)" name="Close friends" count="Add 0" />
-        <GroupRow icon="briefcase" color="var(--ink-3)" name="Business & colleagues" count="Add 0" />
+      <form onSubmit={add} style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
+        <input placeholder="Full name (required)" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={obInput} />
+        <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={obInput} />
+        <select value={form.rel} onChange={(e) => setForm({ ...form, rel: e.target.value })} style={{ ...obInput, flex: "0 0 150px" }}>
+          {GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
+        </select>
+        <button className="ll-btn" type="submit" disabled={busy || !form.name.trim()}><Icon name="plus" size={14} color="white" /> {busy ? "Adding…" : "Add"}</button>
+      </form>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20, maxHeight: 260, overflow: "auto" }}>
+        {contacts.length === 0 && <div style={{ fontSize: 14, color: "var(--ink-3)" }}>No one added yet — add the people you love above.</div>}
+        {contacts.map((c) => (
+          <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 14, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--surface-2)", display: "grid", placeItems: "center", fontSize: 13, fontWeight: 500 }}>{c.full_name.charAt(0)}</div>
+            <div style={{ flex: 1 }}><div style={{ fontWeight: 500, fontSize: 14 }}>{c.full_name}</div><div style={{ fontSize: 12, color: "var(--ink-3)" }}>{c.relationship ?? ""} {c.email ? `· ${c.email}` : ""}</div></div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 13, color: "var(--ink-3)" }}>{contacts.length} added</span>
+        <button className="ll-btn" onClick={onNext}>Continue</button>
+      </div>
+    </div>
+  );
+}
+
+const CREATE_LETTER = `mutation($t: String) { insert_app_messages_one(object: {type: "letter", title: $t, status: "draft"}) { id } }`;
+type MTab = "video" | "audio" | "letter";
+
+function MessageStep({ onNext }: { onNext: () => void }) {
+  const [tab, setTab] = useState<MTab>("video");
+  const [title, setTitle] = useState("A message for the people I love");
+  const [body, setBody] = useState("");
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  async function saveLetter() {
+    setStatus("saving");
+    try {
+      const c = await gql<{ insert_app_messages_one: { id: string } }>(CREATE_LETTER, { t: title });
+      const res = await fetch(`${getApiUrl()}/api/messages/${c.insert_app_messages_one.id}/letter`, {
+        method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ body }),
+      });
+      setStatus(res.ok ? "saved" : "error");
+    } catch { setStatus("error"); }
+  }
+
+  return (
+    <div style={{ maxWidth: 800, width: "100%" }}>
+      <h1 className="serif" style={{ fontSize: 40, fontWeight: 500, margin: 0 }}>What do you want to say?</h1>
+      <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 24px" }}>Record a video, or write a letter. You can add more anytime.</p>
+      <div style={{ padding: 28, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", marginBottom: 20 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          {(["video", "audio", "letter"] as MTab[]).map((t) => (
+            <button key={t} onClick={() => setTab(t)} className={`ll-btn ${tab === t ? "" : "secondary"}`} style={{ fontSize: 13, padding: "8px 14px", textTransform: "capitalize" }}>
+              <Icon name={t === "video" ? "video" : t === "audio" ? "mic" : "pen"} size={14} color={tab === t ? "white" : "var(--ink)"} /> {t}
+            </button>
+          ))}
+        </div>
+        {tab === "video" && <VideoComposer title={title} groupId="" />}
+        {tab === "audio" && <div style={{ padding: 40, border: "1px dashed var(--line)", borderRadius: "var(--r-3)", textAlign: "center", color: "var(--ink-3)" }}>Audio recording is post-MVP — use Video or Letter.</div>}
+        {tab === "letter" && (
+          <div>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="serif" style={{ width: "100%", fontSize: 22, fontWeight: 500, border: "none", borderBottom: "1px solid var(--line)", background: "transparent", padding: "6px 0 10px", marginBottom: 14 }} />
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="My loves,&#10;&#10;" style={{ width: "100%", height: 200, padding: 18, border: "1px solid var(--line)", borderRadius: "var(--r-3)", background: "var(--bg)", fontFamily: "var(--font-serif)", fontSize: 16, lineHeight: 1.65, resize: "vertical" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
+              <span style={{ fontSize: 12, color: "var(--ink-3)" }}>{status === "saved" ? "Saved · encrypted ✓" : "Stored encrypted on save"}</span>
+              <button className="ll-btn grad" onClick={saveLetter} disabled={status === "saving" || !body.trim()}>{status === "saved" ? "Saved ✓" : status === "saving" ? "Saving…" : "Save letter"}</button>
+            </div>
+          </div>
+        )}
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="ll-btn" onClick={onNext}>Continue</button></div>
     </div>
   );
 }
 
-function MessageStep({ onNext }: { onNext: () => void }) {
-  return (
-    <div style={{ maxWidth: 800, width: "100%" }}>
-      <h1 className="serif" style={{ fontSize: 40, fontWeight: 500, margin: 0 }}>What do you want to say?</h1>
-      <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 24px" }}>Start with one message for one group. You can write more anytime.</p>
-      <div style={{ padding: 28, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", marginBottom: 20 }}>
-        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-          <span className="ll-btn" style={{ fontSize: 13, padding: "8px 14px" }}><Icon name="video" size={14} color="white" /> Video</span>
-          <span className="ll-btn secondary" style={{ fontSize: 13, padding: "8px 14px" }}><Icon name="mic" size={14} /> Audio</span>
-          <span className="ll-btn secondary" style={{ fontSize: 13, padding: "8px 14px" }}><Icon name="pen" size={14} /> Letter</span>
-        </div>
-        <ImgSlot src={LLPhotos.recordingMic} alt="recording" style={{ aspectRatio: "16/9", borderRadius: "var(--r-3)", marginBottom: 16 }} />
-        <div style={{ fontSize: 12, color: "var(--ink-3)" }}>No time limit. Speak slowly.</div>
-      </div>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="ll-btn" onClick={onNext}>Continue</button></div>
-    </div>
-  );
-}
+const obInput = { padding: "11px 14px", border: "1px solid var(--line)", borderRadius: "var(--r-2)", background: "var(--surface)", fontSize: 14, flex: "1 1 180px" } as const;
 
 function AdvocatesStep({ onNext }: { onNext: () => void }) {
   const [a, setA] = useState({ name: "", email: "" });
