@@ -79,6 +79,15 @@ export function Accept() {
               <p style={{ fontSize: 16, color: "var(--ink-2)", lineHeight: 1.6 }}>
                 {invite.registrantName} will be told you've accepted. We won't bother you unless the day ever comes — and even then, gently.
               </p>
+              <div style={{ marginTop: 40, paddingTop: 24, borderTop: "1px dashed var(--line-soft)" }}>
+                <p style={{ fontSize: 13, color: "var(--ink-3)", margin: "0 0 12px" }}>
+                  If that day has come, and {invite.registrantName} has passed:
+                </p>
+                <a href={`/confirm/${token}`} className="ll-btn" style={{ padding: "12px 24px", fontSize: 14, background: "var(--bone)", border: "1px solid var(--line)", color: "var(--ink-2)" }}>
+                  Begin the confirmation
+                  <Icon name="arrow" size={15} color="var(--ink-2)" />
+                </a>
+              </div>
             </>
           )}
         </div>
