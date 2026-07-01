@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "@lastlink/ui/styles.css";
+
+html { scroll-behavior: smooth; }
+html, body, #root { min-height: 100%; }
+a { text-decoration: none; color: inherit; }
+.ll-marketing a[href^="#"]:hover { color: var(--ink); }

@@ -11,6 +11,8 @@ import { saveLetter } from "./messages.js";
 import { sealAccount } from "./account.js";
 import { uploadInit, mediaRefresh, playbackToken } from "./video.js";
 import { inviteAdvocate, getInvite, acceptInvite } from "./advocates.js";
+import { getCase, initiateCase, confirmCase, cancelCase, releaseNow } from "./case.js";
+import { getRecipient, openRecipient } from "./recipient.js";
 
 const app = express();
 
@@ -55,6 +57,17 @@ app.post("/api/messages/:id/playback-token", playbackToken);
 app.post("/api/advocates/:id/invite", inviteAdvocate);
 app.get("/advocate/invite/:token", getInvite);
 app.post("/advocate/invite/:token/accept", acceptInvite);
+
+// Death-confirmation lifecycle (advocate token). Release runs inline (no worker).
+app.get("/advocate/:token/case", getCase);
+app.post("/advocate/:token/initiate", initiateCase);
+app.post("/advocate/:token/confirm", confirmCase);
+app.post("/advocate/:token/cancel", cancelCase);
+app.post("/advocate/:token/release", releaseNow);
+
+// Recipient (the message experience), token-based.
+app.get("/recipient/:token", getRecipient);
+app.post("/recipient/:token/open", openRecipient);
 
 app.get("/health", async (_req, res) => {
   try {

@@ -50,6 +50,39 @@ services:
         source: "/*"
         destination: "/index.html"
 
+  # ── Recipient message surface (static SPA, token-based → no cookies) ─────
+  - type: web
+    name: lastlink-message
+    runtime: static
+    buildCommand: corepack pnpm install && corepack pnpm -F @lastlink/message build
+    staticPublishPath: apps/message/dist
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: VITE_API_URL
+        value: https://lastlink-web.onrender.com
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+
+  # ── Marketing site (static; public homepage) ─────────────────────────────
+  - type: web
+    name: lastlink-marketing
+    runtime: static
+    buildCommand: corepack pnpm install && corepack pnpm -F @lastlink/marketing build
+    staticPublishPath: apps/marketing/dist
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      # CTAs ("Begin your LastLink") point at the registrant app.
+      - key: VITE_APP_URL
+        value: https://lastlink-web.onrender.com
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+
   # ── Hasura GraphQL engine (private; console + introspection off) ──────────
   - type: web
     name: lastlink-hasura

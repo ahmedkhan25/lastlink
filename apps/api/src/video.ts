@@ -8,6 +8,19 @@ import { logEvent } from "./audit.js";
 const mux = new Mux({ tokenId: env.MUX_TOKEN_ID, tokenSecret: env.MUX_TOKEN_SECRET });
 const CORS_ORIGIN = process.env.MUX_CORS_ORIGIN ?? process.env.RENDER_EXTERNAL_URL ?? "*"; // exact origin in prod
 
+export interface PlaybackTokens { playback: string; thumbnail: string; storyboard: string }
+
+/** Mint short-lived signed playback tokens for a Mux playback id. */
+export async function mintPlaybackTokens(playbackId: string): Promise<PlaybackTokens> {
+  const opts = { keyId: env.MUX_SIGNING_KEY_ID, keySecret: env.MUX_SIGNING_KEY_PRIVATE, expiration: "2h" } as const;
+  const [playback, thumbnail, storyboard] = await Promise.all([
+    mux.jwt.signPlaybackId(playbackId, { ...opts, type: "video" }),
+    mux.jwt.signPlaybackId(playbackId, { ...opts, type: "thumbnail" }),
+    mux.jwt.signPlaybackId(playbackId, { ...opts, type: "storyboard" }),
+  ]);
+  return { playback, thumbnail, storyboard };
+}
+
 interface MediaRow {
   id: string;
   mux_upload_id: string | null;

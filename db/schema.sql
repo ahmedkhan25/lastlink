@@ -301,3 +301,34 @@ begin
     execute format('create trigger set_updated_at before update on %s for each row execute function app.set_updated_at()', t);
   end loop;
 end $$;
+
+-- FK delete behavior --------------------------------------------------------
+-- Make a registrant deletable in one cascade (powers account-delete / test
+-- resets). Several child FKs defaulted to NO ACTION, which blocked the cascade.
+do $$ begin
+  -- confirmations belong to the case; remove with the advocate too
+  alter table app.advocate_confirmations drop constraint if exists advocate_confirmations_advocate_id_fkey;
+  alter table app.advocate_confirmations add  constraint advocate_confirmations_advocate_id_fkey
+    foreign key (advocate_id) references app.advocates(id) on delete cascade;
+  -- the initiating advocate is just a reference; keep the case, null the pointer
+  alter table app.verification_cases drop constraint if exists verification_cases_initiated_by_fkey;
+  alter table app.verification_cases add  constraint verification_cases_initiated_by_fkey
+    foreign key (initiated_by) references app.advocates(id) on delete set null;
+  -- deliveries are derived; remove with their message/contact
+  alter table app.deliveries drop constraint if exists deliveries_message_id_fkey;
+  alter table app.deliveries add  constraint deliveries_message_id_fkey
+    foreign key (message_id) references app.messages(id) on delete cascade;
+  alter table app.deliveries drop constraint if exists deliveries_contact_id_fkey;
+  alter table app.deliveries add  constraint deliveries_contact_id_fkey
+    foreign key (contact_id) references app.contacts(id) on delete cascade;
+  -- break the deliveries<->recipient_tokens cycle on delete
+  alter table app.deliveries drop constraint if exists deliveries_recipient_token_fk;
+  alter table app.deliveries add  constraint deliveries_recipient_token_fk
+    foreign key (recipient_token_id) references app.recipient_tokens(id) on delete set null;
+  alter table app.recipient_tokens drop constraint if exists recipient_tokens_contact_id_fkey;
+  alter table app.recipient_tokens add  constraint recipient_tokens_contact_id_fkey
+    foreign key (contact_id) references app.contacts(id) on delete cascade;
+  alter table app.recipient_tokens drop constraint if exists recipient_tokens_message_id_fkey;
+  alter table app.recipient_tokens add  constraint recipient_tokens_message_id_fkey
+    foreign key (message_id) references app.messages(id) on delete cascade;
+end $$;

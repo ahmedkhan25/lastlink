@@ -1,12 +1,11 @@
 import type { Request, Response } from "express";
-import { NotificationService, advocateInviteEmail } from "@lastlink/notifications";
+import { advocateInviteEmail } from "@lastlink/notifications";
 import { query } from "./db.js";
 import { env } from "./env.js";
 import { requireRegistrant } from "./auth.js";
 import { logEvent } from "./audit.js";
 import { signAdvocateInvite, verifyAdvocateInvite } from "./tokens.js";
-
-const notifier = new NotificationService({ resendApiKey: env.RESEND_API_KEY, from: env.RESEND_FROM });
+import { notifier } from "./notify.js";
 
 // POST /api/advocates/:id/invite — registrant sends the advocate their email invite.
 export async function inviteAdvocate(req: Request, res: Response): Promise<void> {

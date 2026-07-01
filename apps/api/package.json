@@ -11,6 +11,7 @@
     "@lastlink/crypto": "workspace:*",
     "@lastlink/notifications": "workspace:*",
     "@lastlink/shared": "workspace:*",
+    "@lastlink/verification": "workspace:*",
     "@mux/mux-node": "^9.0.0",
     "better-auth": "^1.2.0",
     "dotenv": "^16.4.0",

@@ -1,13 +1,11 @@
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
-import { Accept } from "./Accept.js";
-import { Confirm } from "./Confirm.js";
+import { Message } from "./Message.js";
 
 const router = createBrowserRouter([
-  { path: "/accept/:token", element: <Accept /> },
-  { path: "/confirm/:token", element: <Confirm /> },
-  { path: "*", element: <Accept /> },
+  { path: "/m/:token", element: <Message /> },
+  { path: "*", element: <Message /> },
 ]);
 
 createRoot(document.getElementById("root")!).render(<RouterProvider router={router} />);
