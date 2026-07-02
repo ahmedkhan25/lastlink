@@ -9,7 +9,7 @@ import { auth } from "./auth.js";
 import { graphqlProxy } from "./graphql-proxy.js";
 import { saveLetter } from "./messages.js";
 import { sealAccount } from "./account.js";
-import { uploadInit, mediaRefresh, playbackToken } from "./video.js";
+import { uploadInit, mediaRefresh, playbackToken, muxWebhook } from "./video.js";
 import { inviteAdvocate, getInvite, acceptInvite } from "./advocates.js";
 import { getCase, initiateCase, confirmCase, cancelCase, releaseNow } from "./case.js";
 import { getRecipient, openRecipient } from "./recipient.js";
@@ -39,6 +39,9 @@ app.use((req, res, next) => {
 
 // Better Auth owns /api/auth/* and reads the raw body — mount BEFORE express.json().
 app.all("/api/auth/*splat", toNodeHandler(auth));
+
+// Mux webhook needs the RAW body for signature verification — before express.json().
+app.post("/webhooks/mux", express.raw({ type: "*/*" }), muxWebhook);
 
 app.use(express.json());
 
