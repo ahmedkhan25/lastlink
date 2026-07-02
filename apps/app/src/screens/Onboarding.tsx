@@ -178,6 +178,17 @@ function MessageStep({ onNext }: { onNext: () => void }) {
   const [title, setTitle] = useState("A message for the people I love");
   const [body, setBody] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [videoSaved, setVideoSaved] = useState(false);
+  const [videoDirty, setVideoDirty] = useState(false); // recorded/uploading but not persisted
+  const [nudge, setNudge] = useState(false);
+
+  function handleContinue() {
+    // Don't let the user leave the video tab with a recording that was never
+    // saved (the row is created only when the video is actually used/uploaded).
+    // Switching to another tab is a deliberate "skip video", so only gate here.
+    if (tab === "video" && videoDirty) { setNudge(true); return; }
+    onNext();
+  }
 
   async function saveLetter() {
     setStatus("saving");
@@ -197,12 +208,24 @@ function MessageStep({ onNext }: { onNext: () => void }) {
       <div style={{ padding: 28, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", marginBottom: 20 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {(["video", "audio", "letter"] as MTab[]).map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`ll-btn ${tab === t ? "" : "secondary"}`} style={{ fontSize: 13, padding: "8px 14px", textTransform: "capitalize" }}>
+            <button key={t} onClick={() => { setTab(t); setNudge(false); }} className={`ll-btn ${tab === t ? "" : "secondary"}`} style={{ fontSize: 13, padding: "8px 14px", textTransform: "capitalize" }}>
               <Icon name={t === "video" ? "video" : t === "audio" ? "mic" : "pen"} size={14} color={tab === t ? "white" : "var(--ink)"} /> {t}
             </button>
           ))}
         </div>
-        {tab === "video" && <VideoComposer title={title} groupId="" />}
+        {tab === "video" && (
+          <VideoComposer
+            title={title}
+            groupId=""
+            onSaved={() => { setVideoSaved(true); setNudge(false); }}
+            onDirtyChange={(d) => { setVideoDirty(d); if (d) setNudge(false); }}
+          />
+        )}
+        {tab === "video" && videoSaved && (
+          <div style={{ marginTop: 12, fontSize: 13, color: "var(--ok)", display: "flex", alignItems: "center", gap: 6 }}>
+            <Icon name="check" size={14} color="var(--ok)" /> Saved to your account — it will appear on your dashboard.
+          </div>
+        )}
         {tab === "audio" && <div style={{ padding: 40, border: "1px dashed var(--line)", borderRadius: "var(--r-3)", textAlign: "center", color: "var(--ink-3)" }}>Audio recording is post-MVP — use Video or Letter.</div>}
         {tab === "letter" && (
           <div>
@@ -215,7 +238,14 @@ function MessageStep({ onNext }: { onNext: () => void }) {
           </div>
         )}
       </div>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="ll-btn" onClick={onNext}>Continue</button></div>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14 }}>
+        {nudge && (
+          <span style={{ fontSize: 13, color: "var(--err)", textAlign: "right", maxWidth: 420 }}>
+            Your video isn't saved yet — click <strong>"Use this video"</strong> (or let the upload finish) first. Or switch tabs to skip it.
+          </span>
+        )}
+        <button className="ll-btn" onClick={handleContinue}>Continue</button>
+      </div>
     </div>
   );
 }

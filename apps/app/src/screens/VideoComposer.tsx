@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MuxUploader from "@mux/mux-uploader-react";
 import MuxPlayer from "@mux/mux-player-react";
 import * as UpChunk from "@mux/upchunk";
@@ -14,14 +14,21 @@ const CREATE = `mutation($title: String, $group_id: uuid) {
   insert_app_messages_one(object: {type: "video", title: $title, group_id: $group_id, status: "draft"}) { id }
 }`;
 
-export function VideoComposer({ title, groupId }: { title: string; groupId: string }) {
+export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { title: string; groupId: string; onSaved?: () => void; onDirtyChange?: (dirty: boolean) => void }) {
   const [mode, setMode] = useState<Mode>("choose");
   const [status, setStatus] = useState<Status>("idle");
   const [progress, setProgress] = useState(0);
   const [playbackId, setPlaybackId] = useState<string>();
   const [tokens, setTokens] = useState<Tokens>();
   const [errorMsg, setErrorMsg] = useState("");
+  const [hasClip, setHasClip] = useState(false); // recorded but not yet uploaded
   const idRef = useRef<string | null>(null);
+
+  // "Dirty" = a recording exists that hasn't been persisted, or one is in flight.
+  // The parent uses this to stop the user advancing past an unsaved video.
+  useEffect(() => {
+    onDirtyChange?.(hasClip || status === "uploading" || status === "processing");
+  }, [hasClip, status, onDirtyChange]);
 
   async function ensureUploadUrl(): Promise<string> {
     let id = idRef.current;
@@ -29,6 +36,7 @@ export function VideoComposer({ title, groupId }: { title: string; groupId: stri
       const c = await gql<{ insert_app_messages_one: { id: string } }>(CREATE, { title, group_id: groupId || null });
       id = c.insert_app_messages_one.id;
       idRef.current = id;
+      onSaved?.(); // the message row now exists — it will show on the dashboard even while Mux processes
     }
     const { uploadUrl } = await postApi<{ uploadUrl: string }>(`/api/messages/${id}/upload-init`);
     return uploadUrl;
@@ -125,7 +133,7 @@ export function VideoComposer({ title, groupId }: { title: string; groupId: stri
     );
   }
 
-  if (mode === "record") return <VideoRecorder onRecorded={uploadRecorded} onCancel={() => setMode("choose")} />;
+  if (mode === "record") return <VideoRecorder onRecorded={uploadRecorded} onCancel={() => { setHasClip(false); setMode("choose"); }} onClipChange={setHasClip} />;
 
   if (mode === "upload") {
     return (

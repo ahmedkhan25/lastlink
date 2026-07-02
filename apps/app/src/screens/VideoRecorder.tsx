@@ -22,7 +22,7 @@ function fmt(s: number): string {
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
-export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blob) => void; onCancel: () => void }) {
+export function VideoRecorder({ onRecorded, onCancel, onClipChange }: { onRecorded: (blob: Blob) => void; onCancel: () => void; onClipChange?: (present: boolean) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -41,7 +41,8 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
   const startCamera = useCallback(async () => {
     stopCamera();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: true });
+      // 'ideal' (not exact) so cameras that can't do 720p still start instead of failing.
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch {
@@ -67,11 +68,20 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
     const mimeType = pickMimeType();
     const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    rec.onerror = () => { setError("Recording failed on this device. Try a different browser (Chrome or Safari)."); stopCamera(); };
     rec.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: rec.mimeType || "video/webm" });
+      stopCamera(); // turn the camera off so it's clearly the recording, not a live feed
+      // A 0-byte capture means the codec/hardware produced nothing — never hand
+      // that upstream (it would be silently dropped). Force a clean retry.
+      if (blob.size === 0) {
+        setError("That recording came through empty (0 bytes). Please record again — this is usually a one-off browser hiccup.");
+        onClipChange?.(false);
+        return;
+      }
       setRecordedBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
-      stopCamera(); // turn the camera off so it's clearly the recording, not a live feed
+      onClipChange?.(true); // a saved-worthy clip now exists but isn't uploaded yet
     };
     rec.start(1000); // emit a chunk per second so data is captured reliably
     recorderRef.current = rec;
@@ -80,7 +90,11 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
   }
 
   function stop() {
-    recorderRef.current?.stop();
+    const rec = recorderRef.current;
+    if (rec && rec.state !== "inactive") {
+      try { rec.requestData(); } catch { /* flush best-effort */ } // force a final chunk before stopping
+      rec.stop();
+    }
     setRecording(false);
   }
 
@@ -89,6 +103,7 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
     setPreviewUrl(null);
     setRecordedBlob(null);
     setElapsed(0);
+    onClipChange?.(false);
     startCamera(); // re-acquire the camera for another take
   }
 
@@ -96,7 +111,10 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
     return (
       <div style={{ padding: 32, border: "1px solid var(--line)", borderRadius: "var(--r-3)", textAlign: "center" }}>
         <div style={{ color: "var(--err)", marginBottom: 12 }}>{error}</div>
-        <button className="ll-btn secondary" onClick={onCancel}>Back</button>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          <button className="ll-btn grad" onClick={() => { setError(null); reset(); }}>Record again</button>
+          <button className="ll-btn secondary" onClick={onCancel}>Back</button>
+        </div>
       </div>
     );
   }
@@ -132,7 +150,7 @@ export function VideoRecorder({ onRecorded, onCancel }: { onRecorded: (blob: Blo
         )}
         {previewUrl && (
           <>
-            <button className="ll-btn grad" onClick={() => recordedBlob && onRecorded(recordedBlob)}>Use this video</button>
+            <button className="ll-btn grad" onClick={() => { if (recordedBlob) { onClipChange?.(false); onRecorded(recordedBlob); } }}>Use this video</button>
             <button className="ll-btn secondary" onClick={reset}>Re-record</button>
           </>
         )}
