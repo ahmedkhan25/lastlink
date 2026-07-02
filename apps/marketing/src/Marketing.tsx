@@ -9,6 +9,7 @@ export function Marketing() {
     <div className="ll-marketing" style={{ background: "var(--bg)", color: "var(--ink)" }}>
       <Nav />
       <Hero />
+      <VideoBand />
       <ProblemStrip />
       <HowItWorks />
       <VerificationBlock />
@@ -39,7 +40,7 @@ const Nav = () => (
       <a href="#enterprise">For organizations</a>
     </nav>
     <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-      <a href={APP} className="ll-btn ghost">Sign in</a>
+      <a href={APP} className="ll-btn ghost ll-hide-mobile">Sign in</a>
       <a href={APP} className="ll-btn">Begin your LastLink</a>
     </div>
   </header>
@@ -69,14 +70,14 @@ const Hero = () => (
         — and the people you work with — hear the news in your words, at the
         same moment, never secondhand.
       </p>
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+      <div className="ll-btnrow" style={{ display: "flex", gap: 12, alignItems: "center" }}>
         <a href={APP} className="ll-btn">
           Begin your LastLink
           <Icon name="arrow" size={16} />
         </a>
         <a href="#how" className="ll-btn secondary">See how it works</a>
       </div>
-      <div style={{
+      <div className="ll-reassure" style={{
         display: "flex", gap: 36, marginTop: 56, paddingTop: 28,
         borderTop: "1px solid var(--line)", color: "var(--ink-3)", fontSize: 13,
       }}>
@@ -86,6 +87,26 @@ const Hero = () => (
       </div>
     </div>
     <HeroCard />
+  </section>
+);
+
+// ----------------------------------------------------------- VIDEO BAND
+const VideoBand = () => (
+  <section style={{ padding: "8px 64px 88px", maxWidth: 1200, margin: "0 auto" }}>
+    <div style={{
+      position: "relative", borderRadius: "var(--r-4)", overflow: "hidden",
+      boxShadow: "var(--shadow-3)", border: "1px solid var(--line)",
+      aspectRatio: "16 / 9", background: "#241D17",
+    }}>
+      <video
+        src="/assets/video/LastLink_30s_Marketing_v2.mp4"
+        autoPlay muted loop playsInline controls preload="metadata"
+        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+      />
+    </div>
+    <p style={{ textAlign: "center", fontSize: 13, color: "var(--ink-3)", marginTop: 14 }}>
+      Daniel, recording his LastLink for his daughter Emily. Tap to unmute.
+    </p>
   </section>
 );
 

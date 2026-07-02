@@ -3,5 +3,39 @@
 
 html { scroll-behavior: smooth; }
 html, body, #root { min-height: 100%; }
+body { overflow-x: hidden; } /* belt-and-suspenders against any wide child */
 a { text-decoration: none; color: inherit; }
 .ll-marketing a[href^="#"]:hover { color: var(--ink); }
+.ll-marketing video { display: block; }
+
+/* ---- Mobile (the page is authored with desktop inline styles; these
+   media-query rules use !important to override them on small screens) ---- */
+@media (max-width: 860px) {
+  .ll-marketing header { padding: 14px 20px !important; }
+  .ll-marketing nav { display: none !important; }              /* anchor links → hidden on mobile */
+  .ll-marketing .ll-hide-mobile { display: none !important; }  /* e.g. secondary "Sign in" */
+
+  /* every section: tighten the big 64px side padding */
+  .ll-marketing section { padding-left: 20px !important; padding-right: 20px !important; }
+  .ll-marketing section { padding-top: 56px !important; padding-bottom: 56px !important; }
+
+  /* stack every multi-column grid into one column */
+  .ll-marketing [style*="grid-template-columns"] { grid-template-columns: 1fr !important; gap: 28px !important; }
+
+  /* scale the oversized display type down */
+  .ll-marketing h1 { font-size: 40px !important; line-height: 1.06 !important; }
+  .ll-marketing h2 { font-size: 30px !important; line-height: 1.12 !important; }
+  .ll-marketing h3 { font-size: 24px !important; }
+
+  /* hero reassurances + button rows: let them wrap instead of overflowing */
+  .ll-marketing .ll-reassure { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+  .ll-marketing .ll-btnrow { flex-wrap: wrap !important; }
+
+  /* horizontal step/verification diagrams: allow scroll instead of squish */
+  .ll-marketing .ll-scroll-x { overflow-x: auto !important; }
+}
+
+@media (max-width: 480px) {
+  .ll-marketing h1 { font-size: 34px !important; }
+  .ll-marketing section { padding-left: 16px !important; padding-right: 16px !important; }
+}
