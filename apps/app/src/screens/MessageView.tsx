@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MuxPlayer from "@mux/mux-player-react";
 import { Icon } from "@lastlink/ui";
@@ -16,20 +16,48 @@ export function MessageView() {
   const [playbackId, setPlaybackId] = useState<string>();
   const [tokens, setTokens] = useState<Tokens>();
   const [note, setNote] = useState<string>("");
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let active = true;
-    gql<{ app_messages_by_pk: Msg | null }>(Q, { id }).then((d) => {
+    let tries = 0;
+
+    async function playIfReady() {
+      try {
+        const t = await postApi<{ playbackId: string; tokens: Tokens }>(`/api/messages/${id}/playback-token`);
+        if (!active) return;
+        setPlaybackId(t.playbackId);
+        setTokens(t.tokens);
+      } catch {
+        if (active) setNote("This video is sealed but couldn't load its player. Please refresh.");
+      }
+    }
+
+    // Reconcile the message with Mux. The upload tab may have died before it
+    // finished syncing, so opening the message here re-checks Mux directly and
+    // heals a stuck 'draft'/'processing' video into 'ready'.
+    async function tick() {
+      const d = await gql<{ app_messages_by_pk: Msg | null }>(Q, { id });
       if (!active) return;
       const m = d.app_messages_by_pk;
       setMsg(m);
-      if (m?.type === "video" && m.status === "ready") {
-        postApi<{ playbackId: string; tokens: Tokens }>(`/api/messages/${id}/playback-token`)
-          .then((t) => { setPlaybackId(t.playbackId); setTokens(t.tokens); })
-          .catch(() => setNote("This video is still being prepared — check back in a moment."));
+      if (m?.type !== "video") return;
+      if (m.status === "ready") return void playIfReady();
+
+      try {
+        const r = await postApi<{ status: string }>(`/api/messages/${id}/media/refresh`);
+        if (!active) return;
+        if (r.status === "ready") { setMsg({ ...m, status: "ready" }); return void playIfReady(); }
+        if (r.status === "errored") return void setNote("This video failed to process. Please record or upload it again.");
+        setNote("Finishing your video… this can take a minute after a recording.");
+      } catch {
+        if (active) setNote("Preparing your video…");
       }
-    });
-    return () => { active = false; };
+      if (active && tries++ < 30) timer.current = setTimeout(tick, 4000); // poll while Mux processes
+    }
+
+    tick();
+    return () => { active = false; if (timer.current) clearTimeout(timer.current); };
   }, [id]);
 
   return (
@@ -43,7 +71,7 @@ export function MessageView() {
       {msg && (
         <>
           <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            {msg.type} · {msg.status === "ready" ? "sealed & ready" : "draft"}
+            {msg.type} · {msg.status === "ready" ? "sealed & ready" : "processing"}
           </div>
           <h1 className="serif" style={{ fontSize: 38, fontWeight: 500, letterSpacing: "-0.015em", margin: "6px 0 24px" }}>
             {msg.title ?? "Untitled message"}

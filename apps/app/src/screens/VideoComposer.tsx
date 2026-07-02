@@ -23,6 +23,7 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
   const [errorMsg, setErrorMsg] = useState("");
   const [hasClip, setHasClip] = useState(false); // recorded but not yet uploaded
   const idRef = useRef<string | null>(null);
+  const processingRef = useRef(false); // guard so reconciliation only starts once
 
   // "Dirty" = a recording exists that hasn't been persisted, or one is in flight.
   // The parent uses this to stop the user advancing past an unsaved video.
@@ -43,21 +44,32 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
   }
 
   async function startProcessing() {
+    if (processingRef.current) return; // already reconciling — don't double-poll
+    processingRef.current = true;
     setStatus("processing");
     const id = idRef.current!;
-    for (let i = 0; i < 24; i++) {
-      const r = await postApi<{ status: string }>(`/api/messages/${id}/media/refresh`);
-      if (r.status === "ready") {
-        const t = await postApi<{ playbackId: string; tokens: Tokens }>(`/api/messages/${id}/playback-token`);
-        setPlaybackId(t.playbackId);
-        setTokens(t.tokens);
-        setStatus("ready");
-        return;
+    for (let i = 0; i < 30; i++) {
+      try {
+        const r = await postApi<{ status: string }>(`/api/messages/${id}/media/refresh`);
+        if (r.status === "ready") {
+          const t = await postApi<{ playbackId: string; tokens: Tokens }>(`/api/messages/${id}/playback-token`);
+          setPlaybackId(t.playbackId);
+          setTokens(t.tokens);
+          setStatus("ready");
+          return;
+        }
+        if (r.status === "errored") return setStatus("error");
+      } catch (e) {
+        // A transient refresh error must NOT abort the loop — the message row
+        // already exists and Mux keeps processing server-side. Keep polling; the
+        // message page also reconciles on open, so state can't get permanently stuck.
+        console.warn("[lastlink] media refresh retry", e);
       }
-      if (r.status === "errored") return setStatus("error");
       await new Promise((res) => setTimeout(res, 4000));
     }
-    setStatus("error");
+    // The video is saved and processing; it just took longer than we waited here.
+    setStatus("processing");
+    setErrorMsg("Still processing — it will appear on your dashboard shortly.");
   }
 
   async function uploadRecorded(blob: Blob) {
@@ -75,7 +87,11 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
       const ext = blob.type.includes("mp4") ? "mp4" : "webm";
       const file = blob instanceof File ? blob : new File([blob], `recording.${ext}`, { type: blob.type || "video/webm" });
       const up = UpChunk.createUpload({ endpoint, file });
-      up.on("progress", (e) => setProgress(Math.round((e as CustomEvent<number>).detail)));
+      up.on("progress", (e) => {
+        const pct = Math.round((e as CustomEvent<number>).detail);
+        setProgress(pct);
+        if (pct >= 100) startProcessing(); // begin reconciling as soon as bytes are in
+      });
       up.on("success", () => startProcessing());
       up.on("error", (e) => {
         const d = (e as CustomEvent).detail as { message?: string } | string | undefined;
@@ -84,6 +100,10 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
         setErrorMsg(`Upload: ${msg}`);
         setStatus("error");
       });
+      // Safety net: UpChunk's success/progress events can be missed (the upload
+      // still reaches Mux). Poll media/refresh regardless — it returns 'waiting'
+      // until the bytes land, then syncs. This prevents a permanent "0%" freeze.
+      setTimeout(() => { if (!processingRef.current) startProcessing(); }, 8000);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[lastlink] upload init failed", e);
@@ -100,7 +120,7 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: "var(--ink-3)" }}>
           <span>Ready · sealed · plays only with a signed token</span>
-          <button className="ll-btn ghost" onClick={() => { idRef.current = null; setStatus("idle"); setMode("choose"); }}>Record another</button>
+          <button className="ll-btn ghost" onClick={() => { idRef.current = null; processingRef.current = false; setStatus("idle"); setMode("choose"); }}>Record another</button>
         </div>
       </div>
     );
@@ -128,7 +148,7 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
         <div style={{ fontSize: 15, fontWeight: 500, color: "var(--err)", marginBottom: 8 }}>That didn't save. Let's try again.</div>
         <div style={{ fontSize: 13, color: "var(--ink-3)", marginBottom: 8 }}>Your recording wasn't saved — nothing was lost on our end.</div>
         {errorMsg && <div className="mono" style={{ fontSize: 11, color: "var(--ink-4)", marginBottom: 16, wordBreak: "break-word" }}>{errorMsg}</div>}
-        <button className="ll-btn" onClick={() => { idRef.current = null; setProgress(0); setStatus("idle"); setMode("choose"); }}>Try again</button>
+        <button className="ll-btn" onClick={() => { idRef.current = null; processingRef.current = false; setProgress(0); setStatus("idle"); setMode("choose"); }}>Try again</button>
       </div>
     );
   }
