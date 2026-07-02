@@ -25,11 +25,12 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
   const idRef = useRef<string | null>(null);
   const processingRef = useRef(false); // guard so reconciliation only starts once
 
-  // "Dirty" = a recording exists that hasn't been persisted, or one is in flight.
-  // The parent uses this to stop the user advancing past an unsaved video.
+  // "Dirty" = a recording exists that was never sent (no message row yet). Once
+  // the upload starts, the row exists and Mux finishes server-side (the message
+  // page self-heals), so we must NOT trap the user on "uploading"/"processing".
   useEffect(() => {
-    onDirtyChange?.(hasClip || status === "uploading" || status === "processing");
-  }, [hasClip, status, onDirtyChange]);
+    onDirtyChange?.(hasClip);
+  }, [hasClip, onDirtyChange]);
 
   async function ensureUploadUrl(): Promise<string> {
     let id = idRef.current;
@@ -127,17 +128,26 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
   }
 
   if (status === "uploading" || status === "processing") {
+    // Some browsers/CDNs don't emit byte-level progress, so a hard "0%" looks
+    // frozen even though bytes are flowing. Show the number only when we actually
+    // have one; otherwise an indeterminate animated bar.
+    const determinate = status === "uploading" && progress > 0;
     return (
       <div style={{ padding: 40, border: "1px solid var(--line)", borderRadius: "var(--r-3)", textAlign: "center" }}>
         <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>
-          {status === "uploading" ? `Uploading securely to LastLink… ${progress}%` : "Preparing your video"}
+          {status === "uploading" ? `Uploading securely to LastLink…${determinate ? ` ${progress}%` : ""}` : "Preparing your video"}
         </div>
         <div style={{ fontSize: 13, color: "var(--ink-3)" }}>
-          {status === "uploading" ? "Your recording is being saved, encrypted." : "Securing your message and generating captions… just a moment."}
+          {status === "uploading"
+            ? "Your recording is being saved, encrypted. Keep this tab open — this can take a moment."
+            : "Securing your message and generating captions… just a moment."}
         </div>
         <div style={{ height: 6, borderRadius: 3, background: "var(--line)", marginTop: 16, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: status === "uploading" ? `${progress}%` : "100%", background: "var(--brand-grad)", transition: "width 200ms" }} />
+          {determinate
+            ? <div style={{ height: "100%", width: `${progress}%`, background: "var(--brand-grad)", transition: "width 200ms" }} />
+            : <div className="ll-indeterminate" style={{ height: "100%", width: "35%", borderRadius: 3, background: "var(--brand-grad)" }} />}
         </div>
+        {errorMsg && <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 12 }}>{errorMsg}</div>}
       </div>
     );
   }

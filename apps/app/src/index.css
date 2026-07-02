@@ -3,3 +3,10 @@
 
 html, body, #root { height: 100%; }
 #root { isolation: isolate; }
+
+/* Indeterminate progress bar (uploads where byte-progress isn't reported). */
+@keyframes ll-indeterminate {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(360%); }
+}
+.ll-indeterminate { animation: ll-indeterminate 1.2s ease-in-out infinite; }
