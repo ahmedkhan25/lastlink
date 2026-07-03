@@ -238,7 +238,7 @@ const HowItWorks = () => {
   ];
   return (
     <section id="how" style={{ padding: "120px 64px 96px", maxWidth: 1280, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 56 }}>
+      <div className="ll-stack-mobile" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 56 }}>
         <div>
           <div className="ll-eyebrow" style={{ marginBottom: 16 }}>How it works</div>
           <h2 className="serif" style={{
@@ -248,7 +248,7 @@ const HowItWorks = () => {
             Five quiet steps.<br />One last act of love.
           </h2>
         </div>
-        <div style={{ color: "var(--ink-3)", fontSize: 13, maxWidth: 280, textAlign: "right" }}>
+        <div className="ll-hide-mobile" style={{ color: "var(--ink-3)", fontSize: 13, maxWidth: 280, textAlign: "right" }}>
           Hover or click a step to read more. Each is its own protected workflow.
         </div>
       </div>
@@ -277,7 +277,7 @@ const HowItWorks = () => {
           })}
         </ol>
 
-        <div style={{
+        <div className="ll-howpanel" style={{
           background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 18,
           padding: 36, display: "flex", flexDirection: "column", minHeight: 540,
           position: "relative", overflow: "hidden",
@@ -550,7 +550,7 @@ const ScenariosBlock = () => {
           Three quiet moments LastLink was built for.
         </h2>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 32 }}>
+        <div className="ll-btnrow" style={{ display: "flex", gap: 8, marginBottom: 32 }}>
           {tabs.map((tt, i) =>
             <button key={i} onClick={() => setTab(i)} style={{
               padding: "10px 20px", border: "1px solid var(--line)",
@@ -655,7 +655,7 @@ const FinalCTA = () => (
       <p className="serif" style={{ fontSize: 28, fontStyle: "italic", color: "var(--ink-4)", margin: "0 0 48px", lineHeight: 1.3, fontWeight: 400 }}>
         Every person left behind deserves to be told with dignity.
       </p>
-      <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+      <div className="ll-btnrow" style={{ display: "flex", gap: 12, justifyContent: "center" }}>
         <a href={APP} className="ll-btn grad" style={{ padding: "16px 30px", fontSize: 15 }}>
           Begin your LastLink — free <Icon name="arrow" size={16} color="white" />
         </a>

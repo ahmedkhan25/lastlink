@@ -44,6 +44,13 @@ a { text-decoration: none; color: inherit; }
   /* hero reassurances + button rows: let them wrap instead of overflowing */
   .ll-marketing .ll-reassure { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
   .ll-marketing .ll-btnrow { flex-wrap: wrap !important; }
+  .ll-marketing .ll-btnrow > * { flex: 1 1 auto; justify-content: center; }
+
+  /* header rows that put a heading beside helper text: stack them */
+  .ll-marketing .ll-stack-mobile { flex-direction: column !important; align-items: flex-start !important; gap: 18px !important; }
+
+  /* the how-it-works illustration panel is fixed-tall on desktop; let it shrink */
+  .ll-marketing .ll-howpanel { min-height: 0 !important; padding: 24px !important; }
 
   /* horizontal step/verification diagrams: allow scroll instead of squish */
   .ll-marketing .ll-scroll-x { overflow-x: auto !important; }
