@@ -1,6 +1,7 @@
 import { NavLink, Outlet, Navigate, useNavigate } from "react-router-dom";
 import { Logo, Icon, type IconName } from "@lastlink/ui";
 import { useSession, signOut } from "./lib/auth.js";
+import { getMarketingUrl } from "./lib/api.js";
 
 const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: "/dashboard", label: "Dashboard", icon: "home" },
@@ -33,7 +34,9 @@ export function AppLayout() {
         }}
       >
         <div style={{ padding: "0 8px 24px" }}>
-          <Logo size={22} />
+          <a href={getMarketingUrl()} title="Back to lastlink.com" style={{ display: "inline-flex" }}>
+            <Logo size={22} />
+          </a>
         </div>
         <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {NAV.map((n) => (

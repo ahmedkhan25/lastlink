@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, Icon } from "@lastlink/ui";
 import { signIn, signUp } from "../lib/auth.js";
+import { getMarketingUrl } from "../lib/api.js";
 
 export function SignIn() {
   const [mode, setMode] = useState<"signin" | "signup">("signup");
@@ -32,7 +33,9 @@ export function SignIn() {
     <div style={{ display: "grid", placeItems: "center", height: "100%", padding: 40 }}>
       <div style={{ width: 420, maxWidth: "100%" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
-          <Logo size={30} />
+          <a href={getMarketingUrl()} title="Back to lastlink.com" style={{ display: "inline-flex" }}>
+            <Logo size={30} />
+          </a>
         </div>
         <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-4)", padding: 32, boxShadow: "var(--shadow-2)" }}>
           <h1 className="serif" style={{ fontSize: 30, fontWeight: 500, margin: "0 0 6px" }}>
