@@ -140,10 +140,10 @@ const HeroCard = () => (
 
 // ----------------------------------------------------------- PROBLEM STRIP
 const PROBLEMS = [
-  { icon: "shield", title: "No verified standard", body: "Families learn through a Facebook comment or a whispered rumor — never a dignified, confirmed source." },
-  { icon: "users", title: "Networks go dark", body: "Colleagues, partners, and clients find out days late. Deals stall. Relationships fray in the silence." },
-  { icon: "candle", title: "Final words go unspoken", body: "People pass with messages undelivered — love left unsaid, gratitude never expressed, goodbyes never heard." },
-  { icon: "sparkle", title: "No one has solved this", body: "Until LastLink, no platform verified a passing, then delivered the news gently — in the person's own words." },
+  { img: "/assets/problem/image1.webp", title: "No verified standard", body: "Families learn through a Facebook comment or a whispered rumor — never a dignified, confirmed source." },
+  { img: "/assets/problem/image2.webp", title: "Networks go dark", body: "Colleagues, partners, and clients find out days late. Deals stall. Relationships fray in the silence." },
+  { img: "/assets/problem/image3.webp", title: "Final words go unspoken", body: "People pass with messages undelivered — love left unsaid, gratitude never expressed, goodbyes never heard." },
+  { img: "/assets/problem/image4.webp", title: "No one has solved this", body: "Until LastLink, no platform verified a passing, then delivered the news gently — in the person's own words." },
 ] as const;
 
 const CYCLE_MS = 5000;
@@ -183,7 +183,9 @@ const ProblemStrip = () => {
                 display: "flex", alignItems: "center", gap: 14,
                 opacity: i === active ? 1 : 0.45, transition: "opacity 260ms ease",
               }}>
-                <Icon name={pp.icon} size={18} color={i === active ? "var(--brand-purple)" : "var(--ink-3)"} />
+                <div style={{ width: 48, height: 48, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: "1px solid var(--line)" }}>
+                  <img src={pp.img} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", filter: i === active ? "none" : "grayscale(0.7)", transition: "filter 300ms ease" }} />
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 17, fontWeight: 500, color: "var(--ink)" }}>{pp.title}</div>
                   {i === active && (
@@ -196,27 +198,21 @@ const ProblemStrip = () => {
             ))}
           </div>
 
-          {/* Right: the spotlight — crossfades on every change */}
+          {/* Right: the spotlight — a photo on top, then the words. Crossfades. */}
           <div style={{
             background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 22,
-            padding: "52px 48px", minHeight: 320, display: "flex", flexDirection: "column",
-            justifyContent: "center", position: "relative", overflow: "hidden",
+            overflow: "hidden", position: "relative",
           }}>
-            <div style={{
-              position: "absolute", top: -70, right: -70, width: 260, height: 260,
-              background: "var(--brand-grad)", opacity: 0.06, borderRadius: "50%", filter: "blur(34px)",
-            }} />
-            <div key={active} className="ll-reveal" style={{ position: "relative" }}>
-              <div style={{
-                width: 66, height: 66, borderRadius: "50%", background: "var(--brand-grad-soft)",
-                display: "grid", placeItems: "center", marginBottom: 24,
-              }}>
-                <Icon name={p.icon} size={30} color="var(--brand-purple)" />
+            <div key={active} className="ll-reveal">
+              <div style={{ aspectRatio: "16 / 9", overflow: "hidden", background: "#241D17" }}>
+                <img src={p.img} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
               </div>
-              <h3 className="serif" style={{ fontSize: 36, fontWeight: 500, letterSpacing: "-0.015em", margin: "0 0 16px", lineHeight: 1.1 }}>
-                {p.title}
-              </h3>
-              <p style={{ fontSize: 18, color: "var(--ink-2)", lineHeight: 1.6, margin: 0, maxWidth: 540 }}>{p.body}</p>
+              <div style={{ padding: "30px 40px 36px" }}>
+                <h3 className="serif" style={{ fontSize: 34, fontWeight: 500, letterSpacing: "-0.015em", margin: "0 0 14px", lineHeight: 1.1 }}>
+                  {p.title}
+                </h3>
+                <p style={{ fontSize: 18, color: "var(--ink-2)", lineHeight: 1.6, margin: 0, maxWidth: 560 }}>{p.body}</p>
+              </div>
             </div>
           </div>
         </div>
