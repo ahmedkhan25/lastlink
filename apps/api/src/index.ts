@@ -10,7 +10,7 @@ import { graphqlProxy } from "./graphql-proxy.js";
 import { saveLetter } from "./messages.js";
 import { sealAccount } from "./account.js";
 import { uploadInit, mediaRefresh, playbackToken, muxWebhook } from "./video.js";
-import { inviteAdvocate, getInvite, acceptInvite } from "./advocates.js";
+import { inviteAdvocate, getInvite, acceptInvite, requestAdvocateLink } from "./advocates.js";
 import { getCase, initiateCase, confirmCase, cancelCase, releaseNow } from "./case.js";
 import { getRecipient, openRecipient } from "./recipient.js";
 
@@ -60,6 +60,7 @@ app.post("/api/messages/:id/playback-token", playbackToken);
 app.post("/api/advocates/:id/invite", inviteAdvocate);
 app.get("/advocate/invite/:token", getInvite);
 app.post("/advocate/invite/:token/accept", acceptInvite);
+app.post("/advocate/request-link", requestAdvocateLink); // re-entry: email me my link
 
 // Death-confirmation lifecycle (advocate token). Release runs inline (no worker).
 app.get("/advocate/:token/case", getCase);

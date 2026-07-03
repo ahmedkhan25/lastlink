@@ -55,6 +55,36 @@ export async function getInvite(req: Request, res: Response): Promise<void> {
   });
 }
 
+// POST /advocate/request-link — an advocate re-enters when the day comes. They
+// won't have the year-old email; they enter their address and we mint a FRESH
+// secure link and email it. Always 200 (never reveal whether the email exists).
+export async function requestAdvocateLink(req: Request, res: Response): Promise<void> {
+  const email = String(req.body?.email ?? "").trim().toLowerCase();
+  if (!email || !email.includes("@")) return void res.status(400).json({ error: "Enter a valid email." });
+
+  const r = await query<{ id: string; full_name: string; legal_name: string }>(
+    `select a.id, a.full_name, reg.legal_name
+       from app.advocates a join app.registrants reg on reg.id = a.registrant_id
+      where lower(a.email) = $1 and reg.account_state in ('active_sealed','in_verification')`,
+    [email],
+  );
+  for (const adv of r.rows) {
+    const url = `${env.ADVOCATE_BASE_URL}/confirm/${signAdvocateInvite(adv.id)}`;
+    await notifier.send({
+      to: email,
+      email: {
+        subject: `Your LastLink advocate link for ${adv.legal_name}`,
+        html: `<p>${adv.full_name}, here is your secure link to act as <strong>${adv.legal_name}</strong>'s advocate. `
+          + `If they have passed, open it to begin the confirmation — both advocates confirm independently, then a 24-hour hold before anything is released.</p>`
+          + `<p><a href="${url}">Open your advocate page</a></p>`
+          + `<p style="color:#888;font-size:12px">If you didn't request this, you can ignore it.</p>`,
+      },
+    });
+  }
+  await logEvent({ actorType: "advocate", action: "advocate.link_requested", entityType: "advocate", entityId: email, data: { matched: r.rows.length } });
+  res.json({ ok: true });
+}
+
 // POST /advocate/invite/:token/accept — advocate accepts the role (token-auth).
 export async function acceptInvite(req: Request, res: Response): Promise<void> {
   const advId = verifyAdvocateInvite(String(req.params.token));

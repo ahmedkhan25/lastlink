@@ -93,8 +93,9 @@ export function Accept() {
                   Begin the confirmation
                   <Icon name="arrow" size={15} color="white" />
                 </a>
-                <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "16px 0 0" }}>
-                  Tip: bookmark this page — it's your private advocate link, and the only way in.
+                <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "16px 0 0", lineHeight: 1.6 }}>
+                  You don't need to keep this email. Whenever the time comes — even years from now —
+                  just visit this site and enter your email to get a fresh secure link.
                 </p>
               </div>
             </>
