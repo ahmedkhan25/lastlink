@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Logo, Icon } from "@lastlink/ui";
+import { Icon } from "@lastlink/ui";
 import { getApiUrl } from "./lib/api.js";
+import { Header, ProcessSteps } from "./parts.js";
 
 interface Invite {
   advocate: { name: string; relationship: string | null; status: string };
@@ -33,10 +34,7 @@ export function Accept() {
 
   return (
     <div style={{ display: "grid", gridTemplateRows: "auto 1fr", height: "100%" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 32px", borderBottom: "1px solid var(--line-soft)" }}>
-        <Logo size={22} />
-        <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em" }}>ADVOCATE</span>
-      </header>
+      <Header />
 
       <div style={{ display: "grid", placeItems: "center", padding: 40 }}>
         <div style={{ maxWidth: 560, width: "100%", textAlign: "center" }}>
@@ -79,24 +77,21 @@ export function Accept() {
               <p style={{ fontSize: 16, color: "var(--ink-2)", lineHeight: 1.6 }}>
                 {invite.registrantName} will be told you've accepted. We won't bother you unless the day ever comes — and even then, gently.
               </p>
-              <div style={{ marginTop: 40, padding: "24px 26px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--line-soft)", textAlign: "left" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <Icon name="shield" size={18} color="var(--brand-purple)" />
-                  <span style={{ fontWeight: 600, fontSize: 15 }}>If the day ever comes</span>
+              <div style={{ marginTop: 44, textAlign: "left" }}>
+                <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em", marginBottom: 14 }}>
+                  WHAT HAPPENS WHEN THE DAY COMES
                 </div>
-                <p style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.65, margin: "0 0 18px" }}>
-                  Come back to this page and begin the confirmation. You'll confirm {invite.registrantName}'s
-                  passing — and so will the other advocate, independently. Nothing is released until <strong>both</strong> of
-                  you confirm, and even then only after a <strong>24-hour hold</strong> that either of you can stop at any time.
-                </p>
-                <a href={`/confirm/${token}`} className="ll-btn grad" style={{ padding: "13px 26px", fontSize: 14 }}>
-                  Begin the confirmation
-                  <Icon name="arrow" size={15} color="white" />
-                </a>
-                <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "16px 0 0", lineHeight: 1.6 }}>
-                  You don't need to keep this email. Whenever the time comes — even years from now —
-                  just visit this site and enter your email to get a fresh secure link.
-                </p>
+                <ProcessSteps registrantName={invite.registrantName} />
+                <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>
+                  <a href={`/confirm/${token}`} className="ll-btn grad" style={{ padding: "13px 26px", fontSize: 14 }}>
+                    Begin the confirmation
+                    <Icon name="arrow" size={15} color="white" />
+                  </a>
+                  <p style={{ fontSize: 12, color: "var(--ink-3)", margin: 0, lineHeight: 1.6 }}>
+                    You don't need to keep this email. Whenever the time comes — even years from now —
+                    just visit <strong>this site</strong> and enter your email to get a fresh secure link.
+                  </p>
+                </div>
               </div>
             </>
           )}

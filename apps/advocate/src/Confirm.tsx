@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Logo, Icon, type IconName } from "@lastlink/ui";
+import { Icon, type IconName } from "@lastlink/ui";
+import { Header } from "./parts.js";
 import { getApiUrl } from "./lib/api.js";
 
 interface CaseData {
@@ -197,10 +198,7 @@ export function Confirm() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "grid", gridTemplateRows: "auto 1fr", height: "100%" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 32px", borderBottom: "1px solid var(--line-soft)" }}>
-        <Logo size={22} />
-        <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em" }}>ADVOCATE</span>
-      </header>
+      <Header />
       <div style={{ display: "grid", placeItems: "center", padding: 40 }}>
         <div style={{ maxWidth: 560, width: "100%" }}>{children}</div>
       </div>

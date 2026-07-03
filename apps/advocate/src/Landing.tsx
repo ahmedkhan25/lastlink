@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Logo, Icon } from "@lastlink/ui";
+import { Icon } from "@lastlink/ui";
 import { getApiUrl } from "./lib/api.js";
+import { Header, ProcessSteps } from "./parts.js";
 
 // The advocate re-entry point. A year after being named, an advocate won't have
 // the original email — they come here, enter their address, and we send a fresh
@@ -22,10 +23,7 @@ export function Landing() {
 
   return (
     <div style={{ display: "grid", gridTemplateRows: "auto 1fr", height: "100%" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 32px", borderBottom: "1px solid var(--line-soft)" }}>
-        <Logo size={22} />
-        <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em" }}>ADVOCATE</span>
-      </header>
+      <Header />
 
       <div style={{ display: "grid", placeItems: "center", padding: 40 }}>
         <div style={{ maxWidth: 520, width: "100%", textAlign: "center" }}>
@@ -56,10 +54,13 @@ export function Landing() {
                 </button>
               </div>
               {state === "error" && <p style={{ color: "var(--danger, #b3261e)", fontSize: 14, marginTop: 14 }}>Please enter a valid email and try again.</p>}
-              <p style={{ fontSize: 12.5, color: "var(--ink-3)", marginTop: 24, lineHeight: 1.6 }}>
-                For everyone's safety, nothing here confirms a passing on its own. Both advocates
-                confirm independently, and there's a 24-hour hold either of you can stop.
-              </p>
+
+              <div style={{ marginTop: 40 }}>
+                <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em", marginBottom: 14, textAlign: "left" }}>
+                  HOW IT WORKS
+                </div>
+                <ProcessSteps registrantName="" />
+              </div>
             </>
           )}
 
