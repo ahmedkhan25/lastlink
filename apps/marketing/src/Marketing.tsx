@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
 
 // CTAs point at the registrant app. In prod, set VITE_APP_URL to the lastlink-web URL.
@@ -139,42 +139,91 @@ const HeroCard = () => (
 );
 
 // ----------------------------------------------------------- PROBLEM STRIP
-const ProblemStrip = () => (
-  <section style={{
-    padding: "80px 64px", background: "var(--surface)",
-    borderTop: "1px solid var(--line-soft)", borderBottom: "1px solid var(--line-soft)",
-  }}>
-    <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-      <div className="ll-eyebrow" style={{ marginBottom: 16 }}>The quiet problem</div>
-      <h2 className="serif" style={{
-        fontSize: 56, lineHeight: 1.05, margin: "0 0 56px",
-        letterSpacing: "-0.015em", maxWidth: 980, fontWeight: 500, textWrap: "pretty",
-      }}>
-        In America, <span style={{ color: "var(--brand-purple)" }}>3.7 million people</span> die each year.
-        Each one leaves behind about <span style={{ color: "var(--brand-blue)" }}>150 relationships</span> who deserve to be told —
-        and most of them won't be.
-      </h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, borderTop: "1px solid var(--line)" }}>
-        {([
-          ["No verified standard", "Families learn through Facebook comments and gossip — never a dignified, confirmed source."],
-          ["Networks go dark", "Business partners, colleagues, and clients find out days late. Deals collapse. Trust frays."],
-          ["Final words are lost", "People die with messages undelivered. Love unspoken. Gratitude unexpressed."],
-          ["No single solution exists", "Until LastLink, no platform simultaneously verified, notified, and delivered."],
-        ] as const).map(([title, body], i) => (
-          <div key={i} style={{
-            padding: "32px 28px 32px 0",
-            borderRight: i < 3 ? "1px solid var(--line)" : "none",
-            paddingLeft: i > 0 ? 28 : 0,
-          }}>
-            <div className="mono" style={{ fontSize: 11, color: "var(--ink-4)", marginBottom: 14 }}>0{i + 1}</div>
-            <h3 style={{ fontSize: 18, fontWeight: 500, margin: "0 0 10px" }}>{title}</h3>
-            <p style={{ fontSize: 14, color: "var(--ink-3)", lineHeight: 1.55, margin: 0 }}>{body}</p>
+const PROBLEMS = [
+  { icon: "shield", title: "No verified standard", body: "Families learn through a Facebook comment or a whispered rumor — never a dignified, confirmed source." },
+  { icon: "users", title: "Networks go dark", body: "Colleagues, partners, and clients find out days late. Deals stall. Relationships fray in the silence." },
+  { icon: "candle", title: "Final words go unspoken", body: "People pass with messages undelivered — love left unsaid, gratitude never expressed, goodbyes never heard." },
+  { icon: "sparkle", title: "No one has solved this", body: "Until LastLink, no platform verified a passing, then delivered the news gently — in the person's own words." },
+] as const;
+
+const CYCLE_MS = 5000;
+
+const ProblemStrip = () => {
+  const [active, setActive] = useState(0);
+  // Auto-advance; resetting on `active` means a manual click also gets a full dwell.
+  useEffect(() => {
+    const t = setInterval(() => setActive((a) => (a + 1) % PROBLEMS.length), CYCLE_MS);
+    return () => clearInterval(t);
+  }, [active]);
+  const p = PROBLEMS[active]!;
+
+  return (
+    <section style={{
+      padding: "96px 64px", background: "var(--surface)",
+      borderTop: "1px solid var(--line-soft)", borderBottom: "1px solid var(--line-soft)",
+    }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+        <div className="ll-eyebrow" style={{ marginBottom: 16 }}>The quiet problem</div>
+        <h2 className="serif" style={{
+          fontSize: 56, lineHeight: 1.05, margin: "0 0 56px",
+          letterSpacing: "-0.015em", maxWidth: 980, fontWeight: 500, textWrap: "pretty",
+        }}>
+          In America, <span style={{ color: "var(--brand-purple)" }}>3.7 million people</span> die each year.
+          Each one leaves behind about <span style={{ color: "var(--brand-blue)" }}>150 relationships</span> who deserve to be told —
+          and most of them won't be.
+        </h2>
+
+        <div style={{ display: "grid", gridTemplateColumns: "0.85fr 1.15fr", gap: 56, alignItems: "center" }}>
+          {/* Left: the issues as quiet nav, active one carries a filling progress line */}
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {PROBLEMS.map((pp, i) => (
+              <button key={i} onClick={() => setActive(i)} aria-label={pp.title} style={{
+                textAlign: "left", padding: "18px 0", background: "transparent",
+                border: "none", borderTop: "1px solid var(--line)", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 14,
+                opacity: i === active ? 1 : 0.45, transition: "opacity 260ms ease",
+              }}>
+                <Icon name={pp.icon} size={18} color={i === active ? "var(--brand-purple)" : "var(--ink-3)"} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 17, fontWeight: 500, color: "var(--ink)" }}>{pp.title}</div>
+                  {i === active && (
+                    <div style={{ height: 2, background: "var(--line)", borderRadius: 2, marginTop: 12, overflow: "hidden" }}>
+                      <div key={active} className="ll-progress" style={{ height: "100%", background: "var(--brand-grad)" }} />
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
           </div>
-        ))}
+
+          {/* Right: the spotlight — crossfades on every change */}
+          <div style={{
+            background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 22,
+            padding: "52px 48px", minHeight: 320, display: "flex", flexDirection: "column",
+            justifyContent: "center", position: "relative", overflow: "hidden",
+          }}>
+            <div style={{
+              position: "absolute", top: -70, right: -70, width: 260, height: 260,
+              background: "var(--brand-grad)", opacity: 0.06, borderRadius: "50%", filter: "blur(34px)",
+            }} />
+            <div key={active} className="ll-reveal" style={{ position: "relative" }}>
+              <div style={{
+                width: 66, height: 66, borderRadius: "50%", background: "var(--brand-grad-soft)",
+                display: "grid", placeItems: "center", marginBottom: 24,
+              }}>
+                <Icon name={p.icon} size={30} color="var(--brand-purple)" />
+              </div>
+              <h3 className="serif" style={{ fontSize: 36, fontWeight: 500, letterSpacing: "-0.015em", margin: "0 0 16px", lineHeight: 1.1 }}>
+                {p.title}
+              </h3>
+              <p style={{ fontSize: 18, color: "var(--ink-2)", lineHeight: 1.6, margin: 0, maxWidth: 540 }}>{p.body}</p>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 // ----------------------------------------------------------- HOW IT WORKS
 const HowItWorks = () => {
