@@ -49,8 +49,8 @@ const Nav = () => (
 const Hero = () => (
   <section style={{
     padding: "96px 64px 80px", display: "grid",
-    gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 0.9fr)",
-    gap: 64, alignItems: "center", maxWidth: 1440, margin: "0 auto",
+    gridTemplateColumns: "minmax(0, 0.9fr) minmax(0, 1.15fr)",
+    gap: 56, alignItems: "center", maxWidth: 1480, margin: "0 auto",
   }}>
     <div>
       <div className="ll-chip" style={{ marginBottom: 28 }}>
@@ -97,7 +97,7 @@ const Reassure = ({ icon, label }: { icon: IconName; label: string }) => (
 );
 
 const HeroCard = () => (
-  <div style={{ position: "relative", width: "100%", maxWidth: 520, marginLeft: "auto", flexShrink: 0 }}>
+  <div style={{ position: "relative", width: "100%", maxWidth: 720, marginLeft: "auto", flexShrink: 0 }}>
     <div style={{
       background: "var(--surface)", border: "1px solid var(--line)",
       borderRadius: "var(--r-4)", boxShadow: "var(--shadow-3)", padding: 12,
