@@ -3,7 +3,11 @@
 
 html { scroll-behavior: smooth; }
 html, body, #root { min-height: 100%; }
-body { overflow-x: hidden; } /* belt-and-suspenders against any wide child */
+/* Kill horizontal scroll: on html AND body (body alone isn't reliable on mobile),
+   plus the root wrapper clips the decorative blurred "glow" circles that use
+   negative offsets (e.g. right:-40) and would otherwise spill past the viewport. */
+html, body { overflow-x: hidden; max-width: 100%; }
+.ll-marketing { overflow-x: clip; width: 100%; }
 a { text-decoration: none; color: inherit; }
 .ll-marketing a[href^="#"]:hover { color: var(--ink); }
 .ll-marketing video { display: block; }
