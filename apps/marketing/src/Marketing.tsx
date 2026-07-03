@@ -9,7 +9,6 @@ export function Marketing() {
     <div className="ll-marketing" style={{ background: "var(--bg)", color: "var(--ink)" }}>
       <Nav />
       <Hero />
-      <VideoBand />
       <ProblemStrip />
       <HowItWorks />
       <VerificationBlock />
@@ -90,26 +89,6 @@ const Hero = () => (
   </section>
 );
 
-// ----------------------------------------------------------- VIDEO BAND
-const VideoBand = () => (
-  <section style={{ padding: "8px 64px 88px", maxWidth: 1200, margin: "0 auto" }}>
-    <div style={{
-      position: "relative", borderRadius: "var(--r-4)", overflow: "hidden",
-      boxShadow: "var(--shadow-3)", border: "1px solid var(--line)",
-      aspectRatio: "16 / 9", background: "#241D17",
-    }}>
-      <video
-        src="/assets/video/LastLink_30s_Marketing_v2.mp4"
-        autoPlay muted loop playsInline controls preload="metadata"
-        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-      />
-    </div>
-    <p style={{ textAlign: "center", fontSize: 13, color: "var(--ink-3)", marginTop: 14 }}>
-      Daniel, recording his LastLink for his daughter Emily. Tap to unmute.
-    </p>
-  </section>
-);
-
 const Reassure = ({ icon, label }: { icon: IconName; label: string }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
     <Icon name={icon} size={15} color="var(--ink-3)" />
@@ -121,13 +100,13 @@ const HeroCard = () => (
   <div style={{ position: "relative", width: "100%", maxWidth: 520, marginLeft: "auto", flexShrink: 0 }}>
     <div style={{
       background: "var(--surface)", border: "1px solid var(--line)",
-      borderRadius: "var(--r-4)", boxShadow: "var(--shadow-3)", padding: 36,
+      borderRadius: "var(--r-4)", boxShadow: "var(--shadow-3)", padding: 12,
       display: "flex", flexDirection: "column",
     }}>
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em",
-        textTransform: "uppercase", marginBottom: 28,
+        textTransform: "uppercase", padding: "6px 8px 12px",
       }}>
         <span>For · Emily</span>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -136,37 +115,18 @@ const HeroCard = () => (
         </span>
       </div>
 
-      <ImgSlot src={LLPhotos.windowLight} alt="Soft morning light through a window"
-        style={{ aspectRatio: "16/10", borderRadius: 12, marginBottom: 28 }} />
-
-      <div className="serif" style={{
-        fontSize: 28, lineHeight: 1.25, color: "var(--ink)", fontStyle: "italic",
-        marginBottom: 18, textWrap: "pretty",
-      }}>
-        "Em — there's so much I never said out loud. Sit with me for nine minutes. I want to tell you everything."
-      </div>
-      <div style={{ fontSize: 13, color: "var(--ink-3)", marginBottom: 18 }}>
-        A message from <span style={{ color: "var(--ink-2)", fontWeight: 500 }}>Daniel R.</span> · Recorded Oct 14, 2024
+      {/* The real 30s message video (16:9). Autoplays muted; tap to unmute. */}
+      <div style={{ borderRadius: 14, overflow: "hidden", aspectRatio: "16 / 9", background: "#241D17" }}>
+        <video
+          src="/assets/video/LastLink_30s_Marketing_v2.mp4"
+          autoPlay muted loop playsInline controls preload="metadata"
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
       </div>
 
-      <div style={{
-        marginTop: "auto", display: "flex", alignItems: "center", gap: 12,
-        padding: 12, background: "var(--bg)", borderRadius: 12, border: "1px solid var(--line)",
-      }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: 999, background: "var(--brand-grad)",
-          display: "flex", alignItems: "center", justifyContent: "center", color: "white",
-        }}>
-          <Icon name="play" size={14} color="white" />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ height: 4, borderRadius: 4, background: "var(--line)", overflow: "hidden" }}>
-            <div style={{ width: "32%", height: "100%", background: "var(--brand-grad)" }} />
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: "var(--ink-3)" }}>
-            <span>02:54</span><span>09:11</span>
-          </div>
-        </div>
+      <div style={{ fontSize: 13, color: "var(--ink-3)", padding: "12px 8px 6px" }}>
+        A message from <span style={{ color: "var(--ink-2)", fontWeight: 500 }}>Daniel R.</span> · for his daughter Emily
+        <span style={{ color: "var(--ink-3)" }}> · tap to unmute</span>
       </div>
     </div>
 
