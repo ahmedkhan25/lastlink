@@ -79,14 +79,23 @@ export function Accept() {
               <p style={{ fontSize: 16, color: "var(--ink-2)", lineHeight: 1.6 }}>
                 {invite.registrantName} will be told you've accepted. We won't bother you unless the day ever comes — and even then, gently.
               </p>
-              <div style={{ marginTop: 40, paddingTop: 24, borderTop: "1px dashed var(--line-soft)" }}>
-                <p style={{ fontSize: 13, color: "var(--ink-3)", margin: "0 0 12px" }}>
-                  If that day has come, and {invite.registrantName} has passed:
+              <div style={{ marginTop: 40, padding: "24px 26px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--line-soft)", textAlign: "left" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <Icon name="shield" size={18} color="var(--brand-purple)" />
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>If the day ever comes</span>
+                </div>
+                <p style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.65, margin: "0 0 18px" }}>
+                  Come back to this page and begin the confirmation. You'll confirm {invite.registrantName}'s
+                  passing — and so will the other advocate, independently. Nothing is released until <strong>both</strong> of
+                  you confirm, and even then only after a <strong>24-hour hold</strong> that either of you can stop at any time.
                 </p>
-                <a href={`/confirm/${token}`} className="ll-btn" style={{ padding: "12px 24px", fontSize: 14, background: "var(--bone)", border: "1px solid var(--line)", color: "var(--ink-2)" }}>
+                <a href={`/confirm/${token}`} className="ll-btn grad" style={{ padding: "13px 26px", fontSize: 14 }}>
                   Begin the confirmation
-                  <Icon name="arrow" size={15} color="var(--ink-2)" />
+                  <Icon name="arrow" size={15} color="white" />
                 </a>
+                <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "16px 0 0" }}>
+                  Tip: bookmark this page — it's your private advocate link, and the only way in.
+                </p>
               </div>
             </>
           )}
