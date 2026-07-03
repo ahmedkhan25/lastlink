@@ -20,12 +20,12 @@ const ADD = `mutation($slot: String!, $name: String!, $email: String!) {
 }`;
 
 const TIMELINE = [
-  { n: "01", t: "Advocate A confirms", d: "Identity + death details, independently." },
-  { n: "02", t: "Advocate B confirms", d: "The second, separately. Neither acts alone." },
-  { n: "03", t: "24-hour hold", d: "We try to reach you directly. Anyone can stop it." },
-  { n: "04", t: "Release authorized", d: "Only if the full day passes with no cancel." },
-  { n: "05", t: "Dignified delivery", d: "Within 48 hours, by email." },
-];
+  { t: "Advocate A confirms", d: "Identity + death details, independently.", icon: "fingerprint" },
+  { t: "Advocate B confirms", d: "The second, separately. Neither acts alone.", icon: "shield" },
+  { t: "24-hour hold", d: "A full day to pause. Either advocate can stop it.", icon: "clock" },
+  { t: "Release authorized", d: "Only if the day passes with no cancel.", icon: "check" },
+  { t: "Dignified delivery", d: "Within 48 hours, gently, by email.", icon: "mail" },
+] as const;
 
 export function Advocates() {
   const [advocates, setAdvocates] = useState<Advocate[]>([]);
@@ -128,16 +128,51 @@ export function Advocates() {
 
       <div style={{ padding: 28, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)" }}>
         <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>What happens when the time comes</h2>
-        <p style={{ fontSize: 13, color: "var(--ink-3)", margin: "0 0 20px" }}>The patent-protected workflow — a 24-hour hold, fully cancellable, before any release.</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
-          {TIMELINE.map((s) => (
-            <div key={s.n} style={{ padding: 16, background: "var(--bg)", border: "1px solid var(--line)", borderRadius: "var(--r-2)" }}>
-              <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>{s.n}</div>
-              <div style={{ fontSize: 14, fontWeight: 500, margin: "6px 0 4px" }}>{s.t}</div>
-              <div style={{ fontSize: 12, color: "var(--ink-3)", lineHeight: 1.45 }}>{s.d}</div>
+        <p style={{ fontSize: 13, color: "var(--ink-3)", margin: "0 0 28px" }}>The patent-pending workflow — a 24-hour hold, fully cancellable, before any release.</p>
+        <ReleaseTimeline />
+      </div>
+    </div>
+  );
+}
+
+// Animated process timeline: each stage lights up in sequence and the connector
+// line fills, then it loops — confirm → confirm → 24h hold → release → deliver.
+function ReleaseTimeline() {
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setActive((a) => (a + 1) % (TIMELINE.length + 1)), 1500);
+    return () => clearInterval(t);
+  }, []);
+  const last = TIMELINE.length - 1;
+  const fill = (Math.min(active, last) / last) * 100;
+  return (
+    <div style={{ position: "relative", paddingTop: 4 }}>
+      {/* connector track spanning between the first and last node centers (10%–90%) */}
+      <div style={{ position: "absolute", top: 26, left: "10%", right: "10%", height: 2, background: "var(--line)", borderRadius: 2, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${fill}%`, background: "var(--brand-grad)", transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${TIMELINE.length}, 1fr)`, gap: 12, position: "relative" }}>
+        {TIMELINE.map((s, i) => {
+          const on = i <= active;
+          const current = i === active;
+          return (
+            <div key={s.t} style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+              <div style={{
+                width: 46, height: 46, borderRadius: "50%",
+                background: on ? "var(--brand-grad)" : "var(--surface)",
+                border: on ? "none" : "1px solid var(--line)",
+                display: "grid", placeItems: "center", marginBottom: 14,
+                transform: current ? "scale(1.14)" : "scale(1)",
+                boxShadow: current ? "var(--shadow-2)" : "none",
+                transition: "background 500ms ease, transform 450ms ease, box-shadow 450ms ease",
+              }}>
+                <Icon name={s.icon} size={19} color={on ? "white" : "var(--ink-3)"} stroke={1.8} />
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: on ? "var(--ink)" : "var(--ink-3)", marginBottom: 4, transition: "color 400ms ease" }}>{s.t}</div>
+              <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.45, maxWidth: 150 }}>{s.d}</div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
