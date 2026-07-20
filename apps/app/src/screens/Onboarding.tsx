@@ -10,7 +10,7 @@ const ADD_ADVOCATES = `mutation($aName: String!, $aEmail: String!, $bName: Strin
   b: insert_app_advocates_one(object: {slot: "B", full_name: $bName, email: $bEmail, invite_status: "pending"}) { id }
 }`;
 
-const STEPS = ["Welcome", "Identity", "Contacts", "Message", "Advocates", "Done"];
+const STEPS = ["Welcome", "Consent", "Identity", "Contacts", "Message", "Advocates", "Done"];
 
 export function Onboarding() {
   const [step, setStep] = useState(0);
@@ -30,17 +30,18 @@ export function Onboarding() {
               <span key={i} style={{ width: i === step ? 24 : 7, height: 7, borderRadius: 999, background: i <= step ? "var(--brand-grad)" : "var(--line)", transition: "width 200ms" }} />
             ))}
           </div>
-          <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>STEP {step + 1} OF 6</span>
+          <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>STEP {step + 1} OF {STEPS.length}</span>
         </div>
       </header>
 
       <div style={{ display: "grid", placeItems: "center", padding: 40, overflow: "auto" }}>
         {step === 0 && <Welcome onNext={next} firstName={firstName} />}
-        {step === 1 && <Identity onNext={next} fullName={fullName} />}
-        {step === 2 && <ContactsStep onNext={next} />}
-        {step === 3 && <MessageStep onNext={next} />}
-        {step === 4 && <AdvocatesStep onNext={next} />}
-        {step === 5 && <Done onDone={() => navigate("/dashboard")} />}
+        {step === 1 && <Consent onNext={next} />}
+        {step === 2 && <Identity onNext={next} fullName={fullName} />}
+        {step === 3 && <ContactsStep onNext={next} />}
+        {step === 4 && <MessageStep onNext={next} />}
+        {step === 5 && <AdvocatesStep onNext={next} />}
+        {step === 6 && <Done onDone={() => navigate("/dashboard")} />}
       </div>
     </div>
   );
@@ -58,7 +59,7 @@ function Welcome({ onNext, firstName }: { onNext: () => void; firstName: string 
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}><Logo size={48} stacked /></div>
       <h1 className="serif" style={{ fontSize: 56, fontWeight: 500, letterSpacing: "-0.015em", margin: 0 }}>Welcome, {firstName}.</h1>
       <p style={{ fontSize: 18, color: "var(--ink-2)", lineHeight: 1.55, margin: "16px 0 28px" }}>
-        The next ten minutes will give your loved ones a lifetime of certainty. We'll set you up in five quiet steps.
+        The next ten minutes will give your loved ones a lifetime of certainty. We'll set you up in a few quiet steps.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28, textAlign: "left" }}>
         {cards.map((c) => (
@@ -72,6 +73,35 @@ function Welcome({ onNext, firstName }: { onNext: () => void; firstName: string 
         ))}
       </div>
       <button className="ll-btn grad" onClick={onNext}>Begin — it takes about 10 minutes <Icon name="arrow" size={16} color="white" /></button>
+    </div>
+  );
+}
+
+// Consent step — the legacy app's ToS gate, now explicit. Records agreement to
+// the terms and to the two-advocate + 24h-hold release model before anything is
+// collected. (Presentational: the checkboxes gate the button, nothing persists.)
+function Consent({ onNext }: { onNext: () => void }) {
+  const [a, setA] = useState(false);
+  const [b, setB] = useState(false);
+  const items = [
+    { checked: a, set: setA, node: <>I agree to the <strong>Terms of Service</strong> and <strong>Privacy Policy</strong>.</> },
+    { checked: b, set: setB, node: <>I understand my messages are released only after <strong>two advocates independently confirm my passing</strong>, followed by a 24-hour cancellable hold.</> },
+  ];
+  return (
+    <div style={{ maxWidth: 560, width: "100%" }}>
+      <h1 className="serif" style={{ fontSize: 40, fontWeight: 500, margin: 0 }}>Before we begin.</h1>
+      <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 24px" }}>A few things to agree to — this is what keeps the promise honest.</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
+        {items.map((it, i) => (
+          <label key={i} style={{ display: "flex", gap: 12, padding: "14px 16px", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", cursor: "pointer", alignItems: "flex-start" }}>
+            <input type="checkbox" checked={it.checked} onChange={(e) => it.set(e.target.checked)} style={{ marginTop: 3 }} />
+            <span style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.5 }}>{it.node}</span>
+          </label>
+        ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button className="ll-btn grad" onClick={onNext} disabled={!a || !b}>I agree — continue <Icon name="arrow" size={16} color="white" /></button>
+      </div>
     </div>
   );
 }
@@ -109,6 +139,16 @@ function Identity({ onNext, fullName }: { onNext: () => void; fullName: string }
         </div>
         <button className="ll-btn secondary">Choose file</button>
       </div>
+      <div style={{ padding: 24, border: "1px solid var(--line)", borderRadius: "var(--r-3)", background: "var(--surface)", display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
+        <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center" }}>
+          <Icon name="user" size={26} color="var(--brand-purple)" />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 500 }}>Add a photo</div>
+          <div style={{ fontSize: 13, color: "var(--ink-3)" }}>Optional. Also becomes your memorial portrait.</div>
+        </div>
+        <button className="ll-btn secondary">Add photo</button>
+      </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 13, color: "var(--ink-3)", display: "flex", gap: 8, alignItems: "center" }}>
           <Icon name="lock" size={14} color="var(--ink-3)" /> Encrypted with AES-256. Never sold, never shared.
@@ -125,6 +165,7 @@ const ADD_CONTACT = `mutation($n: String!, $r: String, $e: String) { insert_app_
 const GROUPS = ["Family", "Close friends", "Business"];
 
 function ContactsStep({ onNext }: { onNext: () => void }) {
+  const navigate = useNavigate();
   const [contacts, setContacts] = useState<OBContact[]>([]);
   const [form, setForm] = useState({ name: "", rel: "Family", email: "" });
   const [busy, setBusy] = useState(false);
@@ -144,7 +185,10 @@ function ContactsStep({ onNext }: { onNext: () => void }) {
   return (
     <div style={{ maxWidth: 760, width: "100%" }}>
       <h1 className="serif" style={{ fontSize: 40, fontWeight: 500, margin: 0 }}>Who should be told?</h1>
-      <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 24px", maxWidth: 600 }}>Start with the people closest to you. You can add more anytime — there's no rush.</p>
+      <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 16px", maxWidth: 600 }}>Start with the people closest to you. You can add more anytime — there's no rush.</p>
+      <button type="button" onClick={() => navigate("/contacts/import")} className="ll-btn secondary" style={{ marginBottom: 16 }}>
+        <Icon name="users" size={14} color="var(--ink)" /> Import from Google or CSV
+      </button>
       <form onSubmit={add} style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
         <input placeholder="Full name (required)" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={obInput} />
         <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={obInput} />

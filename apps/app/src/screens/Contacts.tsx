@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { Icon } from "@lastlink/ui";
 import { gql } from "../lib/api.js";
 import { useConfirm } from "../components/ConfirmProvider.js";
@@ -74,7 +75,12 @@ export function Contacts() {
 
   return (
     <div style={{ padding: "56px 64px", maxWidth: 1100, margin: "0 auto" }}>
-      <h1 className="serif" style={{ fontSize: 38, fontWeight: 500, letterSpacing: "-0.01em", margin: 0 }}>Contacts</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+        <h1 className="serif" style={{ fontSize: 38, fontWeight: 500, letterSpacing: "-0.01em", margin: 0 }}>Contacts</h1>
+        <Link to="/contacts/import" className="ll-btn secondary" style={{ textDecoration: "none" }}>
+          <Icon name="users" size={15} color="var(--ink)" /> Import
+        </Link>
+      </div>
       <p style={{ fontSize: 15, color: "var(--ink-3)", margin: "8px 0 28px" }}>
         {loading ? "Loading…" : `${contacts.length} ${contacts.length === 1 ? "person" : "people"}. Each can receive a different message.`}
       </p>

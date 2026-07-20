@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Logo, Icon } from "@lastlink/ui";
 import { signIn, signUp } from "../lib/auth.js";
 import { getMarketingUrl } from "../lib/api.js";
+import { GoogleMark, AppleMark } from "./preview/_shared.js";
 
 export function SignIn() {
   const [mode, setMode] = useState<"signin" | "signup">("signup");
@@ -11,6 +12,7 @@ export function SignIn() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [socialNote, setSocialNote] = useState(false);
   const navigate = useNavigate();
 
   async function onSubmit(e: FormEvent) {
@@ -44,6 +46,24 @@ export function SignIn() {
           <p style={{ fontSize: 14, color: "var(--ink-3)", margin: "0 0 24px" }}>
             {mode === "signup" ? "A verified last word, for the people you love." : "Sign in to your account."}
           </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
+            <button type="button" onClick={() => setSocialNote(true)} className="ll-btn secondary" style={{ width: "100%", justifyContent: "center" }}>
+              <GoogleMark size={18} /> Continue with Google
+            </button>
+            <button type="button" onClick={() => setSocialNote(true)} className="ll-btn secondary" style={{ width: "100%", justifyContent: "center" }}>
+              <AppleMark size={18} /> Continue with Apple
+            </button>
+            {socialNote && (
+              <div style={{ fontSize: 12, color: "var(--ink-3)", textAlign: "center" }}>
+                Social sign-in preview — enable a provider in Better Auth to turn this on.
+              </div>
+            )}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 18px", color: "var(--ink-4)" }}>
+            <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
+            <span className="mono" style={{ fontSize: 10, letterSpacing: "0.14em" }}>OR</span>
+            <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
+          </div>
           <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {mode === "signup" && <Input label="Full name" value={name} onChange={setName} />}
             <Input label="Email" type="email" value={email} onChange={setEmail} />

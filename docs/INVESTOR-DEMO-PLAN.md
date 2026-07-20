@@ -56,8 +56,15 @@ Two options, in increasing effort. Recommendation: **B for the next investor mee
 ### Option A — mocks stay as the design spec, real app is the demo
 Demo the real deployed app for steps 1, 4–12; open the gallery mocks in a second tab for steps 2, 3, 6, 13, 14. Fastest (nothing to build), but the demo "jumps tabs" at the mock points — fine for a technical audience, less smooth for investors.
 
-### Option B — inline the mocks into the real app as placeholder routes  ⭐ recommended
-Port each HTML mock into a React screen in the relevant app, behind a `DEMO`/placeholder flag, so the *real app itself* walks the whole path without leaving the browser. The screens are presentational (fixture data, no backend), so this is a UI-only lift.
+### Option B — inline the mocks into the real app as placeholder routes  ✅ DONE
+Ported each HTML mock into a real React screen in the app, so the *real app itself* walks the whole path without leaving the browser. The screens are presentational (fixture data, no backend) and each carries a subtle **Preview** chip. Shipped:
+
+- `apps/app` new routes: `/contacts/import`, `/condolences`, `/memorial/settings`, `/account/plan`, `/account/profile` (in `src/screens/preview/`); nav gains **Memorial** and **Account**; **Import** button on Contacts.
+- `apps/app/src/screens/Onboarding.tsx`: added a **Consent** step (now 7 steps), an **avatar** on Identity, and an **import** entry on Contacts.
+- `apps/app/src/screens/SignIn.tsx`: **Continue with Google / Apple** buttons.
+- New **`apps/memorial`** app (public, port 5276, Render service `lastlink-memorial`): the memorial page + condolences + offerings.
+
+All of it typechecks and production-builds clean. Original design intent below.
 
 - `apps/app`: add routes — `/account/plan` (billing), `/account/profile` (avatar), `/memorial/settings` (renewal), `/condolences` (moderation), a `/contacts/import` modal, and the consent/avatar/import additions to `Onboarding.tsx`. Add "Continue with Google/Apple" to `SignIn.tsx`.
 - New `apps/memorial` (or a route in `apps/message`): the public memorial + condolences page.
@@ -93,6 +100,6 @@ Advocate invites and recipient notifications **do not send in prod** — the Res
 
 ---
 
-## 6. Recommended next step
+## 6. Status & next step
 
-Say the word and I'll start **Option B**, beginning with the onboarding additions and social sign-in (smallest, earliest on the demo path), then the memorial surface. In parallel, the email fix is a config change you or I can land quickly once a domain is verified.
+**Option B is built** (all preview screens + the memorial app) and the **email fix config** is in `render.yaml` (`RESEND_FROM`) with a startup warning in the API. The one remaining action is yours: **verify a sending domain on Resend** (`notify.lastlink.com`) so email actually delivers — the code and config are ready for it. After that, Option C (the real schema + endpoints, per `GAP-ANALYSIS-ruby-vs-new.md` §7.3) is the roadmap to turn these previews into shipped features.

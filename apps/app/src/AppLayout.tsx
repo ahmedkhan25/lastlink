@@ -8,6 +8,8 @@ const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: "/compose", label: "Messages", icon: "pen" },
   { to: "/contacts", label: "Contacts", icon: "users" },
   { to: "/advocates", label: "Advocates", icon: "shield" },
+  { to: "/memorial/settings", label: "Memorial", icon: "candle" },
+  { to: "/account/plan", label: "Account", icon: "settings" },
 ];
 
 export function AppLayout() {
