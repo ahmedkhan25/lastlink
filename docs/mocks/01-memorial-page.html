@@ -1,0 +1,357 @@
+<title>Memorial page — LastLink mock</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* LastLink tokens — ported from packages/ui/src/styles.css so this mock
+     reads as the same product. Fonts fall back to system serif/sans/mono
+     because the Artifact CSP blocks font CDNs; the design intent carries. */
+  :root {
+    --bone:#FAF7F1; --bone-soft:#FCFAF6; --ivory:#FEFCF8; --sand:#EFE7D5; --sand-soft:#F5EFE0;
+    --ink:#1F1814; --ink-2:#44362C; --ink-3:#7C6A5B; --ink-4:#B8A896;
+    --line:rgba(31,24,20,0.10); --line-soft:rgba(31,24,20,0.05);
+    --brand-purple:#6B2CB0; --brand-blue:#2E73DC;
+    --brand-grad:linear-gradient(135deg,#6B2CB0 0%,#2E73DC 100%);
+    --brand-grad-soft:linear-gradient(135deg,rgba(107,44,176,0.10) 0%,rgba(46,115,220,0.10) 100%);
+    --ok:#2F7A55; --warn:#C0782A; --err:#9A3A2E;
+    --font-sans:"DM Sans",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    --font-serif:"Cormorant Garamond","Source Serif Pro",Georgia,serif;
+    --font-mono:"JetBrains Mono","SF Mono",ui-monospace,monospace;
+    --r-2:8px; --r-3:12px; --r-4:18px; --r-pill:999px;
+    --shadow-1:0 1px 2px rgba(31,24,20,0.03),0 1px 1px rgba(31,24,20,0.02);
+    --shadow-2:0 4px 14px rgba(31,24,20,0.05),0 1px 2px rgba(31,24,20,0.03);
+    --shadow-3:0 24px 50px -16px rgba(31,24,20,0.16),0 8px 20px rgba(31,24,20,0.05);
+    --bg:var(--bone); --surface:#FFFFFF; --surface-2:var(--bone-soft);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#14110E; --surface:#1C1813; --surface-2:#25201A;
+      --ink:#F4ECDD; --ink-2:#CDBFAB; --ink-3:#918172; --ink-4:#5E5448;
+      --line:rgba(244,236,221,0.10); --line-soft:rgba(244,236,221,0.05);
+      --brand-purple:#A87BE0; --brand-blue:#6FA8F5;
+      --shadow-2:0 4px 14px rgba(0,0,0,0.35),0 1px 2px rgba(0,0,0,0.3);
+      --shadow-3:0 24px 50px -16px rgba(0,0,0,0.6),0 8px 20px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:var(--bone); --surface:#FFFFFF; --surface-2:var(--bone-soft);
+    --ink:#1F1814; --ink-2:#44362C; --ink-3:#7C6A5B; --ink-4:#B8A896;
+    --line:rgba(31,24,20,0.10); --line-soft:rgba(31,24,20,0.05);
+    --brand-purple:#6B2CB0; --brand-blue:#2E73DC;
+  }
+  :root[data-theme="dark"]{
+    --bg:#14110E; --surface:#1C1813; --surface-2:#25201A;
+    --ink:#F4ECDD; --ink-2:#CDBFAB; --ink-3:#918172; --ink-4:#5E5448;
+    --line:rgba(244,236,221,0.10); --line-soft:rgba(244,236,221,0.05);
+    --brand-purple:#A87BE0; --brand-blue:#6FA8F5;
+    --shadow-2:0 4px 14px rgba(0,0,0,0.35),0 1px 2px rgba(0,0,0,0.3);
+    --shadow-3:0 24px 50px -16px rgba(0,0,0,0.6),0 8px 20px rgba(0,0,0,0.4);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);
+    -webkit-font-smoothing:antialiased;line-height:1.55}
+  .serif{font-family:var(--font-serif)}
+  .mono{font-family:var(--font-mono);letter-spacing:0.14em;text-transform:uppercase}
+  a{color:inherit}
+  img{max-width:100%}
+
+  /* ---- mock chrome: a small banner so no one mistakes this for the real page ---- */
+  .mockbar{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;
+    padding:8px 16px;background:var(--brand-grad);color:#fff;font-size:12px}
+  .mockbar .mono{letter-spacing:0.12em;font-size:11px}
+  .mockbar button{font:inherit;color:#fff;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);
+    border-radius:var(--r-pill);padding:3px 12px;cursor:pointer}
+
+  header.site{display:flex;align-items:center;justify-content:space-between;
+    max-width:1080px;margin:0 auto;padding:22px 24px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-serif);font-size:20px;font-weight:600}
+  .wing{width:26px;height:26px;flex:0 0 auto}
+
+  /* ---- memorial header ---- */
+  .memhead{max-width:1080px;margin:0 auto;padding:28px 24px 8px;
+    display:grid;grid-template-columns:180px 1fr;gap:32px;align-items:center}
+  .portrait{width:180px;height:220px;border-radius:var(--r-4);object-fit:cover;
+    background:var(--surface-2);box-shadow:var(--shadow-2);border:1px solid var(--line)}
+  .memhead h1{font-family:var(--font-serif);font-weight:500;letter-spacing:-0.02em;
+    font-size:clamp(40px,7vw,72px);line-height:1.02;margin:0;text-wrap:balance}
+  .dates{font-family:var(--font-serif);font-style:italic;font-size:24px;color:var(--ink-3);margin-top:6px}
+  .relation{margin-top:14px;font-size:15px;color:var(--ink-2)}
+
+  /* ---- tabs ---- */
+  nav.tabs{max-width:1080px;margin:22px auto 0;padding:0 24px;
+    display:flex;gap:28px;border-bottom:1px solid var(--line)}
+  .tab{appearance:none;background:none;border:0;cursor:pointer;padding:12px 2px 14px;
+    font-family:var(--font-mono);font-size:12px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brand-purple)}
+  .tab:focus-visible{outline:2px solid var(--brand-blue);outline-offset:3px;border-radius:2px}
+
+  main{max-width:1080px;margin:0 auto;padding:36px 24px 80px}
+  .panel[hidden]{display:none}
+
+  /* ---- About ---- */
+  .quote{font-family:var(--font-serif);font-style:italic;font-size:clamp(24px,3.4vw,34px);
+    line-height:1.35;color:var(--ink);max-width:20ch;margin:0 0 36px;text-wrap:balance}
+  .quote::before{content:"“";color:var(--ink-4)}
+  .quote::after{content:"”";color:var(--ink-4)}
+  .prose{max-width:62ch;font-size:18px;color:var(--ink-2);line-height:1.7}
+  .prose p{margin:0 0 18px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);
+    box-shadow:var(--shadow-1);padding:22px 24px}
+  .service{margin-top:36px;max-width:62ch;display:flex;gap:16px;align-items:flex-start}
+  .service .mono{font-size:10px;color:var(--ink-3);margin-bottom:6px}
+  .service .k{font-family:var(--font-serif);font-size:22px;font-weight:500;margin-bottom:4px}
+
+  .messages{margin-top:44px}
+  .messages h2,.sec-h{font-family:var(--font-serif);font-weight:500;font-size:28px;letter-spacing:-0.015em;margin:0 0 4px}
+  .sec-sub{color:var(--ink-3);font-size:14px;margin:0 0 20px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);
+    box-shadow:var(--shadow-1);overflow:hidden;cursor:pointer;transition:box-shadow .18s,transform .18s}
+  .tile:hover{box-shadow:var(--shadow-2);transform:translateY(-2px)}
+  .tile .thumb{height:132px;background:var(--brand-grad-soft);display:grid;place-items:center;color:var(--brand-purple)}
+  .tile .body{padding:14px 16px}
+  .tile .body .mono{font-size:10px;color:var(--ink-3)}
+  .tile .body .t{font-family:var(--font-serif);font-size:19px;font-weight:500;margin-top:4px}
+
+  /* ---- Condolences ---- */
+  .cond-grid{display:grid;grid-template-columns:1fr 340px;gap:32px;align-items:start}
+  .cond-list{display:flex;flex-direction:column;gap:16px}
+  .cond{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);
+    box-shadow:var(--shadow-1);padding:20px 22px}
+  .cond .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .cond .name{font-family:var(--font-serif);font-size:20px;font-weight:500}
+  .cond .when{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;color:var(--ink-3)}
+  .cond .rel{font-size:12px;color:var(--ink-3);margin-top:1px}
+  .cond .msg{margin-top:10px;color:var(--ink-2);font-size:16px;line-height:1.6}
+  .compose{position:sticky;top:20px}
+  .compose .card{padding:24px}
+  .compose h3{font-family:var(--font-serif);font-weight:500;font-size:24px;margin:0 0 4px}
+  .compose p.hint{color:var(--ink-3);font-size:13px;margin:0 0 18px}
+  label.fld{display:block;margin-bottom:14px}
+  label.fld .mono{font-size:10px;color:var(--ink-3);display:block;margin-bottom:6px}
+  .inp{width:100%;font:inherit;color:var(--ink);background:var(--surface-2);
+    border:1px solid var(--line);border-radius:var(--r-2);padding:10px 12px}
+  .inp:focus{outline:2px solid var(--brand-blue);outline-offset:1px;border-color:transparent}
+  textarea.inp{min-height:96px;resize:vertical}
+  .btn{font:inherit;font-weight:500;cursor:pointer;border-radius:var(--r-pill);padding:11px 20px;border:1px solid transparent}
+  .btn.primary{background:var(--brand-grad);color:#fff;box-shadow:var(--shadow-2)}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+  .btn:focus-visible{outline:2px solid var(--brand-blue);outline-offset:2px}
+  .moderation-note{margin-top:12px;font-size:12px;color:var(--ink-3);display:flex;gap:7px;align-items:flex-start}
+
+  /* ---- Remember them (offerings) ---- */
+  .offer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:22px}
+  .offer{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);
+    box-shadow:var(--shadow-1);padding:22px;display:flex;flex-direction:column;gap:10px}
+  .offer .ic{width:42px;height:42px;border-radius:var(--r-2);background:var(--brand-grad-soft);
+    display:grid;place-items:center;color:var(--brand-purple)}
+  .offer .t{font-family:var(--font-serif);font-size:22px;font-weight:500}
+  .offer .d{color:var(--ink-3);font-size:14px;flex:1}
+  .offer .row{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+  .offer .price{font-family:var(--font-mono);font-size:12px;color:var(--ink-2)}
+
+  /* ---- provenance footer ---- */
+  footer.prov{border-top:1px solid var(--line);background:var(--surface-2)}
+  .prov-in{max-width:1080px;margin:0 auto;padding:26px 24px;display:flex;gap:14px;
+    align-items:center;flex-wrap:wrap;justify-content:space-between}
+  .seal{display:flex;gap:10px;align-items:center;color:var(--ink-2);font-size:13px}
+  .seal .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+  .prov .mono{font-size:10px;color:var(--ink-3)}
+
+  @media (max-width:760px){
+    .memhead{grid-template-columns:1fr;text-align:center;justify-items:center}
+    .portrait{width:150px;height:184px}
+    .cond-grid{grid-template-columns:1fr}
+    .compose{position:static}
+  }
+</style>
+
+<div class="mockbar">
+  <span class="mono">Mock · GAP 1+2 · public memorial + condolences</span>
+  <span>Not a live page — presentational only</span>
+  <button id="themeBtn" type="button">Toggle light / dark</button>
+</div>
+
+<header class="site">
+  <div class="brand">
+    <svg class="wing" viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M16 6c-3 6-8 6-11 4 0 6 5 10 11 12 6-2 11-6 11-12-3 2-8 2-11-4z" fill="url(#g)"/>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="32" y2="32">
+        <stop offset="0" stop-color="#6B2CB0"/><stop offset="1" stop-color="#2E73DC"/>
+      </linearGradient></defs>
+    </svg>
+    LastLink
+  </div>
+  <div class="mono" style="font-size:11px;color:var(--ink-3)">In memory</div>
+</header>
+
+<section class="memhead">
+  <div class="portrait" role="img" aria-label="Portrait of Daniel Rourke"
+       style="display:grid;place-items:center;color:var(--ink-4)">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+      <circle cx="12" cy="9" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>
+    </svg>
+  </div>
+  <div>
+    <div class="mono" style="font-size:11px;color:var(--ink-3);margin-bottom:8px">A life remembered</div>
+    <h1>Daniel Rourke</h1>
+    <div class="dates">1962 &nbsp;–&nbsp; 2026</div>
+    <div class="relation">Father, carpenter, and the loudest laugh in any room. Dublin, Ireland.</div>
+  </div>
+</section>
+
+<nav class="tabs" role="tablist" aria-label="Memorial sections">
+  <button class="tab" role="tab" id="t-about" aria-controls="p-about" aria-selected="true">About</button>
+  <button class="tab" role="tab" id="t-cond" aria-controls="p-cond" aria-selected="false">Condolences</button>
+  <button class="tab" role="tab" id="t-rem" aria-controls="p-rem" aria-selected="false">Remember them</button>
+</nav>
+
+<main>
+  <!-- ABOUT -->
+  <section class="panel" id="p-about" role="tabpanel" aria-labelledby="t-about">
+    <p class="quote">Be kind. It costs nothing, and it outlives you.</p>
+    <div class="prose">
+      <p>Daniel built things with his hands and made everyone feel like the most interesting
+         person in the room. He loved terrible puns, strong coffee, and his family — roughly
+         in reverse order, though he'd never admit it.</p>
+      <p>He left messages for the people he loved, in his own voice, to be opened when the
+         time came. This page is the public face of his goodbye; the private letters and
+         videos reached each person directly.</p>
+    </div>
+
+    <div class="service">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brand-purple)" stroke-width="1.4" style="margin-top:6px">
+        <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>
+      </svg>
+      <div class="card" style="flex:1">
+        <div class="mono">Service &amp; wishes</div>
+        <div class="k">Saturday 14 June, 11:00</div>
+        <div style="color:var(--ink-2)">St. Mary's, Haddington Road, Dublin. No flowers, by his
+          request — a donation to the hospice that cared for him means more.</div>
+      </div>
+    </div>
+
+    <div class="messages">
+      <h2 class="sec-h">Shared with everyone</h2>
+      <p class="sec-sub">Messages Daniel chose to make public. Private ones went straight to each person.</p>
+      <div class="tiles">
+        <article class="tile" tabindex="0">
+          <div class="thumb"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><polygon points="9 7 17 12 9 17 9 7"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg></div>
+          <div class="body"><div class="mono">Video · 2:14</div><div class="t">To everyone who knew me</div></div>
+        </article>
+        <article class="tile" tabindex="0">
+          <div class="thumb"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 5h16v14H4z"/><path d="M7 9h10M7 13h6"/></svg></div>
+          <div class="body"><div class="mono">Letter</div><div class="t">A few last thoughts</div></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONDOLENCES -->
+  <section class="panel" id="p-cond" role="tabpanel" aria-labelledby="t-cond" hidden>
+    <h2 class="sec-h">Condolences</h2>
+    <p class="sec-sub">Notes from people who loved Daniel. New messages appear after a family member approves them.</p>
+    <div class="cond-grid">
+      <div class="cond-list">
+        <article class="cond">
+          <div class="top"><span class="name">Sarah Chen</span><span class="when">2 days ago</span></div>
+          <div class="rel">Colleague &amp; friend</div>
+          <p class="msg">He was the kindest man I ever worked with, and the most patient teacher.
+             I still hear his voice when I measure twice. I'll miss him terribly.</p>
+        </article>
+        <article class="cond">
+          <div class="top"><span class="name">Michael Rivera</span><span class="when">3 days ago</span></div>
+          <div class="rel">Neighbour</div>
+          <p class="msg">Thinking of the whole family. Daniel talked about you all constantly —
+             you were his proudest work by a mile.</p>
+        </article>
+        <article class="cond">
+          <div class="top"><span class="name">Aunt Peggy</span><span class="when">4 days ago</span></div>
+          <div class="rel">Family</div>
+          <p class="msg">From a boy who couldn't sit still to a man who held everyone together.
+             Rest easy, Danny.</p>
+        </article>
+      </div>
+
+      <aside class="compose">
+        <div class="card">
+          <h3>Share a memory</h3>
+          <p class="hint">A few words the family will treasure. It'll appear once approved.</p>
+          <label class="fld"><span class="mono">Your name</span><input class="inp" type="text" placeholder="e.g. Sarah Chen"></label>
+          <label class="fld"><span class="mono">Email (not shown publicly)</span><input class="inp" type="email" placeholder="you@example.com"></label>
+          <label class="fld"><span class="mono">Your message</span><textarea class="inp" placeholder="A memory, a thank you, a goodbye…"></textarea></label>
+          <button class="btn primary" type="button" style="width:100%">Leave your message</button>
+          <div class="moderation-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.6" style="margin-top:2px;flex:0 0 auto"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>
+            <span>Messages are reviewed before they appear, to keep this page gentle for the family.</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- REMEMBER THEM -->
+  <section class="panel" id="p-rem" role="tabpanel" aria-labelledby="t-rem" hidden>
+    <h2 class="sec-h">Remember them</h2>
+    <p class="sec-sub">Ways to honour Daniel, chosen with the family. No pressure, ever.</p>
+    <div class="offer-grid">
+      <div class="offer">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></div>
+        <div class="t">Send flowers</div>
+        <div class="d">A quiet arrangement delivered to the service, through a local florist.</div>
+        <div class="row"><span class="price">From €45</span><button class="btn ghost" type="button">Choose</button></div>
+      </div>
+      <div class="offer">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 21s-7-4.5-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.5-9 9-9 9z"/></svg></div>
+        <div class="t">Donate to the hospice</div>
+        <div class="d">In lieu of flowers, as Daniel asked. Every euro goes to Our Lady's Hospice.</div>
+        <div class="row"><span class="price">Any amount</span><button class="btn ghost" type="button">Donate</button></div>
+      </div>
+      <div class="offer">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 4h16v14H8l-4 3z"/></svg></div>
+        <div class="t">Plant a tree in his name</div>
+        <div class="d">A native oak in the Wicklow hills he walked every Sunday, with a note of who it's for.</div>
+        <div class="row"><span class="price">€30</span><button class="btn ghost" type="button">Choose</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="prov">
+  <div class="prov-in">
+    <div class="seal">
+      <span class="dot" aria-hidden="true"></span>
+      <span>Verified by two advocates · passing confirmed 11 June 2026</span>
+    </div>
+    <div class="mono">LastLink · the link expires, the message stays</div>
+  </div>
+</footer>
+
+<script>
+  // Tabs
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  const panels = { 't-about':'p-about', 't-cond':'p-cond', 't-rem':'p-rem' };
+  function select(id){
+    tabs.forEach(t=>{
+      const on = t.id===id;
+      t.setAttribute('aria-selected', on ? 'true':'false');
+      document.getElementById(panels[t.id]).hidden = !on;
+    });
+  }
+  tabs.forEach(t=>{
+    t.addEventListener('click', ()=>select(t.id));
+    t.addEventListener('keydown', e=>{
+      const i = tabs.indexOf(t);
+      if(e.key==='ArrowRight'){ tabs[(i+1)%tabs.length].focus(); tabs[(i+1)%tabs.length].click(); }
+      if(e.key==='ArrowLeft'){ tabs[(i-1+tabs.length)%tabs.length].focus(); tabs[(i-1+tabs.length)%tabs.length].click(); }
+    });
+  });
+
+  // Theme toggle (stamps data-theme so it wins over prefers-color-scheme both ways)
+  const root = document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click', ()=>{
+    const cur = root.getAttribute('data-theme')
+      || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    root.setAttribute('data-theme', cur==='dark' ? 'light' : 'dark');
+  });
+</script>
