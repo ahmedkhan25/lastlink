@@ -38,6 +38,14 @@ services:
       # the account owner. See docs/EMAIL-prod-not-sending.md.
       - key: RESEND_FROM
         value: LastLink <notify@lastlink.care>
+      # DEMO ONLY — shortens the mandatory 24h safety hold to 2 minutes so the
+      # advocate flow can be demoed end to end. REMOVE for production (the real
+      # hold is 24h; unset falls back to that default).
+      - key: HOLD_DURATION_MS
+        value: "120000"
+      # Advocate re-entry surface — the registrant app links to it ("I'm an advocate").
+      - key: VITE_ADVOCATE_URL
+        value: https://lastlink-advocate.onrender.com
       - fromGroup: lastlink
 
   # ── Advocate accept surface (static SPA, token-based → no cookies) ────────
@@ -100,6 +108,9 @@ services:
       # CTAs ("Begin your LastLink") point at the registrant app.
       - key: VITE_APP_URL
         value: https://lastlink-web.onrender.com
+      # "I'm an advocate" points at the advocate re-entry surface.
+      - key: VITE_ADVOCATE_URL
+        value: https://lastlink-advocate.onrender.com
     routes:
       - type: rewrite
         source: "/*"

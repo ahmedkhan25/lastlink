@@ -143,6 +143,9 @@ export function Confirm() {
               <span className="mono" style={{ fontSize: 40, fontWeight: 600, color: "var(--ink)" }}>{fmt(hold)}</span>
               <span className="mono" style={{ fontSize: 11, letterSpacing: "0.14em", color: "var(--ink-3)" }}>UNTIL RELEASE</span>
             </div>
+            <p className="mono" style={{ fontSize: 10, letterSpacing: "0.1em", color: "var(--ink-3)", textAlign: "center", marginTop: -6 }}>
+              (DEMO ONLY — SHORTENED; THE REAL SAFETY HOLD IS 24 HOURS)
+            </p>
             {err && err !== "invalid" && <p style={errStyle}>{err}</p>}
             <button className="ll-btn" disabled={busy} onClick={() => post("cancel")}
               style={{ ...primaryBtn, background: "var(--bone)", color: "var(--danger, #b3261e)", border: "1px solid var(--danger, #b3261e)" }}>

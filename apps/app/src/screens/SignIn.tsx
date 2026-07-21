@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, Icon } from "@lastlink/ui";
 import { signIn, signUp } from "../lib/auth.js";
-import { getMarketingUrl } from "../lib/api.js";
+import { getMarketingUrl, getAdvocateUrl } from "../lib/api.js";
 import { GoogleMark, AppleMark } from "./preview/_shared.js";
 
 export function SignIn() {
@@ -81,6 +81,12 @@ export function SignIn() {
             {mode === "signup" ? "Sign in" : "Begin your LastLink"}
           </button>
         </p>
+        <div style={{ textAlign: "center", marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--line)" }}>
+          <a href={getAdvocateUrl()} className="ll-btn secondary" style={{ textDecoration: "none" }}>
+            <Icon name="shield" size={15} color="var(--ink)" /> I'm an advocate
+          </a>
+          <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 10 }}>Named as someone's advocate? Enter here — no account needed.</p>
+        </div>
       </div>
     </div>
   );

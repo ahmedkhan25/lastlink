@@ -3,6 +3,8 @@ import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
 
 // CTAs point at the registrant app. In prod, set VITE_APP_URL to the lastlink-web URL.
 const APP = import.meta.env.VITE_APP_URL ?? "http://localhost:5273";
+// Advocate re-entry surface — for someone named as an advocate, whenever the day comes.
+const ADVOCATE = import.meta.env.VITE_ADVOCATE_URL ?? "http://localhost:5274";
 
 export function Marketing() {
   return (
@@ -39,6 +41,7 @@ const Nav = () => (
       <a href="#enterprise">For organizations</a>
     </nav>
     <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+      <a href={ADVOCATE} className="ll-btn ghost ll-hide-mobile">I'm an advocate</a>
       <a href={APP} className="ll-btn ghost ll-hide-mobile">Sign in</a>
       <a href={APP} className="ll-btn">Begin your LastLink</a>
     </div>

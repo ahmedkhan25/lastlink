@@ -10,6 +10,11 @@ export function getMarketingUrl(): string {
   return import.meta.env.VITE_MARKETING_URL ?? "https://lastlink-marketing.onrender.com";
 }
 
+/** Advocate re-entry surface — for someone named as an advocate, whenever the day comes. */
+export function getAdvocateUrl(): string {
+  return import.meta.env.VITE_ADVOCATE_URL ?? "http://localhost:5274";
+}
+
 export interface GqlError {
   message: string;
 }
