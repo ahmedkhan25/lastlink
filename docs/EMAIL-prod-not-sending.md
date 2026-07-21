@@ -29,15 +29,16 @@ With an unverified domain, **Resend only allows delivery to the account owner's 
 
 This is exactly the caveat `docs/PRODUCT-STATUS.md` flagged ("dev-tier Resend key, no verified domain — real emails only land in one test inbox"), now actively blocking every real send.
 
-## Fix (three steps — needs Resend + DNS access)
+## Fix
 
-1. **Verify a sending domain on Resend** — `resend.com/domains`. Architecture §11.2 wants `notify.lastlink.com` (transactional). Add the SPF / DKIM / DMARC DNS records Resend generates at the registrar. If `lastlink.com` isn't provisioned yet, verify any domain you already control (a subdomain is fine) to unblock immediately.
-2. **Set `RESEND_FROM`** on the `lastlink-web` service to an address on that verified domain, e.g. `LastLink <notify@notify.lastlink.com>`. Also add it to `render.yaml` so it's not lost on the next blueprint sync:
-   ```yaml
-   - key: RESEND_FROM
-     value: LastLink <notify@notify.lastlink.com>
-   ```
-3. **Redeploy** `lastlink-web` so the new env is picked up, then send one live test to a non-owner address and confirm a `200`/message-id in the logs instead of the 403.
+The verified domain in Resend is **`lastlink.care`** (`resend.com/domains` → Verified). So the sender must be an address on that domain.
+
+1. **`RESEND_FROM` is set in `render.yaml`** to `LastLink <notify@lastlink.care>` on `lastlink-web`.
+   > ⚠️ An earlier value pointed at `notify.lastlink.com` (unverified — wrong TLD/subdomain), which produced `"The notify.lastlink.com domain is not verified"`. It must be an address on the **verified** domain `lastlink.care`.
+2. **Redeploy / sync the blueprint** so `lastlink-web` picks up the env value (or set the same value directly in the Render dashboard for immediate effect).
+3. Send one live test to a non-owner address and confirm a message-id in the logs and a `Delivered` row in the Resend dashboard — no more 403.
+
+With `lastlink.care` verified, Resend delivers to **any** recipient (including Gmail `+alias` addresses), not just the account owner.
 
 ## Notes
 

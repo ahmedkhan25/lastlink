@@ -32,13 +32,12 @@ services:
         value: https://lastlink-advocate.onrender.com
       - key: MESSAGE_BASE_URL
         value: https://lastlink-message.onrender.com
-      # Resend sender. Without this the API falls back to onboarding@resend.dev,
-      # which (on an account with no verified domain) can ONLY deliver to the
-      # account owner — every other recipient 403s and email silently fails.
-      # This value REQUIRES the domain to be verified at resend.com/domains
-      # (SPF/DKIM/DMARC). See docs/EMAIL-prod-not-sending.md.
+      # Resend sender — MUST be an address on a domain verified in Resend.
+      # The verified domain is lastlink.care (resend.com/domains). Without this,
+      # the API falls back to onboarding@resend.dev, which can only deliver to
+      # the account owner. See docs/EMAIL-prod-not-sending.md.
       - key: RESEND_FROM
-        value: LastLink <notify@notify.lastlink.com>
+        value: LastLink <notify@lastlink.care>
       - fromGroup: lastlink
 
   # ── Advocate accept surface (static SPA, token-based → no cookies) ────────
