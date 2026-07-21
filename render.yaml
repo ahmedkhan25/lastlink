@@ -46,6 +46,12 @@ services:
       # Advocate re-entry surface — the registrant app links to it ("I'm an advocate").
       - key: VITE_ADVOCATE_URL
         value: https://lastlink-advocate.onrender.com
+      # DEMO ONLY — enables the "Reset demo" button (VITE_DEMO) and its endpoint
+      # (DEMO_RESET), which resurrect a registrant to re-run the flow. REMOVE for prod.
+      - key: VITE_DEMO
+        value: "true"
+      - key: DEMO_RESET
+        value: "true"
       - fromGroup: lastlink
 
   # ── Advocate accept surface (static SPA, token-based → no cookies) ────────

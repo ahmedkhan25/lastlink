@@ -8,7 +8,7 @@ import { logEvent } from "./audit.js";
 import { auth } from "./auth.js";
 import { graphqlProxy } from "./graphql-proxy.js";
 import { saveLetter } from "./messages.js";
-import { sealAccount } from "./account.js";
+import { sealAccount, demoReset } from "./account.js";
 import { uploadInit, mediaRefresh, playbackToken, muxWebhook } from "./video.js";
 import { inviteAdvocate, getInvite, acceptInvite, requestAdvocateLink } from "./advocates.js";
 import { getCase, initiateCase, confirmCase, cancelCase, releaseNow } from "./case.js";
@@ -51,6 +51,7 @@ app.post("/graphql", graphqlProxy);
 // Sensitive consequence endpoints (Express, never Hasura).
 app.post("/api/messages/:id/letter", saveLetter);
 app.post("/api/account/seal", sealAccount);
+app.post("/api/demo/reset", demoReset); // DEMO ONLY (DEMO_RESET=true) — resurrect the registrant to re-run the flow
 // Video (Mux). Local dev polls /media/refresh; prod adds the /webhooks/mux handler.
 app.post("/api/messages/:id/upload-init", uploadInit);
 app.post("/api/messages/:id/media/refresh", mediaRefresh);

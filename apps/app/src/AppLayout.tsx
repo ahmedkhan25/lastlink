@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { NavLink, Outlet, Navigate, useNavigate } from "react-router-dom";
 import { Logo, Icon, type IconName } from "@lastlink/ui";
 import { useSession, signOut } from "./lib/auth.js";
-import { getMarketingUrl } from "./lib/api.js";
+import { getMarketingUrl, postApi } from "./lib/api.js";
+import { useConfirm } from "./components/ConfirmProvider.js";
 
 const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: "/dashboard", label: "Dashboard", icon: "home" },
@@ -15,6 +17,25 @@ const NAV: { to: string; label: string; icon: IconName }[] = [
 export function AppLayout() {
   const { data: session, isPending } = useSession();
   const navigate = useNavigate();
+  const confirm = useConfirm();
+  const [resetting, setResetting] = useState(false);
+  const demo = import.meta.env.VITE_DEMO === "true";
+
+  async function resetDemo() {
+    const ok = await confirm({
+      title: "Reset for a fresh demo?",
+      message: "This undoes any death confirmation and release for this account — it's as if the passing never happened. Messages and contacts are kept. Use this to demo the flow again.",
+      confirmLabel: "Reset demo",
+    });
+    if (!ok) return;
+    setResetting(true);
+    try {
+      await postApi("/api/demo/reset");
+      window.location.assign("/dashboard");
+    } catch {
+      setResetting(false);
+    }
+  }
 
   if (isPending) {
     return <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--ink-3)" }}>Loading…</div>;
@@ -82,6 +103,21 @@ export function AppLayout() {
             </div>
             <div style={{ marginTop: 4 }}>Nothing you need to do today.</div>
           </div>
+          {demo && (
+            <button
+              onClick={resetDemo}
+              disabled={resetting}
+              title="Undo the death confirmation & release so you can demo again"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: "9px 12px", borderRadius: "var(--r-2)", cursor: "pointer",
+                background: "transparent", border: "1px dashed var(--line)", color: "var(--ink-2)", fontSize: 13,
+              }}
+            >
+              <Icon name="clock" size={14} color="var(--ink-3)" />
+              {resetting ? "Resetting…" : "Reset demo"}
+            </button>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 4px" }}>
             <div
               style={{
