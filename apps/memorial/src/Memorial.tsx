@@ -48,9 +48,11 @@ export function Memorial() {
 
       {/* portrait + identity */}
       <section style={{ ...wrap, display: "flex", gap: 26, padding: "20px 24px 8px", alignItems: "flex-start", flexWrap: "wrap" }}>
-        <div style={{ ...card, width: 150, height: 184, display: "grid", placeItems: "center", color: "var(--ink-4)" }}>
-          <Icon name="user" size={54} color="var(--ink-4)" />
-        </div>
+        <img
+          src="/assets/daniel.jpg"
+          alt={`Portrait of ${PERSON.name}`}
+          style={{ width: 150, height: 184, objectFit: "cover", borderRadius: "var(--r-3)", border: "1px solid var(--line)", boxShadow: "var(--shadow-1)" }}
+        />
         <div style={{ flex: 1, minWidth: 240 }}>
           <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginBottom: 8 }}>A life remembered</div>
           <div className="serif" style={{ fontSize: 58, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.02 }}>{PERSON.name}</div>
