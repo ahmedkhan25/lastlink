@@ -41,7 +41,7 @@ export function Memorial() {
 
       <header style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 24px" }}>
         <div className="serif" style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 20, fontWeight: 600 }}>
-          <img src="/assets/lastlink-mark.png" alt="" style={{ height: 24 }} /> LastLink
+          <img src="/assets/lastlink-mark.svg" alt="" style={{ height: 24 }} /> LastLink
         </div>
         <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>In memory</div>
       </header>
