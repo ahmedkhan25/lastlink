@@ -115,6 +115,16 @@ export function GoogleMark({ size = 18 }: { size?: number }) {
   );
 }
 
+/** Facebook mark (presentational). */
+export function FacebookMark({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="12" fill="#1877F2" />
+      <path fill="#fff" d="M15.1 12.5l.44-2.86h-2.74V7.78c0-.78.38-1.55 1.6-1.55h1.25V3.8s-1.13-.19-2.21-.19c-2.26 0-3.73 1.37-3.73 3.84v2.18H7.2v2.86h2.5V19.4a9.9 9.9 0 003.08 0v-6.9h2.3z" />
+    </svg>
+  );
+}
+
 /** Apple mark (presentational). */
 export function AppleMark({ size = 18 }: { size?: number }) {
   return (

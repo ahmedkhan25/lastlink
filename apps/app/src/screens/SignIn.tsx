@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Logo, Icon } from "@lastlink/ui";
 import { signIn, signUp } from "../lib/auth.js";
 import { getMarketingUrl, getAdvocateUrl } from "../lib/api.js";
-import { GoogleMark, AppleMark } from "./preview/_shared.js";
+import { GoogleMark, AppleMark, FacebookMark } from "./preview/_shared.js";
 
 export function SignIn() {
   const [mode, setMode] = useState<"signin" | "signup">("signup");
@@ -56,9 +56,12 @@ export function SignIn() {
             <button type="button" onClick={() => setSocialNote(true)} className="ll-btn secondary" style={{ width: "100%", justifyContent: "center" }}>
               <AppleMark size={18} /> Continue with Apple
             </button>
+            <button type="button" onClick={() => setSocialNote(true)} className="ll-btn secondary" style={{ width: "100%", justifyContent: "center" }}>
+              <FacebookMark size={18} /> Continue with Facebook
+            </button>
             {socialNote && (
-              <div style={{ fontSize: 12, color: "var(--ink-3)", textAlign: "center" }}>
-                Social sign-in preview — enable a provider in Better Auth to turn this on.
+              <div style={{ fontSize: 12.5, color: "var(--ink-3)", textAlign: "center" }}>
+                Preview — coming soon.
               </div>
             )}
           </div>
