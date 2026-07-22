@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
 import { gql, postApi, getApiUrl } from "../lib/api.js";
 import { useSession } from "../lib/auth.js";
@@ -14,7 +13,6 @@ const STEPS = ["Welcome", "Consent", "Identity", "Contacts", "Message", "Advocat
 
 export function Onboarding() {
   const [step, setStep] = useState(0);
-  const navigate = useNavigate();
   const { data: session } = useSession();
   const fullName = session?.user?.name ?? "";
   const firstName = fullName.split(" ")[0] || "there";
@@ -41,7 +39,7 @@ export function Onboarding() {
         {step === 3 && <ContactsStep onNext={next} />}
         {step === 4 && <MessageStep onNext={next} />}
         {step === 5 && <AdvocatesStep onNext={next} />}
-        {step === 6 && <Done onDone={() => navigate("/dashboard")} />}
+        {step === 6 && <Done onDone={() => window.location.assign("/dashboard")} />}
       </div>
     </div>
   );
@@ -165,10 +163,10 @@ const ADD_CONTACT = `mutation($n: String!, $r: String, $e: String) { insert_app_
 const GROUPS = ["Family", "Close friends", "Business"];
 
 function ContactsStep({ onNext }: { onNext: () => void }) {
-  const navigate = useNavigate();
   const [contacts, setContacts] = useState<OBContact[]>([]);
   const [form, setForm] = useState({ name: "", rel: "Family", email: "" });
   const [busy, setBusy] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const refresh = () => gql<{ app_contacts: OBContact[] }>(LIST_CONTACTS).then((d) => setContacts(d.app_contacts));
   useEffect(() => { let a = true; gql<{ app_contacts: OBContact[] }>(LIST_CONTACTS).then((d) => a && setContacts(d.app_contacts)); return () => { a = false; }; }, []);
 
@@ -186,9 +184,23 @@ function ContactsStep({ onNext }: { onNext: () => void }) {
     <div style={{ maxWidth: 760, width: "100%" }}>
       <h1 className="serif" style={{ fontSize: 40, fontWeight: 500, margin: 0 }}>Who should be told?</h1>
       <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 16px", maxWidth: 600 }}>Start with the people closest to you. You can add more anytime — there's no rush.</p>
-      <button type="button" onClick={() => navigate("/contacts/import")} className="ll-btn secondary" style={{ marginBottom: 16 }}>
+      {/* Inline import preview — stays inside onboarding (does NOT navigate to
+          the dashboard). The full import screen lives at /contacts/import for
+          after onboarding. */}
+      <button type="button" onClick={() => setShowImport((v) => !v)} className="ll-btn secondary" style={{ marginBottom: showImport ? 12 : 16 }}>
         <Icon name="users" size={14} color="var(--ink)" /> Import from Google or CSV
       </button>
+      {showImport && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 200px", justifyContent: "center" }}>Connect Google</button>
+            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 200px", justifyContent: "center" }}>Upload a CSV</button>
+          </div>
+          <div style={{ fontSize: 12.5, color: "var(--ink-3)", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-2)", padding: "10px 12px" }}>
+            Connect a source to bring your contacts in, then review and tag them before saving. For now, add people below — you can import anytime from Contacts.
+          </div>
+        </div>
+      )}
       <form onSubmit={add} style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
         <input placeholder="Full name (required)" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={obInput} />
         <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={obInput} />

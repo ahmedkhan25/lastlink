@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { Logo, Icon } from "@lastlink/ui";
 import { signIn, signUp } from "../lib/auth.js";
 import { getMarketingUrl, getAdvocateUrl } from "../lib/api.js";
@@ -13,7 +12,6 @@ export function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [socialNote, setSocialNote] = useState(false);
-  const navigate = useNavigate();
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -28,7 +26,12 @@ export function SignIn() {
       setError(res.error.message ?? "Something went wrong");
       return;
     }
-    navigate(mode === "signup" ? "/onboarding" : "/dashboard");
+    // Full-page navigation (not client-side navigate): the session cookie is
+    // freshly set, and a hard load makes AppLayout's useSession read it from
+    // scratch. A client-side navigate can race the stale (logged-out) session
+    // and bounce back to /signin. Onboarding gate then routes new users to
+    // /onboarding by account_state, so /dashboard is always a safe target.
+    window.location.assign(mode === "signup" ? "/onboarding" : "/dashboard");
   }
 
   return (

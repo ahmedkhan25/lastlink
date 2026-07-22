@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, Navigate, useNavigate } from "react-router-dom";
 import { Logo, Icon, type IconName } from "@lastlink/ui";
 import { useSession, signOut } from "./lib/auth.js";
-import { getMarketingUrl, postApi } from "./lib/api.js";
+import { getMarketingUrl, postApi, gql } from "./lib/api.js";
 import { useConfirm } from "./components/ConfirmProvider.js";
 
 const NAV: { to: string; label: string; icon: IconName }[] = [
@@ -20,6 +20,21 @@ export function AppLayout() {
   const confirm = useConfirm();
   const [resetting, setResetting] = useState(false);
   const demo = import.meta.env.VITE_DEMO === "true";
+
+  // Onboarding gate: keep an un-sealed registrant in the onboarding flow. Until
+  // account_state leaves 'onboarding' (the Done step seals the account), every
+  // app route redirects to /onboarding — so "add contacts" etc. can't drop the
+  // user into the dashboard mid-onboarding. "loading" until we know.
+  const [acctState, setAcctState] = useState<string | null | "loading">("loading");
+  const userId = session?.user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    gql<{ app_registrants: { account_state: string }[] }>("query { app_registrants { account_state } }")
+      .then((d) => active && setAcctState(d.app_registrants[0]?.account_state ?? null))
+      .catch(() => active && setAcctState(null)); // fail open — don't lock out on a transient error
+    return () => { active = false; };
+  }, [userId]);
 
   async function resetDemo() {
     const ok = await confirm({
@@ -41,6 +56,10 @@ export function AppLayout() {
     return <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--ink-3)" }}>Loading…</div>;
   }
   if (!session) return <Navigate to="/signin" replace />;
+  if (acctState === "loading") {
+    return <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--ink-3)" }}>Loading…</div>;
+  }
+  if (acctState === "onboarding") return <Navigate to="/onboarding" replace />;
 
   const displayName = session.user.name || session.user.email;
   const initial = (displayName || "?").charAt(0).toUpperCase();
