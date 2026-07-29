@@ -52,6 +52,11 @@ services:
         value: "true"
       - key: DEMO_RESET
         value: "true"
+      # DEMO ONLY — contact import from "Google"/"Facebook". The OAuth handshake is
+      # simulated and the directory is fixed lastlink.care test users. REMOVE for prod
+      # (or leave off until the real People API / Graph API connectors land).
+      - key: DEMO_CONTACT_IMPORT
+        value: "true"
       - fromGroup: lastlink
 
   # ── Advocate accept surface (static SPA, token-based → no cookies) ────────

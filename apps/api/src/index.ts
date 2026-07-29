@@ -9,6 +9,7 @@ import { auth } from "./auth.js";
 import { graphqlProxy } from "./graphql-proxy.js";
 import { saveLetter } from "./messages.js";
 import { sealAccount, demoReset } from "./account.js";
+import { previewImport, commitImport } from "./contacts-import.js";
 import { uploadInit, mediaRefresh, playbackToken, muxWebhook } from "./video.js";
 import { inviteAdvocate, getInvite, acceptInvite, requestAdvocateLink } from "./advocates.js";
 import { getCase, initiateCase, confirmCase, cancelCase, releaseNow } from "./case.js";
@@ -52,6 +53,10 @@ app.post("/graphql", graphqlProxy);
 app.post("/api/messages/:id/letter", saveLetter);
 app.post("/api/account/seal", sealAccount);
 app.post("/api/demo/reset", demoReset); // DEMO ONLY (DEMO_RESET=true) — resurrect the registrant to re-run the flow
+// Contact import from a connected account. DEMO ONLY (DEMO_CONTACT_IMPORT=true):
+// the OAuth handshake is simulated and the directory is fixed lastlink.care test users.
+app.get("/api/contacts/import/:provider", previewImport);
+app.post("/api/contacts/import/:provider", commitImport);
 // Video (Mux). Local dev polls /media/refresh; prod adds the /webhooks/mux handler.
 app.post("/api/messages/:id/upload-init", uploadInit);
 app.post("/api/messages/:id/media/refresh", mediaRefresh);
