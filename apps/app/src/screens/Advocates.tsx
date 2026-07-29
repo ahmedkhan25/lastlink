@@ -20,7 +20,7 @@ const ADD = `mutation($slot: String!, $name: String!, $email: String!) {
 }`;
 
 const TIMELINE = [
-  { t: "Advocate A confirms", d: "Identity + death details, independently.", icon: "fingerprint" },
+  { t: "Advocate A confirms", d: "Identity + passing details, independently.", icon: "fingerprint" },
   { t: "Advocate B confirms", d: "The second, separately. Neither acts alone.", icon: "shield" },
   { t: "24-hour hold", d: "A full day to pause. Either advocate can stop it.", icon: "clock" },
   { t: "Release authorized", d: "Only if the day passes with no cancel.", icon: "check" },
@@ -128,7 +128,7 @@ export function Advocates() {
 
       <div style={{ padding: 28, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)" }}>
         <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>What happens when the time comes</h2>
-        <p style={{ fontSize: 13, color: "var(--ink-3)", margin: "0 0 28px" }}>The patent-pending workflow — a 24-hour hold, fully cancellable, before any release.</p>
+        <p style={{ fontSize: 13, color: "var(--ink-3)", margin: "0 0 28px" }}>The patented workflow — a 24-hour hold, fully cancellable, before any release.</p>
         <ReleaseTimeline />
       </div>
     </div>

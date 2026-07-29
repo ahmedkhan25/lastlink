@@ -36,7 +36,7 @@ const Nav = () => (
     <nav style={{ display: "flex", gap: 36, fontSize: 14, color: "var(--ink-2)" }}>
       <a href="#how">How it works</a>
       <a href="#trust">Trust &amp; security</a>
-      <a href="#scenarios">Who it's for</a>
+      <a href="#messages">Your messages</a>
       <a href="#pricing">Pricing</a>
       <a href="#enterprise">For organizations</a>
     </nav>
@@ -58,7 +58,7 @@ const Hero = () => (
     <div>
       <div className="ll-chip" style={{ marginBottom: 28 }}>
         <span className="dot" />
-        Patent-pending dual-advocate verification
+        Patented dual-advocate verification
       </div>
       <h1 className="serif" style={{
         fontSize: 92, lineHeight: 0.98, margin: "0 0 28px",
@@ -85,7 +85,7 @@ const Hero = () => (
       }}>
         <Reassure icon="shield" label="Verified by two independent advocates" />
         <Reassure icon="lock" label="Encrypted at rest · SOC&nbsp;2 audit underway" />
-        <Reassure icon="leaf" label="10 minutes to register · free forever" />
+        <Reassure icon="leaf" label="10 minutes to register · free to begin" />
       </div>
     </div>
     <HeroCard />
@@ -171,7 +171,7 @@ const ProblemStrip = () => {
           fontSize: 56, lineHeight: 1.05, margin: "0 0 56px",
           letterSpacing: "-0.015em", maxWidth: 980, fontWeight: 500, textWrap: "pretty",
         }}>
-          In America, <span style={{ color: "var(--brand-purple)" }}>3.7 million people</span> die each year.
+          In America, <span style={{ color: "var(--brand-purple)" }}>3.7 million people</span> pass each year.
           Each one leaves behind about <span style={{ color: "var(--brand-blue)" }}>150 relationships</span> who deserve to be told —
           and most of them won't be.
         </h2>
@@ -227,17 +227,15 @@ const ProblemStrip = () => {
 // ----------------------------------------------------------- HOW IT WORKS
 const HowItWorks = () => {
   const [active, setActive] = useState(0);
+  // Three user-facing steps. Contact lists are assembled in the background as
+  // you go, so collecting them is deliberately not a step of its own.
   const steps = [
-    { n: "01", title: "Register, free", sub: "10 minutes. A lifetime of peace.",
-      body: "Create your account, verify your identity, and build contact lists across Family, Friends, and Business." },
-    { n: "02", title: "Write what matters", sub: "Your voice, your way.",
+    { n: "01", title: "Sign up", sub: "10 minutes. A lifetime of peace.",
+      body: "Create your account and verify your identity. That's the whole of it — your contacts come together in the background as you go." },
+    { n: "02", title: "Pick your advocates", sub: "The people you trust most.",
+      body: "Two people you choose, who each confirm independently. Neither can act alone, and either can stop a release." },
+    { n: "03", title: "Leave your message", sub: "Your voice, your way.",
       body: "Record video or audio. Type a letter. Send something different to each group — or one message for everyone." },
-    { n: "03", title: "Designate two advocates", sub: "The people you trust most.",
-      body: "Two independent people confirm your passing before anything is ever sent. Zero false positives, ever." },
-    { n: "04", title: "Verified trigger", sub: "Patent-pending workflow.",
-      body: "Both advocates confirm, with identity checks. Only then does LastLink begin to deliver — never before." },
-    { n: "05", title: "Dignified delivery", sub: "Everyone, at the same moment.",
-      body: "Family, friends, colleagues — each receives a private, personal notification with your message inside." },
   ];
   return (
     <section id="how" style={{ padding: "120px 64px 96px", maxWidth: 1280, margin: "0 auto" }}>
@@ -248,7 +246,7 @@ const HowItWorks = () => {
             fontSize: 64, lineHeight: 1.02, margin: 0, letterSpacing: "-0.015em",
             fontWeight: 500, maxWidth: 720, textWrap: "pretty",
           }}>
-            Five quiet steps.<br />One last act of love.
+            Three quiet steps.<br />One last act of love.
           </h2>
         </div>
         <div className="ll-hide-mobile" style={{ color: "var(--ink-3)", fontSize: 13, maxWidth: 280, textAlign: "right" }}>
@@ -282,7 +280,7 @@ const HowItWorks = () => {
 
         <div className="ll-howpanel" style={{
           background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 18,
-          padding: 36, display: "flex", flexDirection: "column", minHeight: 540,
+          padding: 36, display: "flex", flexDirection: "column", minHeight: 440,
           position: "relative", overflow: "hidden",
         }}>
           <div style={{
@@ -320,7 +318,7 @@ const StepIllustration = ({ step }: { step: number }) => {
       </div>
     </div>
   );
-  if (step === 1) return (
+  if (step === 2) return (
     <div style={base}>
       <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
         {([["video", "Video"], ["mic", "Audio"], ["pen", "Letter"]] as const).map(([n, l], i) =>
@@ -335,7 +333,7 @@ const StepIllustration = ({ step }: { step: number }) => {
       <ImgSlot src={LLPhotos.recordingMic} alt="Microphone in soft light" style={{ aspectRatio: "16/9", borderRadius: 10 }} />
     </div>
   );
-  if (step === 2) return (
+  if (step === 1) return (
     <div style={base}>
       <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)", marginBottom: 14 }}>YOUR ADVOCATES</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -362,43 +360,6 @@ const StepIllustration = ({ step }: { step: number }) => {
       </div>
     </div>
   );
-  if (step === 3) return (
-    <div style={base}>
-      <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)", marginBottom: 14 }}>VERIFICATION WORKFLOW</div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        {["Advocate A confirms", "Identity check", "Advocate B confirms", "24-hr safety hold", "Release"].map((s, i, arr) =>
-          <span key={i} style={{ display: "contents" }}>
-            <div style={{
-              padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 10,
-              fontSize: 11, color: "var(--ink-2)", background: "var(--surface)", textAlign: "center",
-              flex: 1, minHeight: 50, display: "flex", alignItems: "center", justifyContent: "center",
-            }}>{s}</div>
-            {i < arr.length - 1 && <div style={{ width: 12, height: 1, background: "var(--line)" }} />}
-          </span>)}
-      </div>
-      <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 14 }}>Patent-pending verification workflow</div>
-    </div>
-  );
-  if (step === 4) return (
-    <div style={base}>
-      <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)", marginBottom: 14 }}>DELIVERY · IN PROGRESS</div>
-      {([
-        ["Family · 12 people", "Delivered", "var(--ok)"],
-        ["Close friends · 48 people", "Delivering", "var(--brand-blue)"],
-        ["Business contacts · 91 people", "Queued · 9:30am", "var(--ink-3)"],
-      ] as const).map(([who, status, color], i) =>
-        <div key={i} style={{
-          display: "flex", justifyContent: "space-between", padding: "12px 0",
-          borderBottom: i < 2 ? "1px solid var(--line-soft)" : "none", fontSize: 13,
-        }}>
-          <span>{who}</span>
-          <span style={{ color, display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: 999, background: color }} />
-            {status}
-          </span>
-        </div>)}
-    </div>
-  );
   return null;
 };
 
@@ -409,25 +370,23 @@ const VerificationBlock = () => (
     borderTop: "1px solid var(--line-soft)", borderBottom: "1px solid var(--line-soft)",
   }}>
     <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
-      <div className="ll-eyebrow" style={{ marginBottom: 16 }}>The thing nobody else has gotten right</div>
-      <h2 className="serif" style={{ fontSize: 64, lineHeight: 1.02, margin: "0 0 32px", fontWeight: 500, letterSpacing: "-0.015em", textWrap: "pretty" }}>
-        A false alert is unthinkable.<br />So we made it impossible.
+      <h2 className="serif" style={{ fontSize: 64, lineHeight: 1.02, margin: "0 0 64px", fontWeight: 500, letterSpacing: "-0.015em", textWrap: "pretty" }}>
+        Trusted advocates,<br />independently identified.
       </h2>
-      <p style={{ fontSize: 19, color: "var(--ink-2)", lineHeight: 1.55, maxWidth: 720, margin: "0 auto 64px" }}>
-        Two trusted advocates. Independent identity checks. A 24-hour safety
-        hold. Cancellable at any time, by you or either advocate. We've turned the most fragile
-        moment in a life into the most carefully held one.
-      </p>
 
       <div style={{ background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 22, padding: "56px 48px", position: "relative", overflow: "hidden" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 56, alignItems: "center" }}>
           <AdvocateCard side="left" />
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+            {/* The mark sits between the two advocates — the thing that holds
+                both confirmations together. Soft ground, not the gradient, so
+                the colored mark keeps its contrast. */}
             <div style={{
-              width: 64, height: 64, borderRadius: "50%", background: "var(--brand-grad)",
-              display: "flex", alignItems: "center", justifyContent: "center", color: "white", boxShadow: "var(--shadow-2)",
+              width: 64, height: 64, borderRadius: "50%", background: "var(--brand-grad-soft)",
+              border: "1px solid var(--line)", boxShadow: "var(--shadow-2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <Icon name="shield" size={28} color="white" stroke={1.8} />
+              <Logo size={30} withWordmark={false} />
             </div>
             <div className="mono" style={{ fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.15em" }}>AND</div>
             <div style={{ fontSize: 13, color: "var(--ink-2)", maxWidth: 160, textAlign: "center" }}>
@@ -440,7 +399,7 @@ const VerificationBlock = () => (
 
       <div style={{ marginTop: 56, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32, textAlign: "left" }}>
         {([
-          ["Patent-pending", "Dual-advocate verification, conditional posthumous activation, and structured life-area notification are covered by pending IP."],
+          ["Patented", "Dual-advocate verification and conditional posthumous release are protected by our issued US patent."],
           ["Cancellable at any moment", "If anything changes — a contact, an advocate, a message — you can update or revoke instantly. You are always in control."],
           ["Auditable & encrypted", "Every action is written to a verifiable event log. Messages are encrypted at rest and sealed until verified release."],
         ] as const).map(([t, b], i) =>
@@ -493,10 +452,10 @@ const TrustBlock = () => (
       <div>
         <div className="ll-eyebrow" style={{ marginBottom: 16 }}>Trust &amp; security</div>
         <h2 className="serif" style={{ fontSize: 56, lineHeight: 1.05, margin: "0 0 28px", fontWeight: 500, letterSpacing: "-0.015em" }}>
-          The most careful product you'll ever use.
+          The most careful product you'll use.
         </h2>
         <p style={{ fontSize: 17, color: "var(--ink-2)", lineHeight: 1.55, marginBottom: 36 }}>
-          We hold something irreplaceable: your words for the people you love most.
+          We hold something irreplaceable, your words for the people you love most.
           That responsibility shapes every decision we make.
         </p>
         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 0 }}>
@@ -504,8 +463,8 @@ const TrustBlock = () => (
             ["AES-256 encryption at rest", "Your messages are sealed with strong encryption and stay sealed until verified release."],
             ["SOC 2 Type II — audit underway", "We're pursuing independent annual audits and treat your data the way hospitals treat charts."],
             ["Verifiable audit log", "Every advocate action, every login, every release is recorded and verifiable."],
-            ["Patent-pending workflow", "Dual-advocate verification and conditional posthumous release."],
-            ["No third-party data sale, ever", "We make money from subscriptions and partnerships — not your information."],
+            ["Patented workflow", "Dual-advocate verification and conditional posthumous release."],
+            ["No third-party data sale", "We make money from subscriptions and partnerships — not your information."],
           ] as const).map(([t, b], i) =>
             <li key={i} style={{
               padding: "20px 0", borderTop: "1px solid var(--line)",
@@ -525,74 +484,64 @@ const TrustBlock = () => (
 );
 
 // ----------------------------------------------------------- SCENARIOS
-const ScenariosBlock = () => {
-  const [tab, setTab] = useState(0);
-  const tabs = [
-    { label: "For a father", who: "Daniel · 62 · architect",
-      excerpt: "Em — there's so much I never said out loud. Sit with me for nine minutes.",
-      to: "To his daughter, on her 30th birthday — and his last.",
-      audience: ["Family · 12", "Close friends · 48", "Studio &amp; clients · 91"] },
-    { label: "For a founder", who: "Priya · 51 · CEO",
-      excerpt: "If you're seeing this, you already know. Here's what I'd want you to do next.",
-      to: "To her co-founders, with a recorded handoff and her notes on the next two years.",
-      audience: ["Family · 4", "Leadership · 9", "Investors &amp; board · 22"] },
-    { label: "For a grandmother", who: "Constance · 84 · grandmother of seven",
-      excerpt: "There's a recipe I never wrote down. I want each of you to have it.",
-      to: "To seven grandchildren, with a video for each one, by name.",
-      audience: ["Family · 23", "Friends · 14"] },
-  ];
-  const t = tabs[tab]!;
-  return (
-    <section id="scenarios" style={{
-      padding: "120px 64px", background: "var(--surface)",
-      borderTop: "1px solid var(--line-soft)", borderBottom: "1px solid var(--line-soft)",
-    }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-        <div className="ll-eyebrow" style={{ marginBottom: 16 }}>Who LastLink is for</div>
-        <h2 className="serif" style={{ fontSize: 56, lineHeight: 1.05, margin: "0 0 48px", fontWeight: 500, letterSpacing: "-0.015em", maxWidth: 760, textWrap: "pretty" }}>
-          Three quiet moments LastLink was built for.
-        </h2>
+// Private vs. public is the only distinction we draw at this stage. The wording
+// tracks Terms of Service §4.3 so the marketing claim and the contract agree.
+const MESSAGE_KINDS = [
+  {
+    kind: "Private",
+    icon: "lock" as IconName,
+    line: "Only the people you choose receive it.",
+    body: "A message addressed to the groups you select. Recipients in one group can't see what was written for another, and the one meant for a single person stays that way.",
+  },
+  {
+    kind: "Public",
+    icon: "users" as IconName,
+    line: "Everyone you named receives it, at the same moment.",
+    body: "One message, delivered to all of your designated recipients together — so nobody hears it secondhand, and nobody hears it late.",
+  },
+];
 
-        <div className="ll-btnrow" style={{ display: "flex", gap: 8, marginBottom: 32 }}>
-          {tabs.map((tt, i) =>
-            <button key={i} onClick={() => setTab(i)} style={{
-              padding: "10px 20px", border: "1px solid var(--line)",
-              background: i === tab ? "var(--ink)" : "transparent",
-              color: i === tab ? "var(--bone-soft)" : "var(--ink-2)",
-              borderRadius: 999, fontSize: 14, fontWeight: 500, cursor: "pointer",
-            }}>{tt.label}</button>)}
-        </div>
+const ScenariosBlock = () => (
+  <section id="messages" style={{
+    padding: "120px 64px", background: "var(--surface)",
+    borderTop: "1px solid var(--line-soft)", borderBottom: "1px solid var(--line-soft)",
+  }}>
+    <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+      <div className="ll-eyebrow" style={{ marginBottom: 16 }}>Your messages</div>
+      <h2 className="serif" style={{ fontSize: 56, lineHeight: 1.05, margin: "0 0 48px", fontWeight: 500, letterSpacing: "-0.015em", maxWidth: 760, textWrap: "pretty" }}>
+        Messages can be private or public.
+      </h2>
 
-        <div style={{ background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 20, padding: 48, display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 64 }}>
-          <div>
-            <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginBottom: 14 }}>{t.who.toUpperCase()}</div>
-            <blockquote className="serif" style={{ fontStyle: "italic", fontSize: 36, lineHeight: 1.2, margin: "0 0 20px", color: "var(--ink)", fontWeight: 500, textWrap: "pretty" }}>
-              "{t.excerpt}"
-            </blockquote>
-            <p style={{ fontSize: 15, color: "var(--ink-3)", margin: 0, lineHeight: 1.55 }}>{t.to}</p>
-          </div>
-          <div>
-            <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginBottom: 14 }}>MESSAGE GROUPS</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {t.audience.map((a, i) =>
-                <div key={i} style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "16px 20px", background: "var(--surface)", border: "1px solid var(--line)",
-                  borderRadius: 12, fontSize: 15,
-                }}>
-                  <span dangerouslySetInnerHTML={{ __html: a }} />
-                  <Icon name="check" size={16} color="var(--ok)" />
-                </div>)}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        {MESSAGE_KINDS.map((m) => (
+          <div key={m.kind} style={{
+            background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 20,
+            padding: 40, display: "flex", flexDirection: "column", gap: 16,
+          }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: 14, background: "var(--brand-grad-soft)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Icon name={m.icon} size={24} color="var(--brand-purple)" />
             </div>
-            <div style={{ marginTop: 24, padding: 20, background: "var(--brand-grad-soft)", border: "1px solid var(--line)", borderRadius: 12, fontSize: 13, color: "var(--ink-2)" }}>
-              Each group can receive a different message — the one for family, the one for colleagues, and the one only one person was ever meant to hear.
-            </div>
+            <h3 className="serif" style={{ fontSize: 34, fontWeight: 500, letterSpacing: "-0.015em", margin: 0, lineHeight: 1.1 }}>
+              {m.kind}
+            </h3>
+            <p style={{ fontSize: 17, color: "var(--ink)", lineHeight: 1.5, margin: 0 }}>{m.line}</p>
+            <p style={{ fontSize: 15, color: "var(--ink-3)", lineHeight: 1.6, margin: 0 }}>{m.body}</p>
           </div>
-        </div>
+        ))}
       </div>
-    </section>
-  );
-};
+
+      <div style={{
+        marginTop: 24, padding: "20px 24px", background: "var(--brand-grad-soft)",
+        border: "1px solid var(--line)", borderRadius: 14, fontSize: 14, color: "var(--ink-2)",
+      }}>
+        You choose which it is, message by message — and you can change your mind at any time before release.
+      </div>
+    </div>
+  </section>
+);
 
 // ----------------------------------------------------------- PRICING
 const PricingTeaser = () => (
@@ -600,7 +549,7 @@ const PricingTeaser = () => (
     <div style={{ textAlign: "center", marginBottom: 56 }}>
       <div className="ll-eyebrow" style={{ marginBottom: 16 }}>Pricing</div>
       <h2 className="serif" style={{ fontSize: 56, lineHeight: 1.05, margin: "0 0 16px", fontWeight: 500, letterSpacing: "-0.015em" }}>
-        Begin for free. Forever.
+        Begin your LastLink.
       </h2>
       <p style={{ fontSize: 17, color: "var(--ink-2)", maxWidth: 560, margin: "0 auto" }}>
         Everyone deserves a verified last word. Premium adds video, multi-group messages, and unlimited storage.
@@ -608,7 +557,7 @@ const PricingTeaser = () => (
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
       {([
-        { name: "Free", price: "$0", per: "forever", desc: "Everything you need to make sure you're heard.",
+        { name: "Free", price: "$0", per: "to begin", desc: "Everything you need to make sure you're heard.",
           features: ["1 message · 1 audience group", "Designate two advocates", "Verified, dignified delivery", "Encryption at rest", "Up to 50 contacts"],
           cta: "Begin your LastLink", grad: false },
         { name: "Premium", price: "$60", per: "per year", desc: "For when one message isn't enough.",
@@ -653,14 +602,14 @@ const FinalCTA = () => (
     <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 800, height: 800, background: "var(--brand-grad)", opacity: 0.12, borderRadius: "50%", filter: "blur(80px)" }} />
     <div style={{ maxWidth: 920, margin: "0 auto", textAlign: "center", position: "relative" }}>
       <h2 className="serif" style={{ fontSize: 72, lineHeight: 1.02, margin: "0 0 24px", fontWeight: 500, letterSpacing: "-0.015em", textWrap: "pretty" }}>
-        Every person who dies deserves to be remembered with intention.
+        Every person who passes deserves to be remembered with intention.
       </h2>
       <p className="serif" style={{ fontSize: 28, fontStyle: "italic", color: "var(--ink-4)", margin: "0 0 48px", lineHeight: 1.3, fontWeight: 400 }}>
         Every person left behind deserves to be told with dignity.
       </p>
       <div className="ll-btnrow" style={{ display: "flex", gap: 12, justifyContent: "center" }}>
         <a href={APP} className="ll-btn grad" style={{ padding: "16px 30px", fontSize: 15 }}>
-          Begin your LastLink — free <Icon name="arrow" size={16} color="white" />
+          Begin your LastLink <Icon name="arrow" size={16} color="white" />
         </a>
         <a href="mailto:dawn@lastlink.com" className="ll-btn" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "var(--bone-soft)", padding: "16px 30px", fontSize: 15 }}>
           For organizations &amp; HR
@@ -671,31 +620,63 @@ const FinalCTA = () => (
 );
 
 // ----------------------------------------------------------- FOOTER
+// Every entry resolves to something that exists today — an on-page anchor, one
+// of the two legal pages, or an inbox published in the policies. Aspirational
+// links (a help centre, a blog, a patent page) are left out until they're real.
+const FOOTER_COLS: readonly (readonly [string, readonly (readonly [string, string])[]])[] = [
+  ["Product", [
+    ["How it works", "#how"],
+    ["Your messages", "#messages"],
+    ["Trust & security", "#trust"],
+    ["Pricing", "#pricing"],
+  ]],
+  ["For organizations", [
+    ["HR & benefits", "mailto:partnerships@lastlink.care?subject=HR%20%26%20benefits"],
+    ["Insurance", "mailto:partnerships@lastlink.care?subject=Insurance"],
+    ["Hospice & healthcare", "mailto:partnerships@lastlink.care?subject=Hospice%20%26%20healthcare"],
+    ["Military", "mailto:partnerships@lastlink.care?subject=Military"],
+  ]],
+  ["Legal", [
+    ["Privacy Policy", "/privacy"],
+    ["Terms of Service", "/terms"],
+    ["Report a concern", "mailto:security@lastlink.care?subject=Security%20concern"],
+    ["Legal enquiries", "mailto:legal@lastlink.care"],
+  ]],
+  ["Contact", [
+    ["Support", "mailto:support@lastlink.care"],
+    ["Privacy questions", "mailto:privacy@lastlink.care"],
+    ["Partnerships", "mailto:partnerships@lastlink.care"],
+    ["For organizations & HR", "#enterprise"],
+  ]],
+] as const;
+
 const Footer = () => (
   <footer style={{ padding: "64px 64px 40px", background: "var(--bg)", borderTop: "1px solid var(--line)" }}>
     <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "1.3fr repeat(4, 1fr)", gap: 48 }}>
       <div>
         <Logo size={24} />
         <p style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 16, maxWidth: 280, lineHeight: 1.55 }}>
-          A verified, patent-pending digital death notification and legacy messaging platform.
+          A verified, patented platform for legacy messages and dignified notification.
         </p>
       </div>
-      {([
-        ["Product", ["How it works", "Pricing", "Security", "Patent"]],
-        ["For organizations", ["HR & benefits", "Insurance", "Hospice", "Military"]],
-        ["Resources", ["Help center", "Sample messages", "Estate guide", "Blog"]],
-        ["Company", ["About", "Press", "Careers", "Contact"]],
-      ] as const).map(([h, items]) =>
+      {FOOTER_COLS.map(([h, items]) =>
         <div key={h}>
           <div className="ll-eyebrow" style={{ marginBottom: 14 }}>{h}</div>
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-            {items.map((l) => <li key={l} style={{ fontSize: 13, color: "var(--ink-2)" }}>{l}</li>)}
+            {items.map(([label, href]) =>
+              <li key={label} style={{ fontSize: 13, color: "var(--ink-2)" }}>
+                <a href={href}>{label}</a>
+              </li>)}
           </ul>
         </div>)}
     </div>
-    <div style={{ maxWidth: 1280, margin: "48px auto 0", paddingTop: 24, borderTop: "1px solid var(--line-soft)", display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ink-3)" }}>
-      <span>© 2026 LastLink, Inc. · Patent pending · dawn@lastlink.com</span>
-      <span>Privacy · Terms · Status · Security</span>
+    <div className="ll-stack-mobile" style={{ maxWidth: 1280, margin: "48px auto 0", paddingTop: 24, borderTop: "1px solid var(--line-soft)", display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ink-3)" }}>
+      <span>© 2026 LastLink, Inc. · Patented · support@lastlink.care</span>
+      <span style={{ display: "flex", gap: 16 }}>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="#trust">Security</a>
+      </span>
     </div>
   </footer>
 );
