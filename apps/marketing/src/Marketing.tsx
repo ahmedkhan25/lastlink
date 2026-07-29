@@ -259,7 +259,7 @@ const HowItWorks = () => {
           {steps.map((s, i) => {
             const isActive = i === active;
             return (
-              <li key={i} onMouseEnter={() => setActive(i)} onClick={() => setActive(i)}
+              <li key={i} className="ll-row-step" onMouseEnter={() => setActive(i)} onClick={() => setActive(i)}
                 style={{
                   padding: "22px 4px", borderTop: "1px solid var(--line)",
                   borderBottom: i === steps.length - 1 ? "1px solid var(--line)" : "none",
@@ -466,7 +466,7 @@ const TrustBlock = () => (
             ["Patented workflow", "Dual-advocate verification and conditional posthumous release."],
             ["No third-party data sale", "We make money from subscriptions and partnerships — not your information."],
           ] as const).map(([t, b], i) =>
-            <li key={i} style={{
+            <li key={i} className="ll-row-icon" style={{
               padding: "20px 0", borderTop: "1px solid var(--line)",
               borderBottom: i === 4 ? "1px solid var(--line)" : "none",
               display: "grid", gridTemplateColumns: "24px 1fr", gap: 16,
@@ -652,7 +652,7 @@ const FOOTER_COLS: readonly (readonly [string, readonly (readonly [string, strin
 
 const Footer = () => (
   <footer style={{ padding: "64px 64px 40px", background: "var(--bg)", borderTop: "1px solid var(--line)" }}>
-    <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "1.3fr repeat(4, 1fr)", gap: 48 }}>
+    <div className="ll-footer-cols" style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "1.3fr repeat(4, 1fr)", gap: 48 }}>
       <div>
         <Logo size={24} />
         <p style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 16, maxWidth: 280, lineHeight: 1.55 }}>
@@ -670,7 +670,7 @@ const Footer = () => (
           </ul>
         </div>)}
     </div>
-    <div className="ll-stack-mobile" style={{ maxWidth: 1280, margin: "48px auto 0", paddingTop: 24, borderTop: "1px solid var(--line-soft)", display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ink-3)" }}>
+    <div className="ll-stack-mobile ll-footer-meta" style={{ maxWidth: 1280, margin: "48px auto 0", paddingTop: 24, borderTop: "1px solid var(--line-soft)", display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ink-3)" }}>
       <span>© 2026 LastLink, Inc. · Patented · support@lastlink.care</span>
       <span style={{ display: "flex", gap: 16 }}>
         <a href="/privacy">Privacy</a>

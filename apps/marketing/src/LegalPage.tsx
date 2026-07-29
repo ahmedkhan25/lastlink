@@ -74,8 +74,8 @@ export function LegalPage({ doc, other }: { doc: LegalDoc; other: { href: string
           maxWidth: 1180, margin: "0 auto", display: "flex", justifyContent: "space-between",
           gap: 20, flexWrap: "wrap", fontSize: 12, color: "var(--ink-3)",
         }}>
-          <span>© 2026 LastLink, Inc. · Patented · hello@lastlink.care</span>
-          <span style={{ display: "flex", gap: 18 }}>
+          <span>© 2026 LastLink, Inc. · Patented · support@lastlink.care</span>
+          <span className="ll-footer-meta" style={{ display: "flex", gap: 18 }}>
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>
             <a href="/">Home</a>
@@ -140,7 +140,7 @@ function Node({ node }: { node: Node }) {
       return (
         <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", display: "flex", flexDirection: "column", gap: 9 }}>
           {node.items.map((runs, i) => (
-            <li key={i} style={{ display: "grid", gridTemplateColumns: "16px 1fr", gap: 10, fontSize: 15.5, lineHeight: 1.7, color: "var(--ink-2)" }}>
+            <li key={i} className="ll-row-bullet" style={{ display: "grid", gridTemplateColumns: "16px 1fr", gap: 10, fontSize: 15.5, lineHeight: 1.7, color: "var(--ink-2)" }}>
               <span aria-hidden style={{ color: "var(--brand-purple)", lineHeight: 1.7 }}>·</span>
               <span><Spans runs={runs} /></span>
             </li>

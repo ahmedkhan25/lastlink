@@ -42,9 +42,29 @@ a { text-decoration: none; color: inherit; }
   /* every section: tighten the big 64px side padding */
   .ll-marketing section { padding-left: 20px !important; padding-right: 20px !important; }
   .ll-marketing section { padding-top: 56px !important; padding-bottom: 56px !important; }
+  /* the footer carries the same 64px inline padding and was missed, which cost
+     it a third of the screen and wrapped links that would otherwise fit */
+  .ll-marketing footer { padding-left: 20px !important; padding-right: 20px !important; }
 
   /* stack every multi-column grid into one column */
   .ll-marketing [style*="grid-template-columns"] { grid-template-columns: 1fr !important; gap: 28px !important; }
+
+  /* …except rows where the first track is an icon, number or bullet sitting
+     BESIDE its text. The blanket rule above is meant for page-level layout
+     grids; applied to these it strands the glyph on its own line with a 28px
+     gap under it. Extra [style] specificity so these win over that rule. */
+  .ll-marketing .ll-row-step[style]   { grid-template-columns: 34px 1fr auto !important; gap: 14px !important; }
+  .ll-marketing .ll-row-icon[style]   { grid-template-columns: 24px 1fr !important;      gap: 14px !important; }
+  .ll-marketing .ll-row-bullet[style] { grid-template-columns: 16px 1fr !important;      gap: 10px !important; }
+
+  /* Four stacked link columns make the footer endless; two is half the scroll. */
+  .ll-marketing .ll-footer-cols[style] { grid-template-columns: 1fr 1fr !important; gap: 32px 20px !important; }
+  /* Comfortable touch targets — 13px links are ~17px tall unaided. */
+  .ll-marketing footer li a { display: inline-block; padding: 7px 0; }
+  .ll-marketing footer .ll-footer-meta a { padding: 8px 0; }
+
+  /* No hover on touch, so the inactive steps would just look permanently faded. */
+  .ll-marketing .ll-row-step { opacity: 1 !important; }
 
   /* scale the oversized display type down */
   .ll-marketing h1 { font-size: 40px !important; line-height: 1.06 !important; }
