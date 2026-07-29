@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
-import { gql, postApi, getApiUrl } from "../lib/api.js";
+import { gql, postApi, getApiUrl, getMarketingUrl } from "../lib/api.js";
 import { useSession } from "../lib/auth.js";
 import { VideoComposer } from "./VideoComposer.js";
 
@@ -78,11 +78,23 @@ function Welcome({ onNext, firstName }: { onNext: () => void; firstName: string 
 // Consent step — the legacy app's ToS gate, now explicit. Records agreement to
 // the terms and to the two-advocate + 24h-hold release model before anything is
 // collected. (Presentational: the checkboxes gate the button, nothing persists.)
+// The policies live on the marketing site. Open in a new tab so a half-finished
+// onboarding isn't thrown away by someone reading the terms.
+function Legal({ path, children }: { path: string; children: React.ReactNode }) {
+  return (
+    <a href={`${getMarketingUrl()}${path}`} target="_blank" rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      style={{ color: "var(--brand-purple)", fontWeight: 500, textDecoration: "underline", textUnderlineOffset: 2 }}>
+      {children}
+    </a>
+  );
+}
+
 function Consent({ onNext }: { onNext: () => void }) {
   const [a, setA] = useState(false);
   const [b, setB] = useState(false);
   const items = [
-    { checked: a, set: setA, node: <>I agree to the <strong>Terms of Service</strong> and <strong>Privacy Policy</strong>.</> },
+    { checked: a, set: setA, node: <>I agree to the <Legal path="/terms">Terms of Service</Legal> and <Legal path="/privacy">Privacy Policy</Legal>.</> },
     { checked: b, set: setB, node: <>I understand my messages are released only after <strong>two advocates independently confirm my passing</strong>, followed by a 24-hour cancellable hold.</> },
   ];
   return (

@@ -22,6 +22,16 @@ a { text-decoration: none; color: inherit; }
   .ll-progress { animation: none; width: 100%; }
 }
 
+/* ---- Legal pages (/privacy, /terms) ---- */
+.ll-legal .ll-legal-toc a:hover { color: var(--ink); }
+.ll-legal article a { color: var(--brand-purple); text-decoration: underline; text-underline-offset: 2px; }
+/* The first section heading already sits below the contents rule. */
+.ll-legal article h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+/* A grid item defaults to min-width:auto, so the wide summary table would push
+   the column past the viewport. The desktop track says minmax(0, 1fr), but the
+   mobile rule below rewrites it to a bare 1fr — so pin the floor on the item. */
+.ll-legal-body > article { min-width: 0; }
+
 /* ---- Mobile (the page is authored with desktop inline styles; these
    media-query rules use !important to override them on small screens) ---- */
 @media (max-width: 860px) {
