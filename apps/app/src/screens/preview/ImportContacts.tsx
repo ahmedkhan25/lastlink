@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@lastlink/ui";
 import { getApi, postApi } from "../../lib/api.js";
-import { Flag, GoogleMark, page, card } from "./_shared.js";
+import { Flag, GoogleMark, OutlookMark, AolMark, FacebookMark, AppleMark, page, card } from "./_shared.js";
 
 // Contact import. The connect step is simulated (see apps/api/src/contacts-import.ts)
 // but everything after it is real: the directory is fetched from the API, deduped
@@ -31,6 +31,15 @@ interface Preview {
 
 const GRID = "34px 1.15fr 1.5fr 1fr 0.9fr";
 
+// Additional sources shown as placeholders per the partner feedback round
+// (2026-08-10 issues sheet): visible even though only Google is wired up.
+const COMING_SOON_SOURCES = [
+  { key: "hotmail", label: "Hotmail / Outlook", mark: <OutlookMark size={20} /> },
+  { key: "aol", label: "AOL", mark: <AolMark size={20} /> },
+  { key: "facebook", label: "Facebook", mark: <FacebookMark size={20} /> },
+  { key: "apple", label: "Apple", mark: <AppleMark size={20} /> },
+] as const;
+
 export function ImportContacts() {
   const navigate = useNavigate();
   const [connecting, setConnecting] = useState<Provider | null>(null);
@@ -38,6 +47,7 @@ export function ImportContacts() {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [soonNote, setSoonNote] = useState(false);
 
   async function connect(provider: Provider) {
     setConnecting(provider);
@@ -119,6 +129,31 @@ export function ImportContacts() {
           {connecting ? "Connecting…" : preview ? "Refresh" : "Connect Google"}
         </button>
       </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, margin: "10px 0 0" }}>
+        {COMING_SOON_SOURCES.map((s) => (
+          <button
+            key={s.key}
+            type="button"
+            onClick={() => setSoonNote(true)}
+            style={{
+              ...card, padding: "12px 14px", display: "flex", gap: 10, alignItems: "center",
+              cursor: "pointer", background: "var(--surface)", font: "inherit", textAlign: "left",
+            }}
+          >
+            {s.mark}
+            <span style={{ flex: 1, fontSize: 13.5, fontWeight: 500 }}>{s.label}</span>
+            <span className="mono" style={{ fontSize: 9, letterSpacing: "0.1em", padding: "3px 8px", borderRadius: "var(--r-pill)", background: "var(--line-soft)", color: "var(--ink-3)" }}>
+              SOON
+            </span>
+          </button>
+        ))}
+      </div>
+      {soonNote && (
+        <div style={{ fontSize: 12.5, color: "var(--ink-3)", textAlign: "center", marginTop: 10 }}>
+          Preview — coming soon.
+        </div>
+      )}
 
       {error && (
         <div style={{ ...card, padding: "12px 14px", marginTop: 12, fontSize: 13, color: "var(--err, #b3261e)", borderColor: "var(--err, #b3261e)" }}>

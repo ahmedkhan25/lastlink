@@ -181,3 +181,5 @@ envVarGroups:
         sync: false
       - key: RESEND_API_KEY
         sync: false
+      - key: UPLOADTHING_TOKEN
+        sync: false               # UploadThing (profile photos) — app t0y9ovqk0j

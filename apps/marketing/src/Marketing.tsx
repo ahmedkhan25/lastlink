@@ -37,12 +37,12 @@ const Nav = () => (
       <a href="#how">How it works</a>
       <a href="#trust">Trust &amp; security</a>
       <a href="#messages">Your messages</a>
-      <a href="#pricing">Pricing</a>
-      <a href="#enterprise">For organizations</a>
+      <a href="#pricing">Plans</a>
+      <a href="#enterprise">For Partners</a>
     </nav>
     <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
       <a href={ADVOCATE} className="ll-btn ghost ll-hide-mobile">I'm an advocate</a>
-      <a href={APP} className="ll-btn ghost ll-hide-mobile">Sign in</a>
+      <a href={APP} className="ll-btn ghost ll-hide-mobile">Linker Sign-in</a>
       <a href={APP} className="ll-btn">Begin your LastLink</a>
     </div>
   </header>
@@ -143,7 +143,7 @@ const HeroCard = () => (
 
 // ----------------------------------------------------------- PROBLEM STRIP
 const PROBLEMS = [
-  { img: "/assets/problem/image1.webp", title: "No verified standard", body: "Families learn through a Facebook comment or a whispered rumor — never a dignified, confirmed source." },
+  { img: "/assets/problem/image1.webp", title: "Currently No Trusted Solution", body: "Families learn through a Facebook comment or a whispered rumor — never a dignified, confirmed source." },
   { img: "/assets/problem/image2.webp", title: "Networks go dark", body: "Colleagues, partners, and clients find out days late. Deals stall. Relationships fray in the silence." },
   { img: "/assets/problem/image3.webp", title: "Final words go unspoken", body: "People pass with messages undelivered — love left unsaid, gratitude never expressed, goodbyes never heard." },
   { img: "/assets/problem/image4.webp", title: "No one has solved this", body: "Until LastLink, no platform verified a passing, then delivered the news gently — in the person's own words." },
@@ -234,7 +234,7 @@ const HowItWorks = () => {
       body: "Create your account and verify your identity. That's the whole of it — your contacts come together in the background as you go." },
     { n: "02", title: "Pick your advocates", sub: "The people you trust most.",
       body: "Two people you choose, who each confirm independently. Neither can act alone, and either can stop a release." },
-    { n: "03", title: "Leave your message", sub: "Your voice, your way.",
+    { n: "03", title: "Link your message", sub: "Your voice, your way.",
       body: "Record video or audio. Type a letter. Send something different to each group — or one message for everyone." },
   ];
   return (
@@ -371,7 +371,7 @@ const VerificationBlock = () => (
   }}>
     <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
       <h2 className="serif" style={{ fontSize: 64, lineHeight: 1.02, margin: "0 0 64px", fontWeight: 500, letterSpacing: "-0.015em", textWrap: "pretty" }}>
-        Trusted advocates,<br />independently identified.
+        Trusted advocates,<br />independently verified.
       </h2>
 
       <div style={{ background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 22, padding: "56px 48px", position: "relative", overflow: "hidden" }}>
@@ -462,7 +462,7 @@ const TrustBlock = () => (
           {([
             ["AES-256 encryption at rest", "Your messages are sealed with strong encryption and stay sealed until verified release."],
             ["SOC 2 Type II — audit underway", "We're pursuing independent annual audits and treat your data the way hospitals treat charts."],
-            ["Verifiable audit log", "Every advocate action, every login, every release is recorded and verifiable."],
+            ["Verifiable audit log", "Advocate actions, logins, and releases are recorded and verifiable."],
             ["Patented workflow", "Dual-advocate verification and conditional posthumous release."],
             ["No third-party data sale", "We make money from subscriptions and partnerships — not your information."],
           ] as const).map(([t, b], i) =>
@@ -491,13 +491,13 @@ const MESSAGE_KINDS = [
     kind: "Private",
     icon: "lock" as IconName,
     line: "Only the people you choose receive it.",
-    body: "A message addressed to the groups you select. Recipients in one group can't see what was written for another, and the one meant for a single person stays that way.",
+    body: "Create personalized messages for specific individuals. Recipients in one group can't see what was written for another, and the one meant for a single person stays that way.",
   },
   {
     kind: "Public",
     icon: "users" as IconName,
     line: "Everyone you named receives it, at the same moment.",
-    body: "One message, delivered to all of your designated recipients together — so nobody hears it secondhand, and nobody hears it late.",
+    body: "Send one message to your entire contacts list — so nobody hears it secondhand, and nobody hears it late.",
   },
 ];
 
@@ -547,7 +547,7 @@ const ScenariosBlock = () => (
 const PricingTeaser = () => (
   <section id="pricing" style={{ padding: "120px 64px", maxWidth: 1280, margin: "0 auto" }}>
     <div style={{ textAlign: "center", marginBottom: 56 }}>
-      <div className="ll-eyebrow" style={{ marginBottom: 16 }}>Pricing</div>
+      <div className="ll-eyebrow" style={{ marginBottom: 16 }}>Plans</div>
       <h2 className="serif" style={{ fontSize: 56, lineHeight: 1.05, margin: "0 0 16px", fontWeight: 500, letterSpacing: "-0.015em" }}>
         Begin your LastLink.
       </h2>
@@ -612,7 +612,7 @@ const FinalCTA = () => (
           Begin your LastLink <Icon name="arrow" size={16} color="white" />
         </a>
         <a href="mailto:dawn@lastlink.com" className="ll-btn" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "var(--bone-soft)", padding: "16px 30px", fontSize: 15 }}>
-          For organizations &amp; HR
+          For Partners &amp; HR
         </a>
       </div>
     </div>
@@ -628,9 +628,9 @@ const FOOTER_COLS: readonly (readonly [string, readonly (readonly [string, strin
     ["How it works", "#how"],
     ["Your messages", "#messages"],
     ["Trust & security", "#trust"],
-    ["Pricing", "#pricing"],
+    ["Plans", "#pricing"],
   ]],
-  ["For organizations", [
+  ["For Partners", [
     ["HR & benefits", "mailto:partnerships@lastlink.care?subject=HR%20%26%20benefits"],
     ["Insurance", "mailto:partnerships@lastlink.care?subject=Insurance"],
     ["Hospice & healthcare", "mailto:partnerships@lastlink.care?subject=Hospice%20%26%20healthcare"],
@@ -646,7 +646,7 @@ const FOOTER_COLS: readonly (readonly [string, readonly (readonly [string, strin
     ["Support", "mailto:support@lastlink.care"],
     ["Privacy questions", "mailto:privacy@lastlink.care"],
     ["Partnerships", "mailto:partnerships@lastlink.care"],
-    ["For organizations & HR", "#enterprise"],
+    ["For Partners & HR", "#enterprise"],
   ]],
 ] as const;
 

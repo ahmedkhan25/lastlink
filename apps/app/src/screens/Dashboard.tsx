@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon, type IconName } from "@lastlink/ui";
-import { gql } from "../lib/api.js";
+import { gql, getApi } from "../lib/api.js";
+import { useUploadThing } from "../lib/uploadthing.js";
 import { useConfirm } from "../components/ConfirmProvider.js";
 
 interface Data {
@@ -17,6 +18,75 @@ const Q = `query {
   app_messages(order_by: {created_at: desc}) { id title type status }
   app_contacts { id }
 }`;
+
+interface Me {
+  legalName: string | null;
+  avatarUrl: string | null;
+  uploadsEnabled: boolean;
+}
+
+// Profile photo (issues-sheet request). Reads/writes via REST — the avatar
+// column is not exposed through Hasura. Hidden entirely when the API has no
+// upload provider configured.
+function ProfilePhoto() {
+  const [me, setMe] = useState<Me | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    getApi<Me>("/api/account/me").then((r) => active && setMe(r)).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const { startUpload, isUploading } = useUploadThing("profilePhoto", {
+    onClientUploadComplete: (res: { serverData?: { avatarUrl?: string }; ufsUrl?: string }[]) => {
+      const url = res?.[0]?.serverData?.avatarUrl ?? res?.[0]?.ufsUrl ?? null;
+      setErr(null);
+      if (url) setMe((m) => (m ? { ...m, avatarUrl: url } : m));
+    },
+    onUploadError: (e: Error) => setErr(e.message || "Upload failed"),
+  });
+
+  if (!me?.uploadsEnabled && !me?.avatarUrl) return null;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flexShrink: 0 }}>
+      <button
+        type="button"
+        title={me.avatarUrl ? "Change photo" : "Add a photo"}
+        onClick={() => fileRef.current?.click()}
+        disabled={isUploading || !me.uploadsEnabled}
+        style={{
+          width: 84, height: 84, borderRadius: "50%", padding: 0, overflow: "hidden",
+          border: "1px solid var(--line)", background: "var(--surface)",
+          cursor: me.uploadsEnabled ? "pointer" : "default", display: "grid", placeItems: "center",
+        }}
+      >
+        {me.avatarUrl
+          ? <img src={me.avatarUrl} alt="Profile photo" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: isUploading ? 0.5 : 1 }} />
+          : <Icon name="plus" size={22} color="var(--ink-3)" />}
+      </button>
+      {me.uploadsEnabled && (
+        <span style={{ fontSize: 11.5, color: "var(--ink-3)" }}>
+          {isUploading ? "Uploading…" : me.avatarUrl ? "Change photo" : "Add a photo"}
+        </span>
+      )}
+      {err && <span style={{ fontSize: 11.5, color: "var(--err, #b3261e)", maxWidth: 140, textAlign: "center" }}>{err}</span>}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void startUpload([file]);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
 
 const TYPE_ICON: Record<string, IconName> = { video: "video", audio: "mic", letter: "pen" };
 const DELETE_MSG = `mutation($id: uuid!) { delete_app_messages_by_pk(id: $id) { id } }`;
@@ -53,18 +123,23 @@ export function Dashboard() {
 
   return (
     <div style={{ padding: "56px 64px 80px", maxWidth: 1020, margin: "0 auto" }}>
-      <header style={{ marginBottom: 48 }}>
-        <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.14em" }}>
-          {sealed ? "ACTIVE & SEALED" : "SETUP IN PROGRESS"}
+      <header style={{ marginBottom: 48, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
+        <div>
+          {!sealed && (
+            <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.14em" }}>
+              SETUP IN PROGRESS
+            </div>
+          )}
+          <h1 className="serif" style={{ fontSize: 56, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.04, margin: "8px 0 0" }}>
+            Good morning, {firstName}.
+          </h1>
+          <p className="serif" style={{ fontSize: 22, fontStyle: "italic", color: "var(--ink-2)", lineHeight: 1.4, maxWidth: 620, margin: "12px 0 0", fontWeight: 400 }}>
+            {sealed
+              ? "Everything is in place. There's nothing you need to do today — unless you want to add a thought."
+              : "A few steps left. Finish setting up to seal your account."}
+          </p>
         </div>
-        <h1 className="serif" style={{ fontSize: 56, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.04, margin: "8px 0 0" }}>
-          Good morning, {firstName}.
-        </h1>
-        <p className="serif" style={{ fontSize: 22, fontStyle: "italic", color: "var(--ink-2)", lineHeight: 1.4, maxWidth: 620, margin: "12px 0 0", fontWeight: 400 }}>
-          {sealed
-            ? "Everything is in place. There's nothing you need to do today — unless you want to add a thought."
-            : "A few steps left. Finish setting up to seal your account."}
-        </p>
+        <ProfilePhoto />
       </header>
 
       <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24, padding: "24px 0", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", marginBottom: 56 }}>

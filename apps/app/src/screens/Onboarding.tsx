@@ -3,6 +3,7 @@ import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
 import { gql, postApi, getApiUrl, getMarketingUrl } from "../lib/api.js";
 import { useSession } from "../lib/auth.js";
 import { VideoComposer } from "./VideoComposer.js";
+import { GoogleMark, OutlookMark, AolMark, FacebookMark, AppleMark } from "./preview/_shared.js";
 
 const ADD_ADVOCATES = `mutation($aName: String!, $aEmail: String!, $bName: String!, $bEmail: String!) {
   a: insert_app_advocates_one(object: {slot: "A", full_name: $aName, email: $aEmail, invite_status: "pending"}) { id }
@@ -200,13 +201,17 @@ function ContactsStep({ onNext }: { onNext: () => void }) {
           the dashboard). The full import screen lives at /contacts/import for
           after onboarding. */}
       <button type="button" onClick={() => setShowImport((v) => !v)} className="ll-btn secondary" style={{ marginBottom: showImport ? 12 : 16 }}>
-        <Icon name="users" size={14} color="var(--ink)" /> Import from Google or CSV
+        <Icon name="users" size={14} color="var(--ink)" /> Import contacts
       </button>
       {showImport && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 200px", justifyContent: "center" }}>Connect Google</button>
-            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 200px", justifyContent: "center" }}>Upload a CSV</button>
+            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 160px", justifyContent: "center" }}><GoogleMark size={16} /> Google</button>
+            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 160px", justifyContent: "center" }}><OutlookMark size={16} /> Hotmail / Outlook</button>
+            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 160px", justifyContent: "center" }}><AolMark size={16} /> AOL</button>
+            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 160px", justifyContent: "center" }}><FacebookMark size={16} /> Facebook</button>
+            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 160px", justifyContent: "center" }}><AppleMark size={16} /> Apple</button>
+            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 160px", justifyContent: "center" }}>Upload a CSV</button>
           </div>
           <div style={{ fontSize: 12.5, color: "var(--ink-3)", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-2)", padding: "10px 12px" }}>
             Connect a source to bring your contacts in, then review and tag them before saving. For now, add people below — you can import anytime from Contacts.
@@ -383,9 +388,9 @@ function Done({ onDone }: { onDone: () => void }) {
       <div style={{ width: 96, height: 96, borderRadius: "50%", background: "var(--brand-grad)", display: "grid", placeItems: "center", margin: "0 auto 24px" }}>
         <Icon name="check" size={44} color="white" stroke={2} />
       </div>
-      <h1 className="serif" style={{ fontSize: 48, fontWeight: 500, lineHeight: 1.05, margin: 0 }}>You're protected.</h1>
+      <h1 className="serif" style={{ fontSize: 48, fontWeight: 500, lineHeight: 1.05, margin: 0 }}>You're Linked.</h1>
       <p style={{ fontSize: 18, color: "var(--ink-2)", lineHeight: 1.55, margin: "16px 0 28px" }}>
-        Your LastLink is active and sealed. Come back anytime to add a message, refine your audience, or update an advocate. We won't bother you.
+        Your LastLink is active. Come back anytime to make necessary changes.
       </p>
       <button className="ll-btn grad" onClick={finish} disabled={busy}>
         {busy ? "Sealing…" : "Go to your overview"} <Icon name="arrow" size={16} color="white" />

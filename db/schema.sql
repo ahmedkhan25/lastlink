@@ -35,6 +35,10 @@ create table if not exists app.registrants (
   updated_at    timestamptz not null default now()
 );
 
+-- Profile photo (UploadThing URL for now; S3 later). Additive so `db:apply`
+-- upgrades existing databases in place.
+alter table app.registrants add column if not exists avatar_url text;
+
 create table if not exists app.identity_verifications (
   id            uuid primary key default gen_random_uuid(),
   registrant_id uuid not null references app.registrants(id) on delete cascade,

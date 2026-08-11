@@ -12,8 +12,18 @@ const WRAP = (inner: string) => `
   </div>
 </div>`;
 
+// background-color first: Outlook's renderer drops linear-gradient, and without
+// a solid fallback the label is white-on-white — an invisible button (seen in
+// the wild, 2026-08 partner test). The gradient then upgrades where supported.
 const BUTTON = (href: string, label: string) =>
-  `<a href="${href}" style="display:inline-block;background:linear-gradient(135deg,#6B2CB0,#2E73DC);color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:500;font-size:15px;">${label}</a>`;
+  `<a href="${href}" style="display:inline-block;background-color:#6B2CB0;background:linear-gradient(135deg,#6B2CB0,#2E73DC);color:#ffffff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:500;font-size:15px;">${label}</a>`;
+
+// Plain link under the button so the message stays reachable even in clients
+// that strip styled anchors entirely.
+const FALLBACK_LINK = (href: string) =>
+  `<p style="font-size:13px;line-height:1.6;color:#7C6A5B;margin:16px 0 0;word-break:break-all;">
+     Button not working? Open this link: <a href="${href}" style="color:#2E73DC;">${href}</a>
+   </p>`;
 
 export interface Email {
   subject: string;
@@ -30,6 +40,7 @@ export function advocateInviteEmail(o: { advocateName: string; registrantName: s
       </p>
       <p style="font-size:15px;line-height:1.6;color:#44362C;margin:0 0 28px;">There's nothing to do today. Accepting simply lets ${o.registrantName} know you're willing.</p>
       ${BUTTON(o.acceptUrl, "Accept this role")}
+      ${FALLBACK_LINK(o.acceptUrl)}
     `),
   };
 }
@@ -43,6 +54,7 @@ export function recipientMessageEmail(o: { recipientName: string; registrantName
         We are so very sorry. ${o.registrantName} recorded this for you, and asked us to deliver it only after it was verified. Take your time. Open it whenever you feel ready.
       </p>
       ${BUTTON(o.openUrl, "Open your message")}
+      ${FALLBACK_LINK(o.openUrl)}
     `),
   };
 }

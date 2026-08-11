@@ -1,7 +1,28 @@
 import type { Request, Response } from "express";
+import { env } from "./env.js";
 import { query } from "./db.js";
 import { requireRegistrant } from "./auth.js";
 import { logEvent } from "./audit.js";
+
+// GET /api/account/me — profile bits served over REST (avatar_url is not
+// exposed through Hasura; the column is untracked there).
+export async function getMe(req: Request, res: Response): Promise<void> {
+  const who = await requireRegistrant(req.headers);
+  if (!who) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const { rows } = await query<{ legal_name: string; avatar_url: string | null }>(
+    "select legal_name, avatar_url from app.registrants where id = $1",
+    [who.registrantId],
+  );
+  res.json({
+    legalName: rows[0]?.legal_name ?? null,
+    avatarUrl: rows[0]?.avatar_url ?? null,
+    // Lets the app hide the upload affordance in environments without UploadThing.
+    uploadsEnabled: Boolean(env.UPLOADTHING_TOKEN),
+  });
+}
 
 // POST /api/account/seal — completes onboarding. Sets the account to
 // active_sealed. NO recurring check-in is scheduled (product principle #1).

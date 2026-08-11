@@ -125,6 +125,26 @@ export function FacebookMark({ size = 18 }: { size?: number }) {
   );
 }
 
+/** Outlook / Hotmail mark (presentational envelope in Microsoft blue). */
+export function OutlookMark({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="2" y="4.5" width="20" height="15" rx="2.5" fill="#0F6CBD" />
+      <path d="M3.5 6.5L12 13l8.5-6.5" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** AOL mark (presentational). */
+export function AolMark({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="12" fill="#000" />
+      <text x="12" y="15.5" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="700" fontFamily="Helvetica, Arial, sans-serif">Aol.</text>
+    </svg>
+  );
+}
+
 /** Apple mark (presentational). */
 export function AppleMark({ size = 18 }: { size?: number }) {
   return (

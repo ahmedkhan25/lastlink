@@ -45,4 +45,7 @@ export const env = {
   MUX_SIGNING_KEY_ID: process.env.MUX_SIGNING_KEY_ID ?? "",
   MUX_SIGNING_KEY_PRIVATE: process.env.MUX_SIGNING_KEY_PRIVATE ?? "",
   RESEND_API_KEY: process.env.RESEND_API_KEY,
+  // UploadThing (profile photos). Absent → upload routes are not mounted and
+  // the app hides the upload affordance. SDK reads the same var from process.env.
+  UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
 } as const;

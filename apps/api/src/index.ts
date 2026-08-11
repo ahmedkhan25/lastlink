@@ -8,7 +8,9 @@ import { logEvent } from "./audit.js";
 import { auth } from "./auth.js";
 import { graphqlProxy } from "./graphql-proxy.js";
 import { saveLetter } from "./messages.js";
-import { sealAccount, demoReset } from "./account.js";
+import { sealAccount, demoReset, getMe } from "./account.js";
+import { createRouteHandler } from "uploadthing/express";
+import { uploadRouter } from "./uploadthing.js";
 import { previewImport, commitImport } from "./contacts-import.js";
 import { uploadInit, mediaRefresh, playbackToken, muxWebhook } from "./video.js";
 import { inviteAdvocate, getInvite, acceptInvite, requestAdvocateLink } from "./advocates.js";
@@ -29,7 +31,7 @@ app.use((req, res, next) => {
     res.header("Vary", "Origin");
     if (env.APP_ORIGINS.includes(origin)) res.header("Access-Control-Allow-Credentials", "true");
   }
-  res.header("Access-Control-Allow-Headers", "content-type");
+  res.header("Access-Control-Allow-Headers", "content-type,x-uploadthing-package,x-uploadthing-version");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   if (req.method === "OPTIONS") {
     res.sendStatus(204);
@@ -44,6 +46,12 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 // Mux webhook needs the RAW body for signature verification — before express.json().
 app.post("/webhooks/mux", express.raw({ type: "*/*" }), muxWebhook);
 
+// UploadThing (profile photos) parses its own body — mount BEFORE express.json().
+// Gated on the token so environments without it simply don't expose the routes.
+if (env.UPLOADTHING_TOKEN) {
+  app.use("/api/uploadthing", createRouteHandler({ router: uploadRouter }));
+}
+
 app.use(express.json());
 
 // The single browser→Hasura path.
@@ -51,6 +59,7 @@ app.post("/graphql", graphqlProxy);
 
 // Sensitive consequence endpoints (Express, never Hasura).
 app.post("/api/messages/:id/letter", saveLetter);
+app.get("/api/account/me", getMe);
 app.post("/api/account/seal", sealAccount);
 app.post("/api/demo/reset", demoReset); // DEMO ONLY (DEMO_RESET=true) — resurrect the registrant to re-run the flow
 // Contact import from a connected account. DEMO ONLY (DEMO_CONTACT_IMPORT=true):
