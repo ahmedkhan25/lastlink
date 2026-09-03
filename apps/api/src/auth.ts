@@ -4,6 +4,7 @@ import type { IncomingHttpHeaders } from "node:http";
 import { pool, query } from "./db.js";
 import { env } from "./env.js";
 import { logEvent } from "./audit.js";
+import { ensureMemorial } from "./memorial-slug.js";
 
 export const auth = betterAuth({
   database: pool,
@@ -20,12 +21,22 @@ export const auth = betterAuth({
       create: {
         // Every new auth user gets a registrant profile in onboarding state.
         after: async (user) => {
-          await query(
+          const created = await query<{ id: string; legal_name: string }>(
             `insert into app.registrants (user_id, legal_name, account_state)
              values ($1, $2, 'onboarding')
-             on conflict (user_id) do nothing`,
+             on conflict (user_id) do nothing
+             returning id, legal_name`,
             [user.id, user.name || user.email],
           );
+          const registrant = created.rows[0] ?? (
+            await query<{ id: string; legal_name: string }>(
+              "select id, legal_name from app.registrants where user_id = $1",
+              [user.id],
+            )
+          ).rows[0];
+          if (registrant) {
+            await ensureMemorial({ registrantId: registrant.id, legalName: registrant.legal_name });
+          }
           await logEvent({
             actorType: "registrant",
             actorId: user.id,

@@ -15,6 +15,10 @@ export function getAdvocateUrl(): string {
   return import.meta.env.VITE_ADVOCATE_URL ?? "http://localhost:5274";
 }
 
+export function getMemorialUrl(): string {
+  return import.meta.env.VITE_MEMORIAL_URL ?? "http://localhost:5276";
+}
+
 export interface GqlError {
   message: string;
 }
@@ -48,6 +52,20 @@ export async function postApi<T = unknown>(path: string, body?: unknown): Promis
     method: "POST",
     credentials: "include",
     headers: { "content-type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const e = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(e.error ?? `HTTP ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+export async function postIdempotent<T = unknown>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${getApiUrl()}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {

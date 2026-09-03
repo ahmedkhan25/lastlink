@@ -37,6 +37,22 @@ export const uploadRouter: FileRouter = {
       });
       return { avatarUrl: url };
     }),
+  memorialGalleryPhoto: f({
+    image: { maxFileSize: "8MB", maxFileCount: 6 },
+  })
+    .middleware(async ({ req }) => {
+      const who = await requireRegistrant(req.headers);
+      if (!who) throw new UploadThingError("Unauthorized");
+      return { registrantId: who.registrantId };
+    })
+    .onUploadComplete(async ({ file }) => ({ url: file.ufsUrl, key: file.key })),
+  // Investor-demo only: the public memorial lets a visitor attach one image to
+  // a pending condolence. Production abuse/file scanning is deliberately deferred.
+  condolencePhoto: f({
+    image: { maxFileSize: "4MB", maxFileCount: 1 },
+  })
+    .middleware(async () => ({ surface: "memorial" }))
+    .onUploadComplete(async ({ file }) => ({ url: file.ufsUrl, key: file.key })),
 };
 
 export type UploadRouter = typeof uploadRouter;

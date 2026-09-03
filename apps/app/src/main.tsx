@@ -11,8 +11,8 @@ import { Advocates } from "./screens/Advocates.js";
 import { MessageView } from "./screens/MessageView.js";
 import { SignIn } from "./screens/SignIn.js";
 import { ImportContacts } from "./screens/preview/ImportContacts.js";
-import { Condolences } from "./screens/preview/Condolences.js";
-import { MemorialSettings } from "./screens/preview/MemorialSettings.js";
+import { Condolences } from "./screens/Condolences.js";
+import { MemorialSettings } from "./screens/MemorialSettings.js";
 import { PlanBilling } from "./screens/preview/PlanBilling.js";
 import { Profile } from "./screens/preview/Profile.js";
 
@@ -30,8 +30,8 @@ const router = createBrowserRouter([
       { path: "contacts", element: <Contacts /> },
       { path: "contacts/import", element: <ImportContacts /> },
       { path: "advocates", element: <Advocates /> },
-      // Preview screens — presentational stand-ins for designed-but-unbuilt
-      // features (see docs/INVESTOR-DEMO-PLAN.md). No backend calls.
+      // Investor-demo additions. Memorial + condolences are database-backed;
+      // the remaining account/import screens are presentational previews.
       { path: "memorial/settings", element: <MemorialSettings /> },
       { path: "condolences", element: <Condolences /> },
       { path: "account/plan", element: <PlanBilling /> },

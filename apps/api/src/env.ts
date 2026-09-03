@@ -36,6 +36,8 @@ export const env = {
   ADVOCATE_TOKEN_SECRET: process.env.ADVOCATE_TOKEN_SECRET ?? process.env.BETTER_AUTH_SECRET ?? "dev-advocate-secret",
   ADVOCATE_BASE_URL: process.env.ADVOCATE_BASE_URL ?? "http://localhost:5274",
   MESSAGE_BASE_URL: process.env.MESSAGE_BASE_URL ?? "http://localhost:5275",
+  MEMORIAL_BASE_URL: process.env.MEMORIAL_BASE_URL ?? "http://localhost:5276",
+  DEMO_MEMORIAL: process.env.DEMO_MEMORIAL === "true",
   // Email (Resend)
   RESEND_FROM: process.env.RESEND_FROM ?? "LastLink <onboarding@resend.dev>",
   // Providers

@@ -16,6 +16,13 @@ import { uploadInit, mediaRefresh, playbackToken, muxWebhook } from "./video.js"
 import { inviteAdvocate, getInvite, acceptInvite, requestAdvocateLink } from "./advocates.js";
 import { getCase, initiateCase, confirmCase, cancelCase, releaseNow } from "./case.js";
 import { getRecipient, openRecipient } from "./recipient.js";
+import {
+  createCondolence,
+  getPublicMemorial,
+  hideDemoMemorial,
+  publishDemoMemorial,
+  setMemorialMessageVisibility,
+} from "./memorial.js";
 
 const app = express();
 
@@ -31,7 +38,7 @@ app.use((req, res, next) => {
     res.header("Vary", "Origin");
     if (env.APP_ORIGINS.includes(origin)) res.header("Access-Control-Allow-Credentials", "true");
   }
-  res.header("Access-Control-Allow-Headers", "content-type,x-uploadthing-package,x-uploadthing-version");
+  res.header("Access-Control-Allow-Headers", "content-type,idempotency-key,x-uploadthing-package,x-uploadthing-version");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   if (req.method === "OPTIONS") {
     res.sendStatus(204);
@@ -87,6 +94,13 @@ app.post("/advocate/:token/release", releaseNow);
 // Recipient (the message experience), token-based.
 app.get("/recipient/:token", getRecipient);
 app.post("/recipient/:token/open", openRecipient);
+
+// Public memorial read/contribution surface + demo-only owner controls.
+app.get("/public/memorial/:slug", getPublicMemorial);
+app.post("/public/memorial/:slug/condolences", createCondolence);
+app.post("/api/memorial/publish-demo", publishDemoMemorial);
+app.post("/api/memorial/hide-demo", hideDemoMemorial);
+app.post("/api/memorial/message-visibility", setMemorialMessageVisibility);
 
 app.get("/health", async (_req, res) => {
   try {

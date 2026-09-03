@@ -1,6 +1,6 @@
 # LastLink — Product Status (Investor-Demo MVP)
 
-_Last updated: 2026-07-02 · Owner: Ahmed_
+_Last updated: 2026-09-02 · Owner: Ahmed_
 
 LastLink is a **verified digital death-notification and legacy-messaging platform**.
 A person records messages for the people they love; when they die, **two trusted
@@ -28,6 +28,7 @@ only) and share one **Neon Postgres** database + one **Hasura** GraphQL engine.
 | **Registrant app** | https://lastlink-web.onrender.com | The core product. Sign up, onboard, write/record messages, add contacts, designate advocates, dashboard. Also hosts the **API** and the browser→Hasura proxy. | ✅ |
 | **Advocate** | https://lastlink-advocate.onrender.com | Token-gated. An advocate accepts their role, and later initiates + confirms a passing and watches the 24h hold. Reached via email link. | ✅ |
 | **Recipient message** | https://lastlink-message.onrender.com | Token-gated. Where a recipient opens the private message left for them (video or letter) + the audit footer. Reached via email link. | ✅ |
+| **Public memorial** | https://lastlink-memorial.onrender.com | Slug-based memorial for each test user: story, gallery, moderated visitor memories, public message cards, and demo offerings. | 🟡 Built; deploy pending |
 | Hasura (internal) | https://lastlink-hasura.onrender.com | GraphQL engine over Neon. Admin-secret gated; console + introspection off. **Not user-facing** — infra only. | ✅ |
 
 **Notes**
@@ -130,6 +131,25 @@ CTA into the app. Copy has had an **honesty pass** (24h hold, "patent-pending"
 not a fabricated patent number, "SOC 2 audit underway" rather than certified,
 "encryption at rest" not false end-to-end claims).
 
+### 3.6 Public memorial and visitor memories 🟡
+`lastlink-memorial.onrender.com/:slug`
+
+The repository now contains a database-backed memorial for every registrant,
+replacing the single hard-coded memorial mock. A registrant can edit the life
+story and service details, upload gallery photos, choose which ready message
+cards appear, and explicitly publish or hide the page for a demo. Visitors can
+submit a memory with an optional photo; submissions remain pending until they
+are approved from the registrant app's Condolences screen.
+
+The Remember tab displays three database-backed, real-looking demo offerings:
+flowers, a hospice donation, and a memorial tree. Their handoff is intentionally
+mocked and clearly confirms that no order, donation, or charge occurred.
+
+This increment is **demo-grade and not yet deployed**. Apply `db/schema.sql`, run
+the Hasura metadata setup, seed with `pnpm db:seed:memorial`, and deploy the API,
+registrant app, and memorial site before describing it as live. Abuse controls,
+malware scanning, durable moderation operations, and real commerce are deferred.
+
 ---
 
 ## 4. Intentionally deferred (so we don't oversell)
@@ -148,6 +168,9 @@ not the full hardened product.
 | **Auth hardening** | 🟡 email+password | mandatory 2FA, strict CSP |
 | **Delivery worker** | 🟡 on-demand/time-warp release | pg-boss durable holds + fan-out |
 | **ID verification** | 🟡 demo-approved | real vendor (liveness/gov-ID) |
+| **Memorial publishing** | 🟡 manual demo control | tie publication to the verified release workflow |
+| **Visitor memories** | 🟡 approval queue; optional images | abuse controls, image scanning, rate limits, durable moderation audit |
+| **Memorial offerings** | 🟡 realistic mock handoff; no charge | partner integrations, fulfillment, payments, disclosures |
 
 The **durable, cancellable hold + provable cancel-during-hold** is *kept* — it is
 the product itself.
@@ -169,7 +192,7 @@ the product itself.
 
 ## 6. Repo & deploy
 
-- **Monorepo:** `apps/{marketing,app,advocate,message,api}` + `packages/{ui,
+- **Monorepo:** `apps/{marketing,app,advocate,message,memorial,api}` + `packages/{ui,
   shared,crypto,notifications,verification}`. pnpm workspaces via Vite+ (`vp`).
 - **GitHub:** `ahmedkhan25/lastlink` (branch `main`).
 - **Deploy:** Render Blueprint (`render.yaml`). Push to `main` auto-deploys;

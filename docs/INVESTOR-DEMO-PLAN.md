@@ -24,10 +24,14 @@ The full narrated path, in order. "Real" = shipped and hitting Postgres/Mux/Rese
 | 10 | 24-hour cancellable hold | ✅ Real (time-warped for demo) | `advocate` |
 | 11 | Release (decrypt, tokens, fan-out) | ✅ Real | `api` + workers |
 | 12 | Recipient opens the message | ✅ Real | `message` |
-| 13 | Public memorial + condolences | ⛔ **Mock** | new `memorial` |
-| 14 | Remember them / upgrade to Premium | ⛔ **Mock** | `app` |
+| 13 | Per-user public memorial + moderated visitor memories | 🟡 **Real demo build; deploy pending** | `memorial` + `api` |
+| 14 | Remember them: flowers, donation, memorial tree | 🟡 **Real UI + data; mocked partner handoff** | `memorial` |
 
-**Only three places on the whole path are mocks:** the social sign-in buttons, three additions inside onboarding, and the two post-death surfaces (memorial + offerings/billing). Everything on the critical verification/release path is real.
+The memorial page, gallery, moderation queue, and visitor-submission flow now use
+real per-registrant records. Commerce remains deliberately mocked: the offering
+cards and handoff are presentation-ready, but they never charge or create an
+external order. Everything on the critical verification/release path remains
+real.
 
 ---
 
@@ -71,8 +75,13 @@ All of it typechecks and production-builds clean. Original design intent below.
 - Each reuses `@lastlink/ui`; each renders from a local fixtures module.
 - Label them subtly (a "Preview" chip) so the team never mistakes a mock for a shipped feature.
 
-### Option C — the real build (post-demo)
-Turn the mocks into real features: add the schema (a `memorials` table, `condolences`, `messages.visible_on_memorial`, `registrants.portrait_ref`), the Hasura permissions, and the Express endpoints. This is the actual roadmap, sequenced in `GAP-ANALYSIS-ruby-vs-new.md` §7.3.
+### Option C — database-backed memorial demo ✅ BUILT
+The repository now includes `memorials`, `memorial_media`, `condolences`, and
+`messages.visible_on_memorial`; registrant-scoped Hasura permissions; public
+Express read/submission endpoints; UploadThing image routes; moderation and
+settings screens; and an idempotent three-user demo seed. This is intentionally
+not productionized: publication is a manual demo control, visitor content has no
+abuse pipeline, and offerings stop at a clearly mocked handoff.
 
 ### Suggested build order for Option B (one PR per theme)
 1. Onboarding additions (consent + avatar + import entry) — small diffs into `Onboarding.tsx`; highest demo value, it's early in the path.
@@ -102,4 +111,9 @@ Advocate invites and recipient notifications **do not send in prod** — the Res
 
 ## 6. Status & next step
 
-**Option B is built** (all preview screens + the memorial app) and the **email fix config** is in `render.yaml` (`RESEND_FROM`) with a startup warning in the API. The one remaining action is yours: **verify a sending domain on Resend** (`notify.lastlink.com`) so email actually delivers — the code and config are ready for it. After that, Option C (the real schema + endpoints, per `GAP-ANALYSIS-ruby-vs-new.md` §7.3) is the roadmap to turn these previews into shipped features.
+**Option C is implemented locally.** Before the investor demo, integrate the
+parallel Aug 30 issue-fix branch, apply the schema and Hasura metadata to the
+demo environment, run `pnpm db:seed:memorial`, deploy the three affected
+services, and execute the smoke script in
+`docs/DEV-PLAN-MEMORIAL-DEMO-2026-09-02.md`. Production email domain verification
+is still a separate prerequisite for email-driven portions of the demo.

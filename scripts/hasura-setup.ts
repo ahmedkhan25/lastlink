@@ -14,9 +14,12 @@ const COLS = {
   registrants: ["id", "legal_name", "dob", "country", "plan", "account_state", "sealed_at", "created_at"],
   contacts: ["id", "registrant_id", "full_name", "relationship", "location", "email", "phone", "reach_channels", "created_at"],
   contact_groups: ["id", "registrant_id", "name", "is_default", "created_at"],
-  messages: ["id", "registrant_id", "group_id", "type", "title", "status", "media_asset_id", "delivery_settings", "created_at", "updated_at"],
+  messages: ["id", "registrant_id", "group_id", "type", "title", "status", "media_asset_id", "delivery_settings", "visible_on_memorial", "created_at", "updated_at"],
   advocates: ["id", "registrant_id", "slot", "full_name", "relationship", "email", "phone", "invite_status", "identity_verified", "invited_at", "accepted_at", "last_login_at"],
   media_assets: ["id", "registrant_id", "mux_playback_id", "playback_policy", "status", "duration_seconds", "caption_status", "static_rendition_status", "thumbnail_ref", "created_at"],
+  memorials: ["id", "registrant_id", "slug", "status", "visibility", "headline", "location", "birth_year", "death_year", "quote", "story", "service_when", "service_details", "published_at", "created_at", "updated_at"],
+  memorial_media: ["id", "memorial_id", "url", "file_key", "caption", "alt_text", "sort_order", "created_at"],
+  condolences: ["id", "memorial_id", "author_name", "author_email", "relationship", "body", "image_url", "image_key", "status", "created_at", "reviewed_at"],
 };
 
 interface TableMeta {
@@ -53,9 +56,43 @@ groups.array_relationships = [{ name: "members", using: { foreign_key_constraint
 // registrants: row created by the auth hook; registrant may read/seal their own.
 const registrants: TableMeta = {
   table: { schema: "app", name: "registrants" },
-  object_relationships: [],
+  object_relationships: [{ name: "memorial", using: { manual_configuration: { remote_table: { schema: "app", name: "memorials" }, column_mapping: { id: "registrant_id" } } } }],
   select_permissions: [{ role: "registrant", permission: { columns: COLS.registrants, filter: { id: { _eq: "X-Hasura-User-Id" } } } }],
   update_permissions: [{ role: "registrant", permission: { columns: ["legal_name", "dob", "country", "account_state"], filter: { id: { _eq: "X-Hasura-User-Id" } }, check: {} } }],
+};
+
+const memorials: TableMeta = {
+  table: { schema: "app", name: "memorials" },
+  object_relationships: [{ name: "registrant", using: { foreign_key_constraint_on: "registrant_id" } }],
+  array_relationships: [
+    { name: "media", using: { foreign_key_constraint_on: { table: { schema: "app", name: "memorial_media" }, column: "memorial_id" } } },
+    { name: "condolences", using: { foreign_key_constraint_on: { table: { schema: "app", name: "condolences" }, column: "memorial_id" } } },
+  ],
+  select_permissions: [{ role: "registrant", permission: { columns: COLS.memorials, filter: OWN } }],
+  update_permissions: [{
+    role: "registrant",
+    permission: {
+      columns: ["visibility", "headline", "location", "birth_year", "death_year", "quote", "story", "service_when", "service_details"],
+      filter: OWN,
+      check: OWN,
+    },
+  }],
+};
+
+const memorialMedia: TableMeta = {
+  table: { schema: "app", name: "memorial_media" },
+  object_relationships: [{ name: "memorial", using: { foreign_key_constraint_on: "memorial_id" } }],
+  select_permissions: [{ role: "registrant", permission: { columns: COLS.memorial_media, filter: { memorial: OWN } } }],
+  insert_permissions: [{ role: "registrant", permission: { columns: ["memorial_id", "url", "file_key", "caption", "alt_text", "sort_order"], check: { memorial: OWN } } }],
+  update_permissions: [{ role: "registrant", permission: { columns: ["caption", "alt_text", "sort_order"], filter: { memorial: OWN }, check: { memorial: OWN } } }],
+  delete_permissions: [{ role: "registrant", permission: { filter: { memorial: OWN } } }],
+};
+
+const condolences: TableMeta = {
+  table: { schema: "app", name: "condolences" },
+  object_relationships: [{ name: "memorial", using: { foreign_key_constraint_on: "memorial_id" } }],
+  select_permissions: [{ role: "registrant", permission: { columns: COLS.condolences, filter: { memorial: OWN } } }],
+  update_permissions: [{ role: "registrant", permission: { columns: ["status", "reviewed_at"], filter: { memorial: OWN }, check: { memorial: OWN } } }],
 };
 
 const members: TableMeta = {
@@ -84,6 +121,9 @@ const metadata = {
         messages,
         ownedTable("advocates", { writable: true }),
         ownedTable("media_assets"),
+        memorials,
+        memorialMedia,
+        condolences,
       ],
     },
   ],

@@ -2,3 +2,42 @@
 @import "@lastlink/ui/styles.css";
 
 html, body, #root { height: 100%; }
+
+.memorial-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.memorial-gallery img { width: 100%; height: 230px; object-fit: cover; border-radius: var(--r-3); }
+.memorial-gallery figcaption { color: var(--ink-3); font-size: 12px; padding: 7px 3px; }
+.message-grid, .offering-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 16px; }
+.cond-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 32px; align-items: start; }
+.offer-strip {
+  width: 100%; margin-top: 46px; padding: 0; display: grid; grid-template-columns: 170px 1fr auto;
+  align-items: center; gap: 22px; text-align: left; border: 1px solid var(--line); border-radius: var(--r-4);
+  overflow: hidden; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-2);
+}
+.offer-strip > img { width: 170px; height: 135px; object-fit: cover; }
+.offer-strip strong, .offer-strip small, .offer-strip .mono { display: block; }
+.offer-strip .mono { color: var(--ink-3); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.offer-strip strong { font-size: 23px; margin: 5px 0 3px; }
+.offer-strip small { color: var(--ink-3); max-width: 56ch; }
+.offer-strip > .ll-btn { margin-right: 20px; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(31,24,20,.58); backdrop-filter: blur(5px); }
+.offer-modal { width: min(520px, 100%); max-height: 90vh; overflow: auto; background: var(--surface); border-radius: var(--r-4); box-shadow: var(--shadow-3); }
+.offer-modal > img { width: 100%; height: 230px; object-fit: cover; }
+
+@media (max-width: 760px) {
+  .memorial-identity { align-items: flex-start !important; }
+  .memorial-name { font-size: 42px !important; }
+  .cond-grid { grid-template-columns: 1fr; }
+  .offer-strip { grid-template-columns: 110px 1fr; padding-right: 14px; }
+  .offer-strip > img { width: 110px; height: 120px; }
+  .offer-strip > .ll-btn { display: none; }
+}
+
+@media (max-width: 520px) {
+  .memorial-identity { display: block !important; }
+  .memorial-identity > div:first-child { margin-bottom: 22px; }
+  .memorial-gallery img { height: 200px; }
+}

@@ -11,9 +11,11 @@
   "dependencies": {
     "@lastlink/shared": "workspace:*",
     "@lastlink/ui": "workspace:*",
+    "@uploadthing/react": "^7.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.1.0"
+    "react-router-dom": "^7.1.0",
+    "uploadthing": "^7.7.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

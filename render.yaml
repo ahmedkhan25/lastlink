@@ -52,6 +52,13 @@ services:
         value: "true"
       - key: DEMO_RESET
         value: "true"
+      # DEMO ONLY — database-backed memorial editor plus manual publish/hide.
+      - key: DEMO_MEMORIAL
+        value: "true"
+      - key: MEMORIAL_BASE_URL
+        value: https://lastlink-memorial.onrender.com
+      - key: VITE_MEMORIAL_URL
+        value: https://lastlink-memorial.onrender.com
       # DEMO ONLY — contact import from "Google"/"Facebook". The OAuth handshake is
       # simulated and the directory is fixed lastlink.care test users. REMOVE for prod
       # (or leave off until the real People API / Graph API connectors land).
@@ -91,7 +98,7 @@ services:
         source: "/*"
         destination: "/index.html"
 
-  # ── Public memorial surface (static SPA; public, indexable) ──────────────
+  # ── Public memorial surface (static SPA; public, noindexed for demos) ────
   - type: web
     name: lastlink-memorial
     runtime: static

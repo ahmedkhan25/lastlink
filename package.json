@@ -9,7 +9,7 @@
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "db:apply": "psql \"$DATABASE_URL_DIRECT\" -v ON_ERROR_STOP=1 -f db/schema.sql",
-    "db:seed": "tsx scripts/seed.ts",
+    "db:seed:memorial": "tsx scripts/seed-memorial-demo.ts",
     "hasura:up": "docker compose -f hasura/docker-compose.yml up -d",
     "hasura:down": "docker compose -f hasura/docker-compose.yml down"
   },

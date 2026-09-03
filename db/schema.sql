@@ -112,6 +112,75 @@ create table if not exists app.messages (
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );
+alter table app.messages add column if not exists visible_on_memorial boolean not null default false;
+
+-- ============================================================================
+-- app — investor-demo memorials
+-- ============================================================================
+
+create table if not exists app.memorials (
+  id              uuid primary key default gen_random_uuid(),
+  registrant_id   uuid not null unique references app.registrants(id) on delete cascade,
+  slug            text not null unique check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
+  status          text not null default 'draft' check (status in ('draft','published','hidden')),
+  visibility      text not null default 'unlisted' check (visibility in ('unlisted','public')),
+  headline        text,
+  location        text,
+  birth_year      integer check (birth_year between 1800 and 2200),
+  death_year      integer check (death_year between 1800 and 2200),
+  quote           text,
+  story           text,
+  service_when    text,
+  service_details text,
+  published_at    timestamptz,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+create table if not exists app.memorial_media (
+  id          uuid primary key default gen_random_uuid(),
+  memorial_id uuid not null references app.memorials(id) on delete cascade,
+  url         text not null,
+  file_key    text,
+  caption     text,
+  alt_text    text,
+  sort_order  integer not null default 0,
+  created_at  timestamptz not null default now()
+);
+create index if not exists memorial_media_order_idx
+  on app.memorial_media (memorial_id, sort_order, created_at);
+
+create table if not exists app.condolences (
+  id              uuid primary key default gen_random_uuid(),
+  memorial_id     uuid not null references app.memorials(id) on delete cascade,
+  author_name     text not null,
+  author_email    text,
+  relationship    text,
+  body            text not null,
+  image_url       text,
+  image_key       text,
+  status          text not null default 'pending' check (status in ('pending','approved','hidden')),
+  idempotency_key text,
+  created_at      timestamptz not null default now(),
+  reviewed_at     timestamptz
+);
+create index if not exists condolences_feed_idx
+  on app.condolences (memorial_id, status, created_at desc);
+create unique index if not exists condolences_idempotency_idx
+  on app.condolences (memorial_id, idempotency_key)
+  where idempotency_key is not null;
+
+-- Every existing test registrant gets a separate blank memorial. Curated seed
+-- data can replace these machine-safe slugs with cleaner investor-demo slugs.
+insert into app.memorials (registrant_id, slug, birth_year)
+select r.id,
+       coalesce(
+         nullif(trim(both '-' from regexp_replace(lower(r.legal_name), '[^a-z0-9]+', '-', 'g')), ''),
+         'memorial'
+       ) || '-' || left(r.id::text, 6),
+       extract(year from r.dob)::integer
+  from app.registrants r
+on conflict (registrant_id) do nothing;
 
 -- ============================================================================
 -- app — advocates, verification, release, delivery
@@ -233,6 +302,12 @@ create table if not exists app.offerings (
   description text,
   active      boolean not null default true
 );
+alter table app.offerings add column if not exists image_url text;
+alter table app.offerings add column if not exists price_label text;
+alter table app.offerings add column if not exists cta_label text;
+alter table app.offerings add column if not exists cta_url text;
+alter table app.offerings add column if not exists sponsor_label text;
+alter table app.offerings add column if not exists sort_order integer not null default 0;
 
 -- ============================================================================
 -- enterprise
@@ -299,7 +374,7 @@ create index if not exists event_log_action_idx on audit.event_log (action);
 do $$
 declare t text;
 begin
-  foreach t in array array['app.registrants','app.media_assets','app.messages','app.verification_cases']
+  foreach t in array array['app.registrants','app.media_assets','app.messages','app.memorials','app.verification_cases']
   loop
     execute format('drop trigger if exists set_updated_at on %s', t);
     execute format('create trigger set_updated_at before update on %s for each row execute function app.set_updated_at()', t);

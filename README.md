@@ -130,6 +130,7 @@ Open **http://127.0.0.1:5273** → *Begin your LastLink* → onboarding → dash
 | Registrant SPA (`apps/app`) | `5273` | `strictPort`; proxies `/api` + `/graphql` to the API (same-origin → first-party cookies) |
 | Express API (`apps/api`) | `10000` | |
 | Hasura | `8080` | Docker → Neon |
+| Public memorial (`apps/memorial`) | `5276` | Per-user memorials, visitor memories, and demo offerings |
 
 > Note: `5273` is dedicated to avoid colliding with other local dev servers. The SPA's Vite proxy keeps the browser same-origin, so auth cookies are first-party (no CORS, no `localhost`-vs-`127.0.0.1` cookie issues).
 
@@ -152,6 +153,7 @@ See [`.env.example`](.env.example) for the full template. Summary:
 | `MUX_WEBHOOK_SECRET` | Mux webhook signature (prod) |
 | `RESEND_API_KEY` | Email (pending) |
 | `HOLD_DURATION_MS` | Demo time-warp for the 24h hold |
+| `DEMO_MEMORIAL` / `MEMORIAL_BASE_URL` / `VITE_MEMORIAL_URL` | Demo-only memorial controls and cross-surface links |
 
 ---
 
