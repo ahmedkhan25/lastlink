@@ -15,14 +15,10 @@ interface Advocate {
 
 const LIST = `query { app_advocates(order_by: {slot: asc}) { id slot full_name relationship email invite_status identity_verified } }`;
 const REMOVE = `mutation($id: uuid!) { delete_app_advocates_by_pk(id: $id) { id } }`;
-const ADD = `mutation($slot: String!, $name: String!, $email: String!) {
-  insert_app_advocates_one(object: {slot: $slot, full_name: $name, email: $email, invite_status: "pending"}) { id }
-}`;
-
 const TIMELINE = [
   { t: "Advocate A confirms", d: "Identity + passing details, independently.", icon: "fingerprint" },
   { t: "Advocate B confirms", d: "The second, separately. Neither acts alone.", icon: "shield" },
-  { t: "24-hour hold", d: "A full day to pause. Either advocate can stop it.", icon: "clock" },
+  { t: "One-hour hold", d: "One full hour to pause. Either advocate can stop it.", icon: "clock" },
   { t: "Release authorized", d: "Only if the day passes with no cancel.", icon: "check" },
   { t: "Dignified delivery", d: "Within 48 hours, gently, by email.", icon: "mail" },
 ] as const;
@@ -39,16 +35,25 @@ export function Advocates() {
 
   const [form, setForm] = useState({ name: "", email: "" });
   const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
   async function add() {
     const used = advocates.map((x) => x.slot);
     const slot = ["A", "B"].find((s) => !used.includes(s));
     if (!slot || !form.name.trim() || !form.email.trim()) return;
     setAdding(true);
-    const r = await gql<{ insert_app_advocates_one: { id: string } }>(ADD, { slot, name: form.name, email: form.email });
-    await postApi(`/api/advocates/${r.insert_app_advocates_one.id}/invite`).catch(() => {});
-    setForm({ name: "", email: "" });
-    setAdding(false);
-    await load();
+    setAddError(null);
+    try {
+      const result = await postApi<{ advocates: { id: string }[] }>("/api/advocates", {
+        advocates: [{ slot, name: form.name, email: form.email }],
+      });
+      await postApi(`/api/advocates/${result.advocates[0]!.id}/invite`).catch(() => {});
+      setForm({ name: "", email: "" });
+      await load();
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : "Could not add this advocate.");
+    } finally {
+      setAdding(false);
+    }
   }
 
   const [sent, setSent] = useState<Record<string, boolean>>({});
@@ -86,6 +91,7 @@ export function Advocates() {
             <Icon name="plus" size={14} color="white" /> {adding ? "Inviting…" : "Add & invite advocate"}
           </button>
           <span style={{ fontSize: 12, color: "var(--ink-3)", width: "100%" }}>You can designate up to two. We'll email each an invitation to accept.</span>
+          {addError && <span style={{ fontSize: 12, color: "var(--err)", width: "100%" }}>{addError}</span>}
         </div>
       )}
 
@@ -128,7 +134,7 @@ export function Advocates() {
 
       <div style={{ padding: 28, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)" }}>
         <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>What happens when the time comes</h2>
-        <p style={{ fontSize: 13, color: "var(--ink-3)", margin: "0 0 28px" }}>The patented workflow — a 24-hour hold, fully cancellable, before any release.</p>
+        <p style={{ fontSize: 13, color: "var(--ink-3)", margin: "0 0 28px" }}>The patented workflow — a one-hour hold, fully cancellable, before any release.</p>
         <ReleaseTimeline />
       </div>
     </div>
@@ -136,7 +142,7 @@ export function Advocates() {
 }
 
 // Animated process timeline: each stage lights up in sequence and the connector
-// line fills, then it loops — confirm → confirm → 24h hold → release → deliver.
+// line fills, then it loops — confirm → confirm → 1h hold → release → deliver.
 function ReleaseTimeline() {
   const [active, setActive] = useState(0);
   useEffect(() => {

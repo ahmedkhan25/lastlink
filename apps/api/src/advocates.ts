@@ -1,11 +1,68 @@
 import type { Request, Response } from "express";
 import { advocateInviteEmail } from "@lastlink/notifications";
-import { query } from "./db.js";
+import { pool, query } from "./db.js";
 import { env } from "./env.js";
 import { requireRegistrant } from "./auth.js";
 import { logEvent } from "./audit.js";
 import { signAdvocateInvite, verifyAdvocateInvite } from "./tokens.js";
 import { notifier } from "./notify.js";
+
+interface NewAdvocate {
+  slot: "A" | "B" | null;
+  name: string;
+  email: string;
+}
+
+// POST /api/advocates — all advocate creation goes through the authenticated
+// API so a registrant cannot appoint their own account email.
+export async function createAdvocates(req: Request, res: Response): Promise<void> {
+  const who = await requireRegistrant(req.headers);
+  if (!who) return void res.status(401).json({ error: "unauthorized" });
+  const raw = Array.isArray(req.body?.advocates) ? req.body.advocates : [];
+  const advocates: NewAdvocate[] = raw.map((value: unknown) => {
+    const item = value as Record<string, unknown>;
+    return {
+      slot: item.slot === "A" || item.slot === "B" ? item.slot : null,
+      name: typeof item.name === "string" ? item.name.trim().slice(0, 200) : "",
+      email: typeof item.email === "string" ? item.email.trim().toLowerCase().slice(0, 320) : "",
+    };
+  });
+  if (advocates.length < 1 || advocates.length > 2 || advocates.some((a) => !a.slot || !a.name || !a.email.includes("@"))) {
+    return void res.status(400).json({ error: "Enter a name and valid email for each advocate." });
+  }
+  if (new Set(advocates.map((a) => a.slot)).size !== advocates.length) {
+    return void res.status(400).json({ error: "Each advocate must have a different slot." });
+  }
+  if (new Set(advocates.map((a) => a.email)).size !== advocates.length) {
+    return void res.status(400).json({ error: "Use a different email for each advocate." });
+  }
+  if (advocates.some((a) => a.email === who.email.trim().toLowerCase())) {
+    return void res.status(400).json({ error: "You cannot designate your own account email as an advocate." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const created: { id: string; slot: string }[] = [];
+    for (const advocate of advocates) {
+      const result = await client.query<{ id: string; slot: string }>(
+        `insert into app.advocates (registrant_id, slot, full_name, email, invite_status)
+         values ($1,$2,$3,$4,'pending') returning id, slot`,
+        [who.registrantId, advocate.slot, advocate.name, advocate.email],
+      );
+      created.push(result.rows[0]!);
+    }
+    await client.query("commit");
+    res.status(201).json({ advocates: created });
+  } catch (err) {
+    await client.query("rollback").catch(() => {});
+    const code = (err as { code?: string }).code;
+    if (code === "23505") return void res.status(409).json({ error: "That slot or advocate email is already in use." });
+    throw err;
+  } finally {
+    client.release();
+  }
+}
 
 // POST /api/advocates/:id/invite — registrant sends the advocate their email invite.
 export async function inviteAdvocate(req: Request, res: Response): Promise<void> {
@@ -75,7 +132,7 @@ export async function requestAdvocateLink(req: Request, res: Response): Promise<
       email: {
         subject: `Your LastLink advocate link for ${adv.legal_name}`,
         html: `<p>${adv.full_name}, here is your secure link to act as <strong>${adv.legal_name}</strong>'s advocate. `
-          + `If they have passed, open it to begin the confirmation — both advocates confirm independently, then a 24-hour hold before anything is released.</p>`
+          + `If they have passed, open it to begin the confirmation — both advocates confirm independently, then a one-hour hold before anything is released.</p>`
           + `<p><a href="${url}">Open your advocate page</a></p>`
           + `<p style="color:#888;font-size:12px">If you didn't request this, you can ignore it.</p>`,
       },

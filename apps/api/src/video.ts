@@ -1,13 +1,15 @@
 import type { Request, Response } from "express";
 import crypto from "node:crypto";
 import Mux from "@mux/mux-node";
-import { query } from "./db.js";
+import { pool, query } from "./db.js";
 import { env } from "./env.js";
 import { requireRegistrant } from "./auth.js";
 import { logEvent } from "./audit.js";
+import { assertOwnedAudience, insertMessageRecipients, parseMessageAudience } from "./audience.js";
 
 const mux = new Mux({ tokenId: env.MUX_TOKEN_ID, tokenSecret: env.MUX_TOKEN_SECRET });
 const CORS_ORIGIN = process.env.MUX_CORS_ORIGIN ?? process.env.RENDER_EXTERNAL_URL ?? "*"; // exact origin in prod
+const MAX_VIDEO_DURATION_SECONDS = 5 * 60;
 
 export interface PlaybackTokens { playback: string; thumbnail: string; storyboard: string }
 
@@ -40,35 +42,86 @@ async function ownedMedia(messageId: string, registrantId: string): Promise<Medi
   return rows[0] ?? null;
 }
 
-// POST /api/messages/:id/upload-init → Mux direct upload (signed, captions, MP4).
-export async function uploadInit(req: Request, res: Response): Promise<void> {
-  const who = await requireRegistrant(req.headers);
-  if (!who) return void res.status(401).json({ error: "unauthorized" });
-  const id = String(req.params.id);
-
-  const owned = await query<{ id: string }>("select id from app.messages where id=$1 and registrant_id=$2", [id, who.registrantId]);
-  if (!owned.rows[0]) return void res.status(404).json({ error: "message not found" });
-
-  const upload = await mux.video.uploads.create({
+/** Create a Mux upload for a known message id. No database writes happen here. */
+async function createMuxUpload(messageId: string) {
+  return mux.video.uploads.create({
     cors_origin: CORS_ORIGIN,
     new_asset_settings: {
       playback_policy: ["signed"],
       video_quality: "basic",
-      passthrough: id,
+      passthrough: messageId,
       static_renditions: [{ resolution: "highest" }, { resolution: "audio-only" }],
       inputs: [{ generated_subtitles: [{ language_code: "en", name: "English CC" }] }],
     } as never,
   });
+}
 
-  const ins = await query<{ id: string }>(
-    `insert into app.media_assets (registrant_id, mux_upload_id, status) values ($1,$2,'waiting') returning id`,
-    [who.registrantId, upload.id],
+// POST /api/messages/video/upload-init → initialize Mux first, then create the
+// media + message rows in one DB transaction. A failed Mux request therefore
+// cannot leave a dashboard-visible orphan draft.
+export async function createVideoUpload(req: Request, res: Response): Promise<void> {
+  const who = await requireRegistrant(req.headers);
+  if (!who) return void res.status(401).json({ error: "unauthorized" });
+  const title = typeof req.body?.title === "string" ? req.body.title.trim().slice(0, 300) : null;
+  let audience;
+  try { audience = parseMessageAudience(req.body); }
+  catch (error) { return void res.status(400).json({ error: error instanceof Error ? error.message : "invalid audience" }); }
+
+  // Validate before allocating anything at Mux, then repeat inside the database
+  // transaction to close the small contact-deletion race.
+  const validationClient = await pool.connect();
+  try { await assertOwnedAudience(validationClient, who.registrantId, audience); }
+  catch (error) {
+    return void res.status(400).json({ error: error instanceof Error ? error.message : "invalid audience" });
+  } finally { validationClient.release(); }
+
+  const messageId = crypto.randomUUID();
+  const upload = await createMuxUpload(messageId);
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const ins = await client.query<{ id: string }>(
+      `insert into app.media_assets (registrant_id, mux_upload_id, status)
+       values ($1,$2,'waiting') returning id`,
+      [who.registrantId, upload.id],
+    );
+    const mediaAssetId = ins.rows[0]!.id;
+    await client.query(
+      `insert into app.messages (id, registrant_id, audience_type, type, title, status, media_asset_id)
+       values ($1,$2,$3,'video',$4,'draft',$5)`,
+      [messageId, who.registrantId, audience.audienceType, title || null, mediaAssetId],
+    );
+    await assertOwnedAudience(client, who.registrantId, audience);
+    await insertMessageRecipients(client, messageId, audience);
+    await client.query("commit");
+    await logEvent({ actorType: "registrant", actorId: who.userId, action: "video.upload.init", entityType: "message", entityId: messageId, data: { audienceType: audience.audienceType } })
+      .catch((err) => console.error("[video-upload] audit log failed", err));
+    res.json({ messageId, uploadUrl: upload.url, mediaAssetId });
+  } catch (err) {
+    await client.query("rollback").catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+// POST /api/messages/:id/upload-failed → make a failed client upload explicit
+// instead of leaving it as an apparently valid draft.
+export async function markVideoUploadFailed(req: Request, res: Response): Promise<void> {
+  const who = await requireRegistrant(req.headers);
+  if (!who) return void res.status(401).json({ error: "unauthorized" });
+  const id = String(req.params.id);
+  const reason = typeof req.body?.reason === "string" ? req.body.reason.slice(0, 1000) : "client upload failed";
+  const result = await query(
+    `update app.media_assets ma set status='errored', errored_reason=$3, updated_at=now()
+       from app.messages m
+      where m.media_asset_id=ma.id and m.id=$1 and m.registrant_id=$2 and m.status='draft'`,
+    [id, who.registrantId, reason],
   );
-  const mediaAssetId = ins.rows[0]!.id;
-  await query("update app.messages set type='video', media_asset_id=$1, updated_at=now() where id=$2", [mediaAssetId, id]);
-  await logEvent({ actorType: "registrant", actorId: who.userId, action: "video.upload.init", entityType: "message", entityId: id });
-
-  res.json({ uploadUrl: upload.url, mediaAssetId });
+  if (!result.rowCount) return void res.status(404).json({ error: "message not found" });
+  await query("update app.messages set status='failed', updated_at=now() where id=$1", [id]);
+  await logEvent({ actorType: "registrant", actorId: who.userId, action: "video.upload.failed", entityType: "message", entityId: id, data: { reason } });
+  res.json({ ok: true, status: "failed" });
 }
 
 // POST /api/messages/:id/media/refresh → poll Mux and sync media_assets (local-dev
@@ -102,13 +155,16 @@ export async function mediaRefresh(req: Request, res: Response): Promise<void> {
     playbackId = a.playback_ids?.find((p) => p.policy === "signed")?.id ?? playbackId;
     duration = a.duration ? Math.round(a.duration) : null;
     const captions = a.tracks?.some((t) => t.type === "text" && t.status === "ready") ? "ready" : "pending";
-    status = a.status === "ready" ? "ready" : a.status === "errored" ? "errored" : "processing";
+    const tooLong = typeof duration === "number" && duration > MAX_VIDEO_DURATION_SECONDS;
+    status = tooLong ? "errored" : a.status === "ready" ? "ready" : a.status === "errored" ? "errored" : "processing";
     await query(
       `update app.media_assets set status=$1, mux_playback_id=$2, duration_seconds=$3, caption_status=$4,
-         static_rendition_status=$5, updated_at=now() where id=$6`,
-      [status, playbackId, duration, captions, a.static_renditions?.status ?? "pending", media.id],
+         static_rendition_status=$5, errored_reason=$6, updated_at=now() where id=$7`,
+      [status, tooLong ? null : playbackId, duration, captions, a.static_renditions?.status ?? "pending",
+        tooLong ? `Video exceeds the ${MAX_VIDEO_DURATION_SECONDS}-second limit` : null, media.id],
     );
     if (status === "ready") await query("update app.messages set status='ready', updated_at=now() where id=$1", [id]);
+    if (status === "errored") await query("update app.messages set status='failed', updated_at=now() where id=$1", [id]);
   }
 
   res.json({ status, playbackId, duration });
@@ -163,19 +219,32 @@ export async function muxWebhook(req: Request, res: Response): Promise<void> {
 
   try {
     if (evt.type === "video.asset.ready" && messageId) {
+      const duration = data.duration ? Math.round(data.duration) : null;
+      if (duration !== null && duration > MAX_VIDEO_DURATION_SECONDS) {
+        await query(
+          `update app.media_assets ma set status='errored', mux_asset_id=$1, duration_seconds=$2,
+             errored_reason=$3, updated_at=now()
+           from app.messages m where m.media_asset_id = ma.id and m.id = $4`,
+          [data.id ?? null, duration, `Video exceeds the ${MAX_VIDEO_DURATION_SECONDS}-second limit`, messageId],
+        );
+        await query("update app.messages set status='failed', updated_at=now() where id=$1", [messageId]);
+        await logEvent({ actorType: "system", action: "video.asset.rejected_duration", entityType: "message", entityId: messageId, data: { duration } });
+        return void res.sendStatus(200);
+      }
       const playbackId = data.playback_ids?.find((p) => p.policy === "signed")?.id ?? null;
       const captions = data.tracks?.some((t) => t.type === "text" && t.status === "ready") ? "ready" : "pending";
       await query(
         `update app.media_assets ma set status='ready', mux_asset_id=$1, mux_playback_id=$2,
            duration_seconds=$3, caption_status=$4, updated_at=now()
          from app.messages m where m.media_asset_id = ma.id and m.id = $5`,
-        [data.id ?? null, playbackId, data.duration ? Math.round(data.duration) : null, captions, messageId]);
+        [data.id ?? null, playbackId, duration, captions, messageId]);
       await query("update app.messages set status='ready', updated_at=now() where id=$1", [messageId]);
       await logEvent({ actorType: "system", action: "video.asset.ready", entityType: "message", entityId: messageId });
     } else if (evt.type === "video.asset.errored" && messageId) {
       await query(
         `update app.media_assets ma set status='errored', updated_at=now()
          from app.messages m where m.media_asset_id = ma.id and m.id = $1`, [messageId]);
+      await query("update app.messages set status='failed', updated_at=now() where id=$1", [messageId]);
       await logEvent({ actorType: "system", action: "video.asset.errored", entityType: "message", entityId: messageId });
     }
   } catch (err) {

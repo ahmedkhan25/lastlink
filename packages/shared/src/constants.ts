@@ -1,7 +1,7 @@
 // Canonical durations, roles, channels. No magic numbers elsewhere — import these.
 
 /** Mandatory cancellable safety hold after both advocates confirm (PRD §4). */
-export const HOLD_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+export const HOLD_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
 /** Delivery SLA after release authorization — a dispatch deadline, NOT a second wait. */
 export const DELIVERY_SLA_MS = 48 * 60 * 60 * 1000; // 48 hours

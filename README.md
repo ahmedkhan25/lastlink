@@ -1,6 +1,6 @@
 # LastLink
 
-> A verified digital death-notification and legacy-messaging platform. A **registrant** records messages (video, audio, letter) for the people they love. When they die, **two advocates independently confirm** the death; after a mandatory **24-hour cancellable safety hold**, LastLink delivers each message to its intended **recipients** — in the registrant's own words, never secondhand. An **enterprise HR console** brings the same verified notification to workplaces.
+> A verified digital death-notification and legacy-messaging platform. A **registrant** records messages (video, audio, letter) for the people they love. When they die, **two advocates independently confirm** the death; after a mandatory **one-hour cancellable safety hold**, LastLink delivers each message to its intended **recipients** — in the registrant's own words, never secondhand. An **enterprise HR console** brings the same verified notification to workplaces.
 
 This repository is the **investor-demo MVP** — the full happy path across all surfaces on real infrastructure (Neon, Mux), seeded with the Daniel → Emily narrative. It is intentionally **demo-grade on security** (see [Security posture](#security-posture)); production hardening is deferred and explicitly scoped out.
 
@@ -12,7 +12,7 @@ Product & engineering source of truth: [`docs/LastLink-PRD.md`](docs/LastLink-PR
 
 Five front-end surfaces over one backend:
 
-- **Hasura** serves permission-scoped CRUD (contacts, groups, draft messages, dashboard reads) with row-level security.
+- **Hasura** serves permission-scoped CRUD (contacts, messages, dashboard reads) with row-level security.
 - **Express** owns every *consequential* operation — auth, the GraphQL proxy, verification/release, token issuance, video-upload init, and webhooks. **A death confirmation is never a GraphQL mutation.**
 - One **Neon** Postgres with three schemas: `app` (operational), `audit` (event log), `enterprise` (B2B). pg-boss (planned) runs durable holds in the same DB.
 
@@ -151,7 +151,7 @@ See [`.env.example`](.env.example) for the full template. Summary:
 | `MUX_SIGNING_KEY_ID` / `MUX_SIGNING_KEY_PRIVATE` | Signed playback (created by the script) |
 | `MUX_WEBHOOK_SECRET` | Mux webhook signature (prod) |
 | `RESEND_API_KEY` | Email (pending) |
-| `HOLD_DURATION_MS` | Demo time-warp for the 24h hold |
+| `HOLD_DURATION_MS` | Demo time-warp for the one-hour hold |
 
 ---
 
@@ -160,7 +160,7 @@ See [`.env.example`](.env.example) for the full template. Summary:
 - **Auth & RLS** — Better Auth creates a `user`; a DB hook creates an `app.registrants` row. The `/graphql` proxy maps the session → `registrant` role + registrant id; Hasura scopes every read/write by `X-Hasura-User-Id`.
 - **Letters** — created as draft metadata via Hasura, then the plaintext is POSTed to `/api/messages/:id/letter`, which AES-encrypts it server-side. Ciphertext columns are never exposed through Hasura.
 - **Video (Mux)** — `/api/messages/:id/upload-init` creates a signed direct upload; the browser records (`getUserMedia` + `MediaRecorder`, WebM/Chrome · MP4/Safari) or uploads, then UpChunk pushes the file resumably. Status is synced via `/api/messages/:id/media/refresh` (local) — a `/webhooks/mux` handler is added for production. Owner preview uses short-lived signed playback tokens (recipient tokens are minted only post-release).
-- **Verification** *(M3, planned)* — dual-advocate confirm → durable 24h hold (pg-boss, never `setTimeout`) → release worker re-checks state in-transaction (cancel-during-hold provably no-ops) → delivery.
+- **Verification** *(M3, planned)* — dual-advocate confirm → durable one-hour hold (pg-boss, never `setTimeout`) → release worker re-checks state in-transaction (cancel-during-hold provably no-ops) → delivery.
 
 ---
 
@@ -198,6 +198,6 @@ Kept because they *are* the product: the Express-for-consequence boundary, the G
 | M0 — Foundations (monorepo, Neon schema, Better Auth, `/graphql` proxy + RLS) | ✅ |
 | M1 — Registrant core (onboarding, contacts, letter compose, dashboard) | ✅ core |
 | M2 — Video pipeline (Mux: record/upload → signed playback) | ✅ |
-| M3 — Verification engine (advocate flow, 24h hold, cancel-safety) | ⏳ |
+| M3 — Verification engine (advocate flow, one-hour hold, cancel-safety) | ⏳ |
 | M4 — Recipient experience + email delivery (Resend) | ⏳ |
 | M5 — Enterprise console + marketing + demo seed + Render deploy | ⏳ |

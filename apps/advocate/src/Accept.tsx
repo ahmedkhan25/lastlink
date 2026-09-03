@@ -59,7 +59,7 @@ export function Accept() {
                 You've been designated as one of <strong>{invite.registrantName}</strong>'s two LastLink advocates.
               </p>
               <p style={{ fontSize: 15, color: "var(--ink-3)", lineHeight: 1.6, margin: "0 0 32px" }}>
-                Together with one other person, you would one day confirm their passing — never alone, and only after a 24-hour safety hold. There is nothing to do today. Accepting simply lets them know you're willing.
+                Together with one other person, you would one day confirm their passing — never alone, and only after a one-hour safety hold. There is nothing to do today. Accepting simply lets them know you're willing.
               </p>
               <button className="ll-btn grad" onClick={accept} disabled={view === "accepting"} style={{ padding: "14px 28px", fontSize: 15 }}>
                 {view === "accepting" ? "One moment…" : "Accept this role"}

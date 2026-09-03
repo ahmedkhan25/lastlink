@@ -51,10 +51,10 @@ export async function registrantIdForUser(userId: string): Promise<string | null
 /** Guard for sensitive Express routes: returns the registrant identity or null. */
 export async function requireRegistrant(
   headers: IncomingHttpHeaders,
-): Promise<{ userId: string; registrantId: string } | null> {
+): Promise<{ userId: string; registrantId: string; email: string } | null> {
   const session = await auth.api.getSession({ headers: fromNodeHeaders(headers) });
   if (!session?.user) return null;
   const registrantId = await registrantIdForUser(session.user.id);
   if (!registrantId) return null;
-  return { userId: session.user.id, registrantId };
+  return { userId: session.user.id, registrantId, email: session.user.email };
 }

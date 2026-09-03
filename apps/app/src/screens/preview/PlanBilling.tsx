@@ -1,11 +1,11 @@
 import { Icon } from "@lastlink/ui";
 import { PageHead, SubTabs, Flag, page, card } from "./_shared.js";
 
-const FREE = ["3 video messages", "Up to 100 contacts", "Default groups", "Memorial page (1 year)", "Two advocates"];
+const FREE = ["3 video messages", "Up to 100 contacts", "Public & private delivery", "Memorial page (1 year)", "Two advocates"];
 const PREMIUM = [
-  "Unlimited video messages",
-  "Up to 1,000 contacts",
-  "Custom contact groups",
+  "Video, audio, and letter messages",
+  "Expanded contact capacity",
+  "Private delivery options",
   "Permanent memorial page",
   "Private per-group messages",
   "24/7 support",
@@ -17,7 +17,7 @@ export function PlanBilling() {
       <PageHead
         eyebrow="Account · plan"
         title="Your plan"
-        sub="You're on Free. Premium unlocks unlimited video, custom groups, a permanent memorial page, and priority support."
+        sub="You're on Free. Premium options and final plan limits are still being finalized."
       />
       <SubTabs active="/account/plan" tabs={[{ href: "/account/plan", label: "Plan" }, { href: "/account/profile", label: "Profile" }]} />
 
@@ -41,7 +41,7 @@ export function PlanBilling() {
             <span className="mono" style={{ fontSize: 10, letterSpacing: "0.1em", padding: "4px 10px", borderRadius: "var(--r-pill)", background: "var(--line-soft)", color: "var(--ink-3)" }}>Recommended</span>
           </div>
           <div className="serif" style={{ fontSize: 34, fontWeight: 500, margin: "10px 0 16px" }}>
-            $99.95<span style={{ fontSize: 15, color: "var(--ink-3)" }}> / year</span>
+            TBD<span style={{ fontSize: 15, color: "var(--ink-3)" }}> before launch</span>
           </div>
           {PREMIUM.map((f) => (
             <div key={f} style={{ display: "flex", gap: 9, padding: "6px 0", color: "var(--ink-2)" }}>

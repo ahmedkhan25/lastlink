@@ -38,7 +38,7 @@ export function SignIn() {
     <div style={{ display: "grid", placeItems: "center", height: "100%", padding: 40 }}>
       <div style={{ width: 420, maxWidth: "100%" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
-          <a href={getMarketingUrl()} title="Back to lastlink.com" style={{ display: "inline-flex" }}>
+          <a href={getMarketingUrl()} title="Back to lastlink.care" style={{ display: "inline-flex" }}>
             <Logo size={30} />
           </a>
         </div>
@@ -47,7 +47,7 @@ export function SignIn() {
             {mode === "signup" ? "Begin your LastLink" : "Welcome back"}
           </h1>
           <p style={{ fontSize: 14, color: "var(--ink-3)", margin: "0 0 24px" }}>
-            {mode === "signup" ? "A verified last word, for the people you love." : "Sign in to your account."}
+            {mode === "signup" ? "A Timely Last Word, for the people you love." : "Sign in to your account."}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
             <button type="button" onClick={() => setSocialNote(true)} className="ll-btn secondary" style={{ width: "100%", justifyContent: "center" }}>

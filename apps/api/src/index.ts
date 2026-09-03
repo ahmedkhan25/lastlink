@@ -7,13 +7,14 @@ import { query } from "./db.js";
 import { logEvent } from "./audit.js";
 import { auth } from "./auth.js";
 import { graphqlProxy } from "./graphql-proxy.js";
-import { saveLetter } from "./messages.js";
+import { createLetter } from "./messages.js";
 import { sealAccount, demoReset, getMe } from "./account.js";
 import { createRouteHandler } from "uploadthing/express";
 import { uploadRouter } from "./uploadthing.js";
 import { previewImport, commitImport } from "./contacts-import.js";
-import { uploadInit, mediaRefresh, playbackToken, muxWebhook } from "./video.js";
-import { inviteAdvocate, getInvite, acceptInvite, requestAdvocateLink } from "./advocates.js";
+import { createVideoUpload, markVideoUploadFailed, mediaRefresh, playbackToken, muxWebhook } from "./video.js";
+import { resendWebhook } from "./resend-webhook.js";
+import { createAdvocates, inviteAdvocate, getInvite, acceptInvite, requestAdvocateLink } from "./advocates.js";
 import { getCase, initiateCase, confirmCase, cancelCase, releaseNow } from "./case.js";
 import { getRecipient, openRecipient } from "./recipient.js";
 
@@ -45,6 +46,7 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 
 // Mux webhook needs the RAW body for signature verification — before express.json().
 app.post("/webhooks/mux", express.raw({ type: "*/*" }), muxWebhook);
+app.post("/webhooks/resend", express.raw({ type: "application/json" }), resendWebhook);
 
 // UploadThing (profile photos) parses its own body — mount BEFORE express.json().
 // Gated on the token so environments without it simply don't expose the routes.
@@ -58,7 +60,7 @@ app.use(express.json());
 app.post("/graphql", graphqlProxy);
 
 // Sensitive consequence endpoints (Express, never Hasura).
-app.post("/api/messages/:id/letter", saveLetter);
+app.post("/api/messages/letter", createLetter);
 app.get("/api/account/me", getMe);
 app.post("/api/account/seal", sealAccount);
 app.post("/api/demo/reset", demoReset); // DEMO ONLY (DEMO_RESET=true) — resurrect the registrant to re-run the flow
@@ -67,11 +69,13 @@ app.post("/api/demo/reset", demoReset); // DEMO ONLY (DEMO_RESET=true) — resur
 app.get("/api/contacts/import/:provider", previewImport);
 app.post("/api/contacts/import/:provider", commitImport);
 // Video (Mux). Local dev polls /media/refresh; prod adds the /webhooks/mux handler.
-app.post("/api/messages/:id/upload-init", uploadInit);
+app.post("/api/messages/video/upload-init", createVideoUpload);
+app.post("/api/messages/:id/upload-failed", markVideoUploadFailed);
 app.post("/api/messages/:id/media/refresh", mediaRefresh);
 app.post("/api/messages/:id/playback-token", playbackToken);
 
 // Advocate invite (registrant) + accept (token-based, no session).
+app.post("/api/advocates", createAdvocates);
 app.post("/api/advocates/:id/invite", inviteAdvocate);
 app.get("/advocate/invite/:token", getInvite);
 app.post("/advocate/invite/:token/accept", acceptInvite);
