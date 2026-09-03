@@ -38,6 +38,7 @@ export const env = {
   MESSAGE_BASE_URL: process.env.MESSAGE_BASE_URL ?? "http://localhost:5275",
   MEMORIAL_BASE_URL: process.env.MEMORIAL_BASE_URL ?? "http://localhost:5276",
   DEMO_MEMORIAL: process.env.DEMO_MEMORIAL === "true",
+  DEMO_RELEASE_BYPASS: process.env.DEMO_RELEASE_BYPASS === "true",
   // Email (Resend)
   RESEND_FROM: process.env.RESEND_FROM ?? "LastLink <onboarding@resend.dev>",
   // Providers

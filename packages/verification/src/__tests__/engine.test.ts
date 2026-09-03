@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyConfirmation, canCancel, isReleasable, type Confirmation } from "../index.js";
+import { applyConfirmation, canCancel, canUseDemoReleaseBypass, isReleasable, type Confirmation } from "../index.js";
 import { HOLD_DURATION_MS } from "@lastlink/shared";
 
 describe("applyConfirmation", () => {
@@ -50,5 +50,13 @@ describe("safety guards", () => {
     // THE critical case: a cancel landed first → state moved off safety_hold → no release
     expect(isReleasable("cancelled", now, now - 1)).toBe(false);
     expect(isReleasable("safety_hold", now, null)).toBe(false);
+  });
+
+  it("allows an early release only for an explicit request in a demo environment", () => {
+    expect(canUseDemoReleaseBypass("safety_hold", true, true)).toBe(true);
+    expect(canUseDemoReleaseBypass("safety_hold", false, true)).toBe(false);
+    expect(canUseDemoReleaseBypass("safety_hold", true, false)).toBe(false);
+    expect(canUseDemoReleaseBypass("cancelled", true, true)).toBe(false);
+    expect(canUseDemoReleaseBypass("released", true, true)).toBe(false);
   });
 });

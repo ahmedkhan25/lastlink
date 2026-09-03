@@ -41,6 +41,10 @@ services:
       # The mandatory cancellable safety hold is one hour.
       - key: HOLD_DURATION_MS
         value: "3600000"
+      # INVESTOR DEMO ONLY — shows an explicit early-release button. The API still
+      # requires safety_hold state and records each bypass in the audit log.
+      - key: DEMO_RELEASE_BYPASS
+        value: "true"
       # Advocate re-entry surface — the registrant app links to it ("I'm an advocate").
       - key: VITE_ADVOCATE_URL
         value: https://lastlink-advocate.onrender.com

@@ -71,3 +71,15 @@ export function canCancel(state: CaseState): boolean {
 export function isReleasable(state: CaseState, nowMs: number, holdExpiresAtMs: number | null): boolean {
   return state === "safety_hold" && holdExpiresAtMs != null && nowMs >= holdExpiresAtMs;
 }
+
+/**
+ * Explicit investor-demo escape hatch. This never shortens the real hold:
+ * callers must opt in per request and the server-side demo flag must be on.
+ */
+export function canUseDemoReleaseBypass(
+  state: CaseState,
+  demoEnabled: boolean,
+  requested: boolean,
+): boolean {
+  return state === "safety_hold" && demoEnabled && requested;
+}

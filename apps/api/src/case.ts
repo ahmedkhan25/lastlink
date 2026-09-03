@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { applyConfirmation, canCancel, isReleasable, type Confirmation } from "@lastlink/verification";
+import { applyConfirmation, canCancel, canUseDemoReleaseBypass, isReleasable, type Confirmation } from "@lastlink/verification";
 import { resolveHoldDurationMs, type AdvocateSlot, type AdvocateDecision } from "@lastlink/shared";
 import { recipientMessageEmail } from "@lastlink/notifications";
 import { pool, query } from "./db.js";
@@ -78,6 +78,7 @@ export async function getCase(req: Request, res: Response): Promise<void> {
 
   res.json({
     registrantName: who.registrantName,
+    demoReleaseEnabled: env.DEMO_RELEASE_BYPASS,
     advocate: { name: who.advocateName, slot: who.slot },
     advocates: advocates.rows.map((a) => ({ slot: a.slot, name: a.full_name, status: a.invite_status })),
     contactsAffected: Number(contactCount.rows[0]?.n ?? 0),
@@ -195,7 +196,13 @@ export async function releaseNow(req: Request, res: Response): Promise<void> {
       "select state, hold_expires_at from app.verification_cases where id=$1 for update", [c.id]);
     const row = locked.rows[0];
     const holdExpiresAtMs = row?.hold_expires_at ? new Date(row.hold_expires_at).getTime() : null;
-    if (!row || !isReleasable(row.state as never, Date.now(), holdExpiresAtMs)) {
+    const holdElapsed = !!row && isReleasable(row.state as never, Date.now(), holdExpiresAtMs);
+    const demoBypassUsed = !!row && !holdElapsed && canUseDemoReleaseBypass(
+      row.state as never,
+      env.DEMO_RELEASE_BYPASS,
+      req.body?.demoBypass === true,
+    );
+    if (!row || (!holdElapsed && !demoBypassUsed)) {
       await client.query("rollback");
       return void res.status(409).json({ error: row?.state === "safety_hold" ? "The one-hour safety hold is still running." : `not releasable (state: ${row?.state})` });
     }
@@ -280,8 +287,18 @@ export async function releaseNow(req: Request, res: Response): Promise<void> {
         );
       }
     }
-    await logEvent({ actorType: "system", action: "case.released", entityType: "case", entityId: c.id, data: { deliveries: emails.length, accepted, failed } });
-    res.json({ ok: true, state: "released", deliveriesQueued: emails.length, recipientsNotified: accepted, deliveryFailures: failed });
+    if (demoBypassUsed) {
+      await logEvent({
+        actorType: "advocate",
+        actorId: who.advocateId,
+        action: "case.demo_hold_bypassed",
+        entityType: "case",
+        entityId: c.id,
+        data: { holdExpiresAt: row.hold_expires_at },
+      });
+    }
+    await logEvent({ actorType: "system", action: "case.released", entityType: "case", entityId: c.id, data: { deliveries: emails.length, accepted, failed, demoBypassUsed } });
+    res.json({ ok: true, state: "released", deliveriesQueued: emails.length, recipientsNotified: accepted, deliveryFailures: failed, demoBypassUsed });
   } catch (err) {
     await client.query("rollback").catch(() => {});
     res.status(500).json({ error: String(err) });

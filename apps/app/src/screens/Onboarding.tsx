@@ -5,15 +5,27 @@ import { useSession } from "../lib/auth.js";
 import { VideoComposer } from "./VideoComposer.js";
 import { GoogleMark, OutlookMark, AolMark, FacebookMark, AppleMark } from "./preview/_shared.js";
 
-const STEPS = ["Welcome", "Consent", "Identity", "Contacts", "Message", "Advocates", "Done"];
+const STEPS = ["Welcome", "Consent", "Identity", "Contacts", "Advocates", "Message", "Done"];
+const ONBOARDING_STEP_KEY = "lastlink:onboarding-step:v2";
+
+function savedStep(): number {
+  const value = Number(window.sessionStorage.getItem(ONBOARDING_STEP_KEY) ?? 0);
+  return Number.isInteger(value) && value >= 0 && value < STEPS.length ? value : 0;
+}
 
 export function Onboarding() {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(savedStep);
   const { data: session } = useSession();
   const fullName = session?.user?.name ?? "";
   const firstName = fullName.split(" ")[0] || "there";
   const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
   const previous = () => setStep((s) => Math.max(s - 1, 0));
+  useEffect(() => window.sessionStorage.setItem(ONBOARDING_STEP_KEY, String(step)), [step]);
+
+  function finishOnboarding() {
+    window.sessionStorage.removeItem(ONBOARDING_STEP_KEY);
+    window.location.assign("/dashboard");
+  }
 
   return (
     <div style={{ display: "grid", gridTemplateRows: "auto 1fr", height: "100%" }}>
@@ -37,9 +49,9 @@ export function Onboarding() {
         {step === 1 && <Consent onNext={next} />}
         {step === 2 && <Identity onNext={next} fullName={fullName} />}
         {step === 3 && <ContactsStep onNext={next} />}
-        {step === 4 && <MessageStep onNext={next} />}
-        {step === 5 && <AdvocatesStep onNext={next} />}
-        {step === 6 && <Done onDone={() => window.location.assign("/dashboard")} />}
+        {step === 4 && <AdvocatesStep onNext={next} />}
+        {step === 5 && <MessageStep onNext={next} />}
+        {step === 6 && <Done onDone={finishOnboarding} />}
       </div>
     </div>
   );
@@ -49,8 +61,8 @@ function Welcome({ onNext, firstName }: { onNext: () => void; firstName: string 
   const cards: { icon: IconName; t: string; s: string }[] = [
     { icon: "fingerprint", t: "Verify your identity", s: "So no one can speak for you." },
     { icon: "users", t: "Build your contact list", s: "Family, friends, business." },
-    { icon: "pen", t: "Write what matters", s: "Video, audio, or letter." },
     { icon: "shield", t: "Designate two advocates", s: "They confirm, together." },
+    { icon: "pen", t: "Write what matters", s: "Video, audio, or letter." },
   ];
   return (
     <div style={{ maxWidth: 600, textAlign: "center" }}>
@@ -122,7 +134,34 @@ function Field({ label, value, type = "text" }: { label: string; value: string; 
   return (
     <label style={{ display: "block" }}>
       <div style={{ fontSize: 12, color: "var(--ink-3)", marginBottom: 6 }}>{label}</div>
-      <input type={type} defaultValue={value} style={{ width: "100%", padding: "12px 14px", border: "1px solid var(--line)", borderRadius: "var(--r-2)", background: "var(--surface)", fontSize: 14 }} />
+      <input type={type} defaultValue={value} style={{ width: "100%", padding: "12px 14px", border: "1.5px solid var(--ink-3)", borderRadius: "var(--r-2)", background: "var(--surface)", fontSize: 14 }} />
+    </label>
+  );
+}
+
+function DateOfBirthField() {
+  const [value, setValue] = useState("");
+
+  function update(raw: string) {
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
+    setValue(parts.join("/"));
+  }
+
+  return (
+    <label style={{ display: "block" }}>
+      <div style={{ fontSize: 12, color: "var(--ink-3)", marginBottom: 6 }}>Date of birth</div>
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="bday"
+        value={value}
+        onChange={(e) => update(e.target.value)}
+        placeholder="MM/DD/YYYY"
+        aria-label="Date of birth in month day year format"
+        style={{ width: "100%", padding: "12px 14px", border: "1.5px solid var(--ink-3)", borderRadius: "var(--r-2)", background: "var(--surface)", fontSize: 14 }}
+      />
+      <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 5 }}>Type 8 digits — for example, 04251980.</div>
     </label>
   );
 }
@@ -138,7 +177,7 @@ function Identity({ onNext, fullName }: { onNext: () => void; fullName: string }
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
         <Field label="Legal first name" value={firstName} />
         <Field label="Legal last name" value={lastName} />
-        <Field label="Date of birth (MM/DD/YYYY)" value="" type="date" />
+        <DateOfBirthField />
         <Field label="Country of residence" value="" />
       </div>
       <div style={{ padding: 24, border: "1px dashed var(--line)", borderRadius: "var(--r-3)", background: "var(--surface)", display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
@@ -301,8 +340,10 @@ function MessageStep({ onNext }: { onNext: () => void }) {
         {tab === "audio" && <div style={{ padding: 40, border: "1px dashed var(--line)", borderRadius: "var(--r-3)", textAlign: "center", color: "var(--ink-3)" }}>Audio recording is post-MVP — use Video or Letter.</div>}
         {tab === "letter" && (
           <div>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="serif" style={{ width: "100%", fontSize: 22, fontWeight: 500, border: "none", borderBottom: "1px solid var(--line)", background: "transparent", padding: "6px 0 10px", marginBottom: 14 }} />
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="My loves,&#10;&#10;" style={{ width: "100%", height: 200, padding: 18, border: "1px solid var(--line)", borderRadius: "var(--r-3)", background: "var(--bg)", fontFamily: "var(--font-serif)", fontSize: 16, lineHeight: 1.65, resize: "vertical" }} />
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--ink-2)", marginBottom: 6 }} htmlFor="message-title">Message title</label>
+            <input id="message-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Give your message a title" className="serif" style={{ width: "100%", fontSize: 20, fontWeight: 500, border: "1.5px solid var(--ink-3)", borderRadius: "var(--r-2)", background: "var(--surface)", padding: "12px 14px", marginBottom: 16 }} />
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--ink-2)", marginBottom: 6 }} htmlFor="message-body">Your message</label>
+            <textarea id="message-body" value={body} onChange={(e) => setBody(e.target.value)} placeholder="My loves,&#10;&#10;" style={{ width: "100%", height: 200, padding: 18, border: "1.5px solid var(--ink-3)", borderRadius: "var(--r-3)", background: "var(--surface)", fontFamily: "var(--font-serif)", fontSize: 16, lineHeight: 1.65, resize: "vertical" }} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
               <span style={{ fontSize: 12, color: "var(--ink-3)" }}>{status === "saved" ? "Saved · encrypted ✓" : "Stored encrypted on save"}</span>
               <button className="ll-btn grad" onClick={saveLetter} disabled={status === "saving" || !body.trim()}>{status === "saved" ? "Saved ✓" : status === "saving" ? "Saving…" : "Save letter"}</button>

@@ -6,6 +6,7 @@ import { getApiUrl } from "./lib/api.js";
 
 interface CaseData {
   registrantName: string;
+  demoReleaseEnabled: boolean;
   advocate: { name: string; slot: string };
   advocates: { slot: string; name: string; status: string }[];
   contactsAffected: number;
@@ -66,7 +67,7 @@ export function Confirm() {
     try {
       const r = await fetch(`${API}/advocate/${token}/${path}`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
         body: body ? JSON.stringify(body) : undefined,
       });
       const j = await r.json().catch(() => ({}));
@@ -153,9 +154,16 @@ export function Confirm() {
               Stop the release
             </button>
             <div style={demoBox}>
-              <span className="mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--ink-3)" }}>{hold > 0 ? "AVAILABLE WHEN THE HOLD ENDS" : "HOLD COMPLETE"}</span>
-              <button className="ll-btn grad" disabled={busy || hold > 0} onClick={() => post("release")} style={{ ...primaryBtn, marginTop: 8 }}>
-                {busy ? "Releasing…" : "Release messages"} <Icon name="arrow" size={16} color="white" />
+              <span className="mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--ink-3)" }}>
+                {data.demoReleaseEnabled && hold > 0 ? "INVESTOR DEMO · BYPASSES THE REMAINING HOLD" : hold > 0 ? "AVAILABLE WHEN THE HOLD ENDS" : "HOLD COMPLETE"}
+              </span>
+              <button
+                className="ll-btn grad"
+                disabled={busy || (hold > 0 && !data.demoReleaseEnabled)}
+                onClick={() => post("release", data.demoReleaseEnabled && hold > 0 ? { demoBypass: true } : undefined)}
+                style={{ ...primaryBtn, marginTop: 8 }}
+              >
+                {busy ? "Releasing…" : data.demoReleaseEnabled && hold > 0 ? "Release now for demo" : "Release messages"} <Icon name="arrow" size={16} color="white" />
               </button>
             </div>
           </div>
