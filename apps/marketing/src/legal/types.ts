@@ -1,5 +1,5 @@
-// Shape of the legal documents produced by scripts/import-legal-docx.py.
-// Deliberately small: only the constructs the counsel-supplied .docx files use.
+// Shape of the legal documents produced by the scripts/import-legal-* tools.
+// Deliberately small: only the constructs the counsel-supplied documents use.
 
 /** An inline span. `b` marks a bold lead-in (defined terms, list captions). */
 export interface Run {
