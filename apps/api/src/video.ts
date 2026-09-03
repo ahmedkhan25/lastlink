@@ -50,9 +50,9 @@ async function createMuxUpload(messageId: string) {
       playback_policy: ["signed"],
       video_quality: "basic",
       passthrough: messageId,
-      static_renditions: [{ resolution: "highest" }, { resolution: "audio-only" }],
-      inputs: [{ generated_subtitles: [{ language_code: "en", name: "English CC" }] }],
-    } as never,
+      mp4_support: "audio-only,capped-1080p",
+      input: [{ generated_subtitles: [{ language_code: "en", name: "English CC" }] }],
+    },
   });
 }
 
