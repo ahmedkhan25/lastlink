@@ -50,14 +50,6 @@ create table if not exists app.identity_verifications (
   created_at    timestamptz not null default now()
 );
 
-create table if not exists app.contact_groups (
-  id            uuid primary key default gen_random_uuid(),
-  registrant_id uuid not null references app.registrants(id) on delete cascade,
-  name          text not null,
-  is_default    boolean not null default false,
-  created_at    timestamptz not null default now()
-);
-
 create table if not exists app.contacts (
   id             uuid primary key default gen_random_uuid(),
   registrant_id  uuid not null references app.registrants(id) on delete cascade,
@@ -72,12 +64,6 @@ create table if not exists app.contacts (
 );
 
 alter table app.contacts add column if not exists receives_public boolean not null default true;
-
-create table if not exists app.contact_group_members (
-  group_id   uuid not null references app.contact_groups(id) on delete cascade,
-  contact_id uuid not null references app.contacts(id) on delete cascade,
-  primary key (group_id, contact_id)
-);
 
 create table if not exists app.media_assets (
   id                      uuid primary key default gen_random_uuid(),
@@ -102,7 +88,6 @@ create index if not exists media_assets_upload_idx on app.media_assets (mux_uplo
 create table if not exists app.messages (
   id                uuid primary key default gen_random_uuid(),
   registrant_id     uuid not null references app.registrants(id) on delete cascade,
-  group_id          uuid references app.contact_groups(id) on delete set null,
   audience_type     text not null default 'public' check (audience_type in ('public','private')),
   type              text not null check (type in ('video','audio','letter')),
   title             text,
@@ -194,8 +179,7 @@ do $$ begin
 end $$;
 
 -- Private messages name their recipients directly. Public messages fan out to
--- contacts whose receives_public flag is on. Legacy group tables remain only so
--- old installations can be migrated without losing targeting information.
+-- contacts whose receives_public flag is on.
 create table if not exists app.message_recipients (
   message_id uuid not null references app.messages(id) on delete cascade,
   contact_id uuid not null references app.contacts(id) on delete cascade,
@@ -203,14 +187,24 @@ create table if not exists app.message_recipients (
   primary key (message_id, contact_id)
 );
 
--- Preserve existing group-targeted messages when upgrading: they become
--- Private messages with the group's current members copied into the new join.
-insert into app.message_recipients (message_id, contact_id)
-select m.id, gm.contact_id
-  from app.messages m
-  join app.contact_group_members gm on gm.group_id = m.group_id
-on conflict do nothing;
-update app.messages set audience_type = 'private' where group_id is not null;
+-- Preserve existing group-targeted messages when upgrading, then retire the
+-- old group model completely. The conditional block is a no-op on fresh DBs.
+do $$ begin
+  if exists (
+    select 1 from information_schema.columns
+     where table_schema='app' and table_name='messages' and column_name='group_id'
+  ) and to_regclass('app.contact_group_members') is not null then
+    insert into app.message_recipients (message_id, contact_id)
+    select m.id, gm.contact_id
+      from app.messages m
+      join app.contact_group_members gm on gm.group_id = m.group_id
+    on conflict do nothing;
+    update app.messages set audience_type = 'private' where group_id is not null;
+  end if;
+end $$;
+alter table app.messages drop column if exists group_id;
+drop table if exists app.contact_group_members;
+drop table if exists app.contact_groups;
 
 -- ============================================================================
 -- app — advocates, verification, release, delivery
