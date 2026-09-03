@@ -47,12 +47,10 @@ async function createMuxUpload(messageId: string) {
   return mux.video.uploads.create({
     cors_origin: CORS_ORIGIN,
     new_asset_settings: {
-      playback_policy: ["signed"],
+      playback_policies: ["signed"],
       video_quality: "basic",
       passthrough: messageId,
-      mp4_support: "audio-only,capped-1080p",
-      input: [{ generated_subtitles: [{ language_code: "en", name: "English CC" }] }],
-    },
+    } as never,
   });
 }
 
