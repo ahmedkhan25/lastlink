@@ -22,6 +22,11 @@ interface Media { id: string; url: string; file_key: string | null; caption: str
 interface Message { id: string; title: string | null; type: string; status: string; visible_on_memorial: boolean }
 interface Data { app_memorials: Memorial[]; app_memorial_media: Media[]; app_messages: Message[] }
 
+function galleryImageUrl(url: string): string {
+  if (!url.startsWith("/")) return url;
+  return `${getMemorialUrl().replace(/\/$/, "")}${url}`;
+}
+
 const QUERY = `query MemorialSettings {
   app_memorials(limit: 1) { id slug status visibility headline location birth_year death_year quote story service_when service_details }
   app_memorial_media(order_by: {sort_order: asc}) { id url file_key caption alt_text sort_order }
@@ -141,7 +146,7 @@ function Gallery({ media, uploading, onUpload, onRefresh }: { media: Media[]; up
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}><div><div className="serif" style={{ fontSize: 24 }}>Photo gallery</div><div style={{ color: "var(--ink-3)", fontSize: 13 }}>Add warm, personal images to the public page.</div></div>
       <label className="ll-btn secondary">{uploading ? "Uploading…" : "Add photos"}<input type="file" accept="image/*" multiple hidden disabled={uploading} onChange={(e) => e.target.files && onUpload(e.target.files)} /></label></div>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 14, marginTop: 18 }}>
-      {media.map((item) => <div key={item.id} style={{ border: "1px solid var(--line)", borderRadius: "var(--r-2)", overflow: "hidden" }}><img src={item.url} alt={item.alt_text ?? item.caption ?? "Memorial gallery"} style={{ width: "100%", height: 130, objectFit: "cover" }} /><div style={{ padding: 10 }}><input defaultValue={item.caption ?? ""} placeholder="Add a caption" style={{ ...field, padding: "7px 9px", fontSize: 12 }} onBlur={(e) => update(item, e.target.value)} /><button onClick={() => remove(item.id)} style={linkButton}>Remove</button></div></div>)}
+      {media.map((item) => <div key={item.id} style={{ border: "1px solid var(--line)", borderRadius: "var(--r-2)", overflow: "hidden" }}><img src={galleryImageUrl(item.url)} alt={item.alt_text ?? item.caption ?? "Memorial gallery"} style={{ width: "100%", height: 130, objectFit: "cover" }} /><div style={{ padding: 10 }}><input defaultValue={item.caption ?? ""} placeholder="Add a caption" style={{ ...field, padding: "7px 9px", fontSize: 12 }} onBlur={(e) => update(item, e.target.value)} /><button onClick={() => remove(item.id)} style={linkButton}>Remove</button></div></div>)}
       {!media.length && <div style={{ color: "var(--ink-3)", fontSize: 13 }}>No gallery images yet.</div>}
     </div>
   </section>;
