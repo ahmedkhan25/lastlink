@@ -73,12 +73,23 @@ export async function createDemoVideoImport(req: Request, res: Response): Promis
 
   const messageId = crypto.randomUUID();
   const title = typeof req.body?.title === "string" ? req.body.title.trim().slice(0, 300) : null;
-  const asset = await mux.video.assets.create({
-    inputs: [{ url: DEMO_MEMORIAL_VIDEO_URL }],
-    playback_policies: ["signed"],
-    video_quality: "basic",
-    passthrough: messageId,
-  } as never);
+  let asset;
+  try {
+    asset = await mux.video.assets.create({
+      inputs: [{ url: DEMO_MEMORIAL_VIDEO_URL }],
+      playback_policies: ["signed"],
+      video_quality: "basic",
+      passthrough: messageId,
+    } as never);
+  } catch (error) {
+    const muxError = error as { status?: number; message?: string; error?: { messages?: string[] } };
+    console.error("[video-demo-import] Mux create failed", error);
+    return void res.status(502).json({
+      error: "Mux import failed",
+      muxStatus: muxError.status ?? null,
+      detail: muxError.error?.messages?.[0] ?? muxError.message ?? "unknown Mux error",
+    });
+  }
 
   const client = await pool.connect();
   try {
