@@ -4,10 +4,10 @@ import MuxPlayer from "@mux/mux-player-react";
 import { Icon } from "@lastlink/ui";
 import { gql, postApi } from "../lib/api.js";
 
-interface Msg { id: string; type: string; title: string | null; status: string }
+interface Msg { id: string; type: string; title: string | null; status: string; audience_type: "public" | "private" }
 interface Tokens { playback: string; thumbnail: string; storyboard: string }
 
-const Q = `query($id: uuid!) { app_messages_by_pk(id: $id) { id type title status } }`;
+const Q = `query($id: uuid!) { app_messages_by_pk(id: $id) { id type title status audience_type } }`;
 
 export function MessageView() {
   const { id } = useParams();
@@ -29,7 +29,7 @@ export function MessageView() {
         setPlaybackId(t.playbackId);
         setTokens(t.tokens);
       } catch {
-        if (active) setNote("This video is sealed but couldn't load its player. Please refresh.");
+        if (active) setNote("This secure video couldn't load its player. Please refresh.");
       }
     }
 
@@ -71,7 +71,7 @@ export function MessageView() {
       {msg && (
         <>
           <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            {msg.type} · {msg.status === "ready" ? "sealed & ready" : "processing"}
+            {msg.type} · {msg.audience_type} · {msg.status === "ready" ? "secure & ready" : msg.status === "failed" ? "failed" : "processing"}
           </div>
           <h1 className="serif" style={{ fontSize: 38, fontWeight: 500, letterSpacing: "-0.015em", margin: "6px 0 24px" }}>
             {msg.title ?? "Untitled message"}
@@ -83,7 +83,7 @@ export function MessageView() {
                 <MuxPlayer playbackId={playbackId} tokens={tokens} accentColor="#6B2CB0" style={{ height: "100%", width: "100%" }} />
               </div>
               <p style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 10 }}>
-                This is your private preview. After release it plays only for the named recipient, via a signed link.
+                This is your private preview. After release it plays only for the {msg.audience_type === "public" ? "contacts on your Public list" : "people you selected"}, via individual signed links.
               </p>
             </>
           )}
@@ -98,9 +98,9 @@ export function MessageView() {
             <div style={{ padding: 28, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", display: "flex", gap: 14, alignItems: "flex-start" }}>
               <Icon name="lock" size={20} color="var(--brand-purple)" />
               <div>
-                <div style={{ fontWeight: 500, marginBottom: 4 }}>This letter is sealed.</div>
+                <div style={{ fontWeight: 500, marginBottom: 4 }}>This letter is secure.</div>
                 <div style={{ fontSize: 14, color: "var(--ink-3)", lineHeight: 1.55 }}>
-                  It's encrypted and will only be unsealed for its recipient after release — never shown again here, by design.
+                  It's encrypted and will only be opened by the {msg.audience_type === "public" ? "contacts on your Public list" : "people you selected"} after release — never shown again here, by design.
                 </div>
               </div>
             </div>

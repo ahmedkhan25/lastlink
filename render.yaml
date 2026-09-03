@@ -38,11 +38,9 @@ services:
       # the account owner. See docs/EMAIL-prod-not-sending.md.
       - key: RESEND_FROM
         value: LastLink <notify@lastlink.care>
-      # DEMO ONLY — shortens the mandatory 24h safety hold to 2 minutes so the
-      # advocate flow can be demoed end to end. REMOVE for production (the real
-      # hold is 24h; unset falls back to that default).
+      # The mandatory cancellable safety hold is one hour.
       - key: HOLD_DURATION_MS
-        value: "120000"
+        value: "3600000"
       # Advocate re-entry surface — the registrant app links to it ("I'm an advocate").
       - key: VITE_ADVOCATE_URL
         value: https://lastlink-advocate.onrender.com

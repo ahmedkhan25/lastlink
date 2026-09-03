@@ -5,11 +5,6 @@ import { useSession } from "../lib/auth.js";
 import { VideoComposer } from "./VideoComposer.js";
 import { GoogleMark, OutlookMark, AolMark, FacebookMark, AppleMark } from "./preview/_shared.js";
 
-const ADD_ADVOCATES = `mutation($aName: String!, $aEmail: String!, $bName: String!, $bEmail: String!) {
-  a: insert_app_advocates_one(object: {slot: "A", full_name: $aName, email: $aEmail, invite_status: "pending"}) { id }
-  b: insert_app_advocates_one(object: {slot: "B", full_name: $bName, email: $bEmail, invite_status: "pending"}) { id }
-}`;
-
 const STEPS = ["Welcome", "Consent", "Identity", "Contacts", "Message", "Advocates", "Done"];
 
 export function Onboarding() {
@@ -18,11 +13,15 @@ export function Onboarding() {
   const fullName = session?.user?.name ?? "";
   const firstName = fullName.split(" ")[0] || "there";
   const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  const previous = () => setStep((s) => Math.max(s - 1, 0));
 
   return (
     <div style={{ display: "grid", gridTemplateRows: "auto 1fr", height: "100%" }}>
       <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 32px", borderBottom: "1px solid var(--line-soft)" }}>
-        <Logo size={22} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <Logo size={22} />
+          {step > 0 && <button type="button" className="ll-btn ghost" onClick={previous}><Icon name="arrowLeft" size={15} /> Back</button>}
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", gap: 6 }}>
             {STEPS.map((_, i) => (
@@ -58,12 +57,14 @@ function Welcome({ onNext, firstName }: { onNext: () => void; firstName: string 
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}><Logo size={48} stacked /></div>
       <h1 className="serif" style={{ fontSize: 56, fontWeight: 500, letterSpacing: "-0.015em", margin: 0 }}>Welcome, {firstName}.</h1>
       <p style={{ fontSize: 18, color: "var(--ink-2)", lineHeight: 1.55, margin: "16px 0 28px" }}>
-        The next ten minutes will give your loved ones a lifetime of certainty. We'll set you up in a few quiet steps.
+        The next few minutes will give your loved ones a lifetime of certainty. We'll set you up in a few quiet steps.
       </p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28, textAlign: "left" }}>
+      <div style={{ display: "grid", gap: 10, marginBottom: 28, textAlign: "left" }}>
         {cards.map((c) => (
-          <div key={c.t} style={{ padding: 16, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", display: "flex", gap: 12, alignItems: "center" }}>
-            <Icon name={c.icon} size={22} color="var(--brand-purple)" />
+          <div key={c.t} style={{ padding: "4px 0", display: "flex", gap: 12, alignItems: "center" }}>
+            <span style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <Icon name={c.icon} size={16} color="var(--brand-purple)" />
+            </span>
             <div>
               <div style={{ fontSize: 14, fontWeight: 500 }}>{c.t}</div>
               <div style={{ fontSize: 12, color: "var(--ink-3)" }}>{c.s}</div>
@@ -71,13 +72,13 @@ function Welcome({ onNext, firstName }: { onNext: () => void; firstName: string 
           </div>
         ))}
       </div>
-      <button className="ll-btn grad" onClick={onNext}>Begin — it takes about 10 minutes <Icon name="arrow" size={16} color="white" /></button>
+      <button className="ll-btn grad" onClick={onNext}>Begin — it takes just a few minutes <Icon name="arrow" size={16} color="white" /></button>
     </div>
   );
 }
 
 // Consent step — the legacy app's ToS gate, now explicit. Records agreement to
-// the terms and to the two-advocate + 24h-hold release model before anything is
+// the terms and to the two-advocate + one-hour-hold release model before anything is
 // collected. (Presentational: the checkboxes gate the button, nothing persists.)
 // The policies live on the marketing site. Open in a new tab so a half-finished
 // onboarding isn't thrown away by someone reading the terms.
@@ -96,7 +97,7 @@ function Consent({ onNext }: { onNext: () => void }) {
   const [b, setB] = useState(false);
   const items = [
     { checked: a, set: setA, node: <>I agree to the <Legal path="/terms">Terms of Service</Legal> and <Legal path="/privacy">Privacy Policy</Legal>.</> },
-    { checked: b, set: setB, node: <>I understand my messages are released only after <strong>two advocates independently confirm my passing</strong>, followed by a 24-hour cancellable hold.</> },
+    { checked: b, set: setB, node: <>I understand my messages are released only after <strong>two advocates independently confirm my passing</strong>, followed by a one-hour cancellable hold.</> },
   ];
   return (
     <div style={{ maxWidth: 560, width: "100%" }}>
@@ -117,11 +118,11 @@ function Consent({ onNext }: { onNext: () => void }) {
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value, type = "text" }: { label: string; value: string; type?: string }) {
   return (
     <label style={{ display: "block" }}>
       <div style={{ fontSize: 12, color: "var(--ink-3)", marginBottom: 6 }}>{label}</div>
-      <input defaultValue={value} style={{ width: "100%", padding: "12px 14px", border: "1px solid var(--line)", borderRadius: "var(--r-2)", background: "var(--surface)", fontSize: 14 }} />
+      <input type={type} defaultValue={value} style={{ width: "100%", padding: "12px 14px", border: "1px solid var(--line)", borderRadius: "var(--r-2)", background: "var(--surface)", fontSize: 14 }} />
     </label>
   );
 }
@@ -137,7 +138,7 @@ function Identity({ onNext, fullName }: { onNext: () => void; fullName: string }
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
         <Field label="Legal first name" value={firstName} />
         <Field label="Legal last name" value={lastName} />
-        <Field label="Date of birth" value="" />
+        <Field label="Date of birth (MM/DD/YYYY)" value="" type="date" />
         <Field label="Country of residence" value="" />
       </div>
       <div style={{ padding: 24, border: "1px dashed var(--line)", borderRadius: "var(--r-3)", background: "var(--surface)", display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
@@ -170,14 +171,13 @@ function Identity({ onNext, fullName }: { onNext: () => void; fullName: string }
   );
 }
 
-interface OBContact { id: string; full_name: string; relationship: string | null; email: string | null }
-const LIST_CONTACTS = `query { app_contacts(order_by: {created_at: asc}) { id full_name relationship email } }`;
-const ADD_CONTACT = `mutation($n: String!, $r: String, $e: String) { insert_app_contacts_one(object: {full_name: $n, relationship: $r, email: $e}) { id } }`;
-const GROUPS = ["Family", "Close friends", "Business"];
+interface OBContact { id: string; full_name: string; relationship: string | null; email: string | null; receives_public: boolean }
+const LIST_CONTACTS = `query { app_contacts(order_by: {created_at: asc}) { id full_name relationship email receives_public } }`;
+const ADD_CONTACT = `mutation($n: String!, $r: String, $e: String, $public: Boolean!) { insert_app_contacts_one(object: {full_name: $n, relationship: $r, email: $e, receives_public: $public}) { id } }`;
 
 function ContactsStep({ onNext }: { onNext: () => void }) {
   const [contacts, setContacts] = useState<OBContact[]>([]);
-  const [form, setForm] = useState({ name: "", rel: "Family", email: "" });
+  const [form, setForm] = useState({ name: "", rel: "", email: "", receivesPublic: true });
   const [busy, setBusy] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const refresh = () => gql<{ app_contacts: OBContact[] }>(LIST_CONTACTS).then((d) => setContacts(d.app_contacts));
@@ -187,8 +187,8 @@ function ContactsStep({ onNext }: { onNext: () => void }) {
     e.preventDefault();
     if (!form.name.trim() || busy) return;
     setBusy(true);
-    await gql(ADD_CONTACT, { n: form.name, r: form.rel || null, e: form.email || null }).catch(() => {});
-    setForm({ name: "", rel: form.rel, email: "" });
+    await gql(ADD_CONTACT, { n: form.name, r: form.rel || null, e: form.email || null, public: form.receivesPublic }).catch(() => {});
+    setForm({ name: "", rel: "", email: "", receivesPublic: true });
     setBusy(false);
     await refresh();
   }
@@ -211,7 +211,6 @@ function ContactsStep({ onNext }: { onNext: () => void }) {
             <button type="button" className="ll-btn secondary" style={{ flex: "1 1 160px", justifyContent: "center" }}><AolMark size={16} /> AOL</button>
             <button type="button" className="ll-btn secondary" style={{ flex: "1 1 160px", justifyContent: "center" }}><FacebookMark size={16} /> Facebook</button>
             <button type="button" className="ll-btn secondary" style={{ flex: "1 1 160px", justifyContent: "center" }}><AppleMark size={16} /> Apple</button>
-            <button type="button" className="ll-btn secondary" style={{ flex: "1 1 160px", justifyContent: "center" }}>Upload a CSV</button>
           </div>
           <div style={{ fontSize: 12.5, color: "var(--ink-3)", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-2)", padding: "10px 12px" }}>
             Connect a source to bring your contacts in, then review and tag them before saving. For now, add people below — you can import anytime from Contacts.
@@ -221,9 +220,10 @@ function ContactsStep({ onNext }: { onNext: () => void }) {
       <form onSubmit={add} style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
         <input placeholder="Full name (required)" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={obInput} />
         <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={obInput} />
-        <select value={form.rel} onChange={(e) => setForm({ ...form, rel: e.target.value })} style={{ ...obInput, flex: "0 0 150px" }}>
-          {GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
-        </select>
+        <input placeholder="Relationship" value={form.rel} onChange={(e) => setForm({ ...form, rel: e.target.value })} style={obInput} />
+        <label style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "0 8px", fontSize: 13 }}>
+          <input type="checkbox" checked={form.receivesPublic} onChange={(e) => setForm({ ...form, receivesPublic: e.target.checked })} /> Public
+        </label>
         <button className="ll-btn" type="submit" disabled={busy || !form.name.trim()}><Icon name="plus" size={14} color="white" /> {busy ? "Adding…" : "Add"}</button>
       </form>
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20, maxHeight: 260, overflow: "auto" }}>
@@ -231,7 +231,7 @@ function ContactsStep({ onNext }: { onNext: () => void }) {
         {contacts.map((c) => (
           <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 14, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)" }}>
             <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--surface-2)", display: "grid", placeItems: "center", fontSize: 13, fontWeight: 500 }}>{c.full_name.charAt(0)}</div>
-            <div style={{ flex: 1 }}><div style={{ fontWeight: 500, fontSize: 14 }}>{c.full_name}</div><div style={{ fontSize: 12, color: "var(--ink-3)" }}>{c.relationship ?? ""} {c.email ? `· ${c.email}` : ""}</div></div>
+            <div style={{ flex: 1 }}><div style={{ fontWeight: 500, fontSize: 14 }}>{c.full_name}</div><div style={{ fontSize: 12, color: "var(--ink-3)" }}>{c.relationship ?? ""} {c.email ? `· ${c.email}` : ""} · {c.receives_public ? "Public" : "Private only"}</div></div>
           </div>
         ))}
       </div>
@@ -243,7 +243,6 @@ function ContactsStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-const CREATE_LETTER = `mutation($t: String) { insert_app_messages_one(object: {type: "letter", title: $t, status: "draft"}) { id } }`;
 type MTab = "video" | "audio" | "letter";
 
 function MessageStep({ onNext }: { onNext: () => void }) {
@@ -266,9 +265,8 @@ function MessageStep({ onNext }: { onNext: () => void }) {
   async function saveLetter() {
     setStatus("saving");
     try {
-      const c = await gql<{ insert_app_messages_one: { id: string } }>(CREATE_LETTER, { t: title });
-      const res = await fetch(`${getApiUrl()}/api/messages/${c.insert_app_messages_one.id}/letter`, {
-        method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ body }),
+      const res = await fetch(`${getApiUrl()}/api/messages/letter`, {
+        method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ title, body, audienceType: "public", contactIds: [] }),
       });
       setStatus(res.ok ? "saved" : "error");
     } catch { setStatus("error"); }
@@ -289,7 +287,8 @@ function MessageStep({ onNext }: { onNext: () => void }) {
         {tab === "video" && (
           <VideoComposer
             title={title}
-            groupId=""
+            audienceType="public"
+            contactIds={[]}
             onSaved={() => { setVideoSaved(true); setNudge(false); }}
             onDirtyChange={(d) => { setVideoDirty(d); if (d) setNudge(false); }}
           />
@@ -329,20 +328,26 @@ function AdvocatesStep({ onNext }: { onNext: () => void }) {
   const [a, setA] = useState({ name: "", email: "" });
   const [b, setB] = useState({ name: "", email: "" });
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function inviteAndContinue() {
     setBusy(true);
+    setError(null);
     try {
-      const r = await gql<{ a: { id: string }; b: { id: string } }>(ADD_ADVOCATES, {
-        aName: a.name, aEmail: a.email, bName: b.name, bEmail: b.email,
+      const result = await postApi<{ advocates: { id: string; slot: string }[] }>("/api/advocates", {
+        advocates: [
+          { slot: "A", name: a.name, email: a.email },
+          { slot: "B", name: b.name, email: b.email },
+        ],
       });
       // Send each advocate their email invite (real email if Resend is configured).
-      await Promise.all([
-        postApi(`/api/advocates/${r.a.id}/invite`).catch(() => {}),
-        postApi(`/api/advocates/${r.b.id}/invite`).catch(() => {}),
-      ]);
-    } catch { /* already added — proceed */ }
-    onNext();
+      await Promise.all(result.advocates.map((advocate) => postApi(`/api/advocates/${advocate.id}/invite`).catch(() => {})));
+      onNext();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add your advocates.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const ready = a.name && a.email && b.name && b.email;
@@ -365,6 +370,7 @@ function AdvocatesStep({ onNext }: { onNext: () => void }) {
           </div>
         ))}
       </div>
+      {error && <p style={{ fontSize: 13, color: "var(--err)", margin: "0 0 14px" }}>{error}</p>}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button className="ll-btn" onClick={inviteAndContinue} disabled={busy || !ready}>
           {busy ? "Sending invites…" : "Send invites & continue"}

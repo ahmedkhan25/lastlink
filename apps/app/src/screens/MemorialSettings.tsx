@@ -25,7 +25,7 @@ interface Data { app_memorials: Memorial[]; app_memorial_media: Media[]; app_mes
 const QUERY = `query MemorialSettings {
   app_memorials(limit: 1) { id slug status visibility headline location birth_year death_year quote story service_when service_details }
   app_memorial_media(order_by: {sort_order: asc}) { id url file_key caption alt_text sort_order }
-  app_messages(where: {status: {_in: ["ready", "released"]}}, order_by: {created_at: asc}) { id title type status visible_on_memorial }
+  app_messages(where: {status: {_in: ["ready", "released"]}, audience_type: {_eq: "public"}}, order_by: {created_at: asc}) { id title type status visible_on_memorial }
 }`;
 const UPDATE = `mutation UpdateMemorial($id: uuid!, $set: app_memorials_set_input!) {
   update_app_memorials_by_pk(pk_columns: {id: $id}, _set: $set) { id }

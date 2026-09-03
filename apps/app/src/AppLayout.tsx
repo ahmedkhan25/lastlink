@@ -76,7 +76,7 @@ export function AppLayout() {
         }}
       >
         <div style={{ padding: "0 8px 24px" }}>
-          <a href={getMarketingUrl()} title="Back to lastlink.com" style={{ display: "inline-flex" }}>
+          <a href={getMarketingUrl()} title="Back to lastlink.care" style={{ display: "inline-flex" }}>
             <Logo size={22} />
           </a>
         </div>
@@ -106,6 +106,15 @@ export function AppLayout() {
         </nav>
 
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+          <button
+            type="button"
+            onClick={() => window.alert("Support chat is coming soon. For now, email support@lastlink.care.")}
+            className="ll-btn secondary"
+            title="Preview of the planned support chat"
+            style={{ width: "100%", justifyContent: "center", fontSize: 12 }}
+          >
+            <Icon name="mail" size={14} /> Support · Coming soon
+          </button>
           <div
             style={{
               padding: 14,
@@ -118,7 +127,7 @@ export function AppLayout() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--ink-2)", fontWeight: 500 }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--ok)" }} />
-              Active &amp; sealed
+              Active &amp; secure
             </div>
             <div style={{ marginTop: 4 }}>Nothing you need to do today.</div>
           </div>

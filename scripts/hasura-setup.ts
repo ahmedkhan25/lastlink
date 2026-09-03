@@ -12,9 +12,8 @@ const INSERT_SET = { registrant_id: "X-Hasura-User-Id" };
 // columns visible to the registrant per table (messages excludes ciphertext)
 const COLS = {
   registrants: ["id", "legal_name", "dob", "country", "plan", "account_state", "sealed_at", "created_at"],
-  contacts: ["id", "registrant_id", "full_name", "relationship", "location", "email", "phone", "reach_channels", "created_at"],
-  contact_groups: ["id", "registrant_id", "name", "is_default", "created_at"],
-  messages: ["id", "registrant_id", "group_id", "type", "title", "status", "media_asset_id", "delivery_settings", "visible_on_memorial", "created_at", "updated_at"],
+  contacts: ["id", "registrant_id", "full_name", "relationship", "location", "email", "phone", "reach_channels", "receives_public", "created_at"],
+  messages: ["id", "registrant_id", "audience_type", "type", "title", "status", "media_asset_id", "delivery_settings", "visible_on_memorial", "created_at", "updated_at"],
   advocates: ["id", "registrant_id", "slot", "full_name", "relationship", "email", "phone", "invite_status", "identity_verified", "invited_at", "accepted_at", "last_login_at"],
   media_assets: ["id", "registrant_id", "mux_playback_id", "playback_policy", "status", "duration_seconds", "caption_status", "static_rendition_status", "thumbnail_ref", "created_at"],
   memorials: ["id", "registrant_id", "slug", "status", "visibility", "headline", "location", "birth_year", "death_year", "quote", "story", "service_when", "service_details", "published_at", "created_at", "updated_at"],
@@ -48,10 +47,17 @@ function ownedTable(name: keyof typeof COLS, opts: { writable?: boolean; filter?
 }
 
 const messages = ownedTable("messages", { writable: true });
-(messages.object_relationships = [{ name: "group", using: { foreign_key_constraint_on: "group_id" } }]);
+(messages.array_relationships = [{ name: "recipients", using: { foreign_key_constraint_on: { table: { schema: "app", name: "message_recipients" }, column: "message_id" } } }]);
+// Message creation and audience assignment are transactional API operations.
+// Hasura remains the read/delete path for the registrant dashboard.
+delete messages.insert_permissions;
+delete messages.update_permissions;
 
-const groups = ownedTable("contact_groups", { writable: true });
-groups.array_relationships = [{ name: "members", using: { foreign_key_constraint_on: { table: { schema: "app", name: "contact_group_members" }, column: "group_id" } } }];
+// Advocate creation is validated by POST /api/advocates (including the
+// self-advocate check). Keep update/delete for account management, but do not
+// expose a direct Hasura insert path that bypasses those checks.
+const advocates = ownedTable("advocates", { writable: true });
+delete advocates.insert_permissions;
 
 // registrants: row created by the auth hook; registrant may read/seal their own.
 const registrants: TableMeta = {
@@ -95,15 +101,13 @@ const condolences: TableMeta = {
   update_permissions: [{ role: "registrant", permission: { columns: ["status", "reviewed_at"], filter: { memorial: OWN }, check: { memorial: OWN } } }],
 };
 
-const members: TableMeta = {
-  table: { schema: "app", name: "contact_group_members" },
+const messageRecipients: TableMeta = {
+  table: { schema: "app", name: "message_recipients" },
   object_relationships: [
     { name: "contact", using: { foreign_key_constraint_on: "contact_id" } },
-    { name: "group", using: { foreign_key_constraint_on: "group_id" } },
+    { name: "message", using: { foreign_key_constraint_on: "message_id" } },
   ],
-  select_permissions: [{ role: "registrant", permission: { columns: ["group_id", "contact_id"], filter: { group: OWN } } }],
-  insert_permissions: [{ role: "registrant", permission: { check: { group: OWN }, columns: ["group_id", "contact_id"] } }],
-  delete_permissions: [{ role: "registrant", permission: { filter: { group: OWN } } }],
+  select_permissions: [{ role: "registrant", permission: { columns: ["message_id", "contact_id", "created_at"], filter: { message: OWN } } }],
 };
 
 const metadata = {
@@ -116,10 +120,9 @@ const metadata = {
       tables: [
         registrants,
         ownedTable("contacts", { writable: true }),
-        groups,
-        members,
         messages,
-        ownedTable("advocates", { writable: true }),
+        messageRecipients,
+        advocates,
         ownedTable("media_assets"),
         memorials,
         memorialMedia,

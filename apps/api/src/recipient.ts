@@ -45,7 +45,9 @@ export async function getRecipient(req: Request, res: Response): Promise<void> {
   if (!d) return void res.status(401).json({ error: "This link isn't valid or has expired." });
   const advs = await query<{ full_name: string }>(
     "select full_name from app.advocates where registrant_id=$1 order by slot", [d.registrant_id]);
-  await query("update app.deliveries set status='delivered', delivered_at=coalesce(delivered_at, now()) where id=$1", [d.delivery_id]);
+  // Opening a LastLink link is an application event, not proof that the email
+  // provider delivered it. Provider delivery is tracked by the Resend webhook.
+  await query("update app.deliveries set opened_at=coalesce(opened_at, now()) where id=$1", [d.delivery_id]);
   res.json({
     recipientName: d.recipient_name,
     registrantName: d.registrant_name,

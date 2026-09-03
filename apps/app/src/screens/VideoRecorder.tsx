@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@lastlink/ui";
 
+const MAX_RECORDING_SECONDS = 5 * 60;
+
 // Cross-browser recording mime. Prefer WebM (reliable on Chrome/Firefox);
 // fall back to MP4/H.264 which is what Safari/iOS records. Chrome's MP4
 // recording is flaky and can produce unplayable blobs, so WebM goes first.
@@ -60,6 +62,10 @@ export function VideoRecorder({ onRecorded, onCancel, onClipChange }: { onRecord
     const id = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(id);
   }, [recording]);
+
+  useEffect(() => {
+    if (recording && elapsed >= MAX_RECORDING_SECONDS) stop();
+  }, [elapsed, recording]);
 
   function start() {
     const stream = streamRef.current;
@@ -156,7 +162,11 @@ export function VideoRecorder({ onRecorded, onCancel, onClipChange }: { onRecord
         )}
         <button className="ll-btn ghost" onClick={onCancel}>Cancel</button>
         <span style={{ fontSize: 12, color: "var(--ink-3)", marginLeft: "auto" }}>
-          {recordedBlob ? `Recorded ${(recordedBlob.size / 1024 / 1024).toFixed(2)} MB` : "No time limit. Take your time."}
+          {recordedBlob
+            ? `Recorded ${(recordedBlob.size / 1024 / 1024).toFixed(2)} MB`
+            : recording
+              ? `${fmt(elapsed)} / ${fmt(MAX_RECORDING_SECONDS)}`
+              : "1–5 minutes works best · 5-minute maximum"}
         </span>
       </div>
     </div>

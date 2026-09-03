@@ -4,7 +4,7 @@ _Last updated: 2026-09-02 · Owner: Ahmed_
 
 LastLink is a **verified digital death-notification and legacy-messaging platform**.
 A person records messages for the people they love; when they die, **two trusted
-advocates independently confirm it**; after a mandatory **24-hour cancellable
+advocates independently confirm it**; after a mandatory **one-hour cancellable
 safety hold**, the messages are delivered to each recipient — in the sender's own
 words, never secondhand.
 
@@ -26,7 +26,7 @@ only) and share one **Neon Postgres** database + one **Hasura** GraphQL engine.
 |---|---|---|---|
 | **Marketing** | https://lastlink-marketing.onrender.com | Public homepage. The story, the problem, how it works, the verification model, pricing (visual), CTA into the app. | ✅ |
 | **Registrant app** | https://lastlink-web.onrender.com | The core product. Sign up, onboard, write/record messages, add contacts, designate advocates, dashboard. Also hosts the **API** and the browser→Hasura proxy. | ✅ |
-| **Advocate** | https://lastlink-advocate.onrender.com | Token-gated. An advocate accepts their role, and later initiates + confirms a passing and watches the 24h hold. Reached via email link. | ✅ |
+| **Advocate** | https://lastlink-advocate.onrender.com | Token-gated. An advocate accepts their role, and later initiates + confirms a passing and watches the one-hour hold. Reached via email link. | ✅ |
 | **Recipient message** | https://lastlink-message.onrender.com | Token-gated. Where a recipient opens the private message left for them (video or letter) + the audit footer. Reached via email link. | ✅ |
 | **Public memorial** | https://lastlink-memorial.onrender.com | Slug-based memorial for each test user: story, gallery, moderated visitor memories, public message cards, and demo offerings. | 🟡 Built; deploy pending |
 | Hasura (internal) | https://lastlink-hasura.onrender.com | GraphQL engine over Neon. Admin-secret gated; console + introspection off. **Not user-facing** — infra only. | ✅ |
@@ -99,7 +99,7 @@ Marketing ──▶ Registrant app ──▶ (Hasura via /graphql proxy)  ← CR
 2. **Confirm (independent)** — each advocate confirms separately. First confirm →
    `awaiting_second`; second confirm → **`safety_hold`** with a live countdown.
    Either advocate can instead **dispute**, which halts everything.
-3. **24-hour safety hold** — a durable, cancellable window. Either advocate can
+3. **One-hour safety hold** — a durable, cancellable window. Either advocate can
    **"Stop the release"** at any moment. (A demo **"Advance hold & release now"**
    control time-warps the hold so it's watchable in a demo.)
 4. **Release** — runs **inline in a transaction** that re-checks state with
@@ -121,13 +121,13 @@ and by the in-transaction re-check. It was validated against the live API with a
 2. On open: a **letter renders decrypted**, or a **Mux video plays** with signed,
    short-lived tokens (private even though it's a shareable link).
 3. Below: an **aftercare** note and an **audit footer** naming both advocates and
-   confirming the 24-hour hold — the trust payoff.
+   confirming the one-hour hold — the trust payoff.
 
 ### 3.5 Marketing ✅
 `lastlink-marketing.onrender.com`
 Long-scroll homepage: hero → the problem → 5-step "how it works" → the
 verification model → trust & security → who it's for → pricing (visual only) →
-CTA into the app. Copy has had an **honesty pass** (24h hold, "patent-pending"
+CTA into the app. Copy has had an **honesty pass** (one-hour hold, "patent-pending"
 not a fabricated patent number, "SOC 2 audit underway" rather than certified,
 "encryption at rest" not false end-to-end claims).
 
@@ -208,7 +208,7 @@ the product itself.
 2. **Daniel** signs up → writes a letter (or records a video) → adds a recipient →
    designates 2 advocates → "active & sealed."
 3. **Advocates** accept via email → one begins the confirmation → both confirm →
-   **24-hour hold** with live countdown.
+   **one-hour hold** with live countdown.
 4. Point out **"Stop the release"** (the safety), then **advance the hold**.
 5. **Recipient** opens the private link → the message plays/reads, with the audit
    footer naming both advocates.

@@ -55,7 +55,11 @@ export function Confirm() {
     setLoading(false);
   }, [token]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const refresh = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(refresh);
+  }, [load]);
 
   async function post(path: string, body?: unknown) {
     setBusy(true); setErr(null);
@@ -95,7 +99,7 @@ export function Confirm() {
             <p style={lede}>
               If <strong>{data.registrantName}</strong> has passed, you can begin the confirmation here.
               Nothing is released until <strong>both</strong> advocates confirm, independently — and even then,
-              only after a <strong>24-hour safety hold</strong> that either of you can stop.
+              only after a <strong>one-hour safety hold</strong> that either of you can stop.
             </p>
             <label style={fieldLabel}>Date of passing</label>
             <input type="date" value={reportedDod} onChange={(e) => setReportedDod(e.target.value)}
@@ -129,7 +133,7 @@ export function Confirm() {
           </Centered>
         );
 
-        // Safety hold → countdown + cancel + demo time-warp release.
+        // Safety hold → countdown + cancel; release is enabled only after expiry.
         if (c.state === "safety_hold") return (
           <div style={card}>
             <Halo icon="clock" />
@@ -143,18 +147,15 @@ export function Confirm() {
               <span className="mono" style={{ fontSize: 40, fontWeight: 600, color: "var(--ink)" }}>{fmt(hold)}</span>
               <span className="mono" style={{ fontSize: 11, letterSpacing: "0.14em", color: "var(--ink-3)" }}>UNTIL RELEASE</span>
             </div>
-            <p className="mono" style={{ fontSize: 10, letterSpacing: "0.1em", color: "var(--ink-3)", textAlign: "center", marginTop: -6 }}>
-              (DEMO ONLY — SHORTENED; THE REAL SAFETY HOLD IS 24 HOURS)
-            </p>
             {err && err !== "invalid" && <p style={errStyle}>{err}</p>}
             <button className="ll-btn" disabled={busy} onClick={() => post("cancel")}
               style={{ ...primaryBtn, background: "var(--bone)", color: "var(--danger, #b3261e)", border: "1px solid var(--danger, #b3261e)" }}>
               Stop the release
             </button>
             <div style={demoBox}>
-              <span className="mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--ink-3)" }}>DEMO CONTROL</span>
-              <button className="ll-btn grad" disabled={busy} onClick={() => post("release")} style={{ ...primaryBtn, marginTop: 8 }}>
-                {busy ? "Releasing…" : "Advance hold & release now"} <Icon name="arrow" size={16} color="white" />
+              <span className="mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--ink-3)" }}>{hold > 0 ? "AVAILABLE WHEN THE HOLD ENDS" : "HOLD COMPLETE"}</span>
+              <button className="ll-btn grad" disabled={busy || hold > 0} onClick={() => post("release")} style={{ ...primaryBtn, marginTop: 8 }}>
+                {busy ? "Releasing…" : "Release messages"} <Icon name="arrow" size={16} color="white" />
               </button>
             </div>
           </div>
@@ -164,7 +165,7 @@ export function Confirm() {
         if (c.iConfirmed) return (
           <Centered title="Your confirmation is recorded." icon="check">
             Thank you, {data.advocate.name}. We're now waiting for {other?.name ?? "the second advocate"} to
-            confirm independently. The 24-hour hold begins only once you've both confirmed.
+            confirm independently. The one-hour hold begins only once you've both confirmed.
           </Centered>
         );
 

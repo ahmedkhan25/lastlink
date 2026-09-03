@@ -8,14 +8,14 @@ import { useConfirm } from "../components/ConfirmProvider.js";
 interface Data {
   app_registrants: { legal_name: string; account_state: string }[];
   app_advocates: { full_name: string; invite_status: string }[];
-  app_messages: { id: string; title: string | null; type: string; status: string }[];
+  app_messages: { id: string; title: string | null; type: string; status: string; audience_type: "public" | "private" }[];
   app_contacts: { id: string }[];
 }
 
 const Q = `query {
   app_registrants { legal_name account_state }
   app_advocates(order_by: {slot: asc}) { full_name invite_status }
-  app_messages(order_by: {created_at: desc}) { id title type status }
+  app_messages(order_by: {created_at: desc}) { id title type status audience_type }
   app_contacts { id }
 }`;
 
@@ -120,6 +120,8 @@ export function Dashboard() {
   const sealed = reg?.account_state === "active_sealed";
   const advAccepted = d?.app_advocates.filter((a) => a.invite_status === "accepted").length ?? 0;
   const ready = d?.app_messages.filter((m) => m.status === "ready").length ?? 0;
+  const failedMessages = d?.app_messages.filter((m) => m.status === "failed").length ?? 0;
+  const processingMessages = (d?.app_messages.length ?? 0) - ready - failedMessages;
 
   return (
     <div style={{ padding: "56px 64px 80px", maxWidth: 1020, margin: "0 auto" }}>
@@ -147,8 +149,10 @@ export function Dashboard() {
         <Status icon="shield" label="Advocates confirmed"
           sub={(d?.app_advocates.length ?? 0) === 0 ? "Add your advocates →" : `${advAccepted} of ${d?.app_advocates.length} accepted`}
           ok={advAccepted >= 2} onClick={() => navigate("/advocates")} />
-        <Status icon="lock" label="Messages sealed"
-          sub={(d?.app_messages.length ?? 0) === 0 ? "Write your first →" : `${ready} ready · ${(d?.app_messages.length ?? 0) - ready} drafts`}
+        <Status icon="lock" label="Secure messages"
+          sub={(d?.app_messages.length ?? 0) === 0
+            ? "Write your first →"
+            : [ready && `${ready} ready`, processingMessages && `${processingMessages} processing`, failedMessages && `${failedMessages} failed`].filter(Boolean).join(" · ")}
           ok={ready > 0} onClick={() => navigate("/compose")} />
       </section>
 
@@ -164,6 +168,7 @@ export function Dashboard() {
         )}
         {d?.app_messages.map((m) => {
           const ok = m.status === "ready";
+          const failed = m.status === "failed";
           return (
             <li key={m.id} onClick={() => navigate(`/messages/${m.id}`)}
               style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 20, alignItems: "center", padding: "18px 0", borderBottom: "1px solid var(--line-soft)", cursor: "pointer" }}>
@@ -172,12 +177,12 @@ export function Dashboard() {
               </div>
               <div>
                 <div className="serif" style={{ fontSize: 20, fontWeight: 500 }}>{m.title ?? "Untitled message"}</div>
-                <div style={{ fontSize: 13, color: "var(--ink-3)", textTransform: "capitalize" }}>{m.type}</div>
+                <div style={{ fontSize: 13, color: "var(--ink-3)", textTransform: "capitalize" }}>{m.type} · {m.audience_type}</div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: ok ? "var(--ok)" : "var(--warn)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: failed ? "var(--err)" : ok ? "var(--ok)" : "var(--warn)" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <Icon name={ok ? "check" : "pen"} size={14} color={ok ? "var(--ok)" : "var(--warn)"} />
-                  {ok ? "Ready" : "Draft"}
+                  <Icon name={ok ? "check" : "pen"} size={14} color={failed ? "var(--err)" : ok ? "var(--ok)" : "var(--warn)"} />
+                  {failed ? "Failed — delete and retry" : ok ? "Ready" : "Processing"}
                 </span>
                 <button
                   onClick={(e) => { e.stopPropagation(); removeMessage(m.id, m.title ?? "this message"); }}

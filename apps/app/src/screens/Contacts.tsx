@@ -11,13 +11,17 @@ interface Contact {
   location: string | null;
   email: string | null;
   reach_channels: string[];
+  receives_public: boolean;
 }
 
-const LIST = `query { app_contacts(order_by: {created_at: asc}) { id full_name relationship location email reach_channels } }`;
+const LIST = `query { app_contacts(order_by: {created_at: asc}) { id full_name relationship location email reach_channels receives_public } }`;
 const ADD = `mutation Add($full_name: String!, $relationship: String, $email: String) {
   insert_app_contacts_one(object: {full_name: $full_name, relationship: $relationship, email: $email}) { id }
 }`;
 const REMOVE = `mutation Remove($id: uuid!) { delete_app_contacts_by_pk(id: $id) { id } }`;
+const SET_PUBLIC = `mutation SetPublic($id: uuid!, $enabled: Boolean!) {
+  update_app_contacts_by_pk(pk_columns: {id: $id}, _set: {receives_public: $enabled}) { id receives_public }
+}`;
 
 export function Contacts() {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -73,6 +77,16 @@ export function Contacts() {
     await refresh(); // authoritative reconcile with the DB
   }
 
+  async function setPublic(c: Contact, enabled: boolean) {
+    setContacts((items) => items.map((item) => item.id === c.id ? { ...item, receives_public: enabled } : item));
+    try {
+      await gql(SET_PUBLIC, { id: c.id, enabled });
+    } catch {
+      setContacts((items) => items.map((item) => item.id === c.id ? { ...item, receives_public: !enabled } : item));
+      setError(`Could not update ${c.full_name}'s Public setting.`);
+    }
+  }
+
   return (
     <div style={{ padding: "56px 64px", maxWidth: 1100, margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
@@ -82,7 +96,7 @@ export function Contacts() {
         </Link>
       </div>
       <p style={{ fontSize: 15, color: "var(--ink-3)", margin: "8px 0 28px" }}>
-        {loading ? "Loading…" : `${contacts.length} ${contacts.length === 1 ? "person" : "people"}. Each can receive a different message.`}
+        {loading ? "Loading…" : `${contacts.length} ${contacts.length === 1 ? "person" : "people"}. Public is selected by default; turn it off for anyone who should receive only private messages.`}
       </p>
 
       <form onSubmit={add} style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
@@ -102,7 +116,7 @@ export function Contacts() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left", fontSize: 11, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              <th style={th}>Name</th><th style={th}>Relationship</th><th style={th}>Email</th><th style={th}>Reach</th><th style={th} />
+              <th style={th}>Name</th><th style={th}>Relationship</th><th style={th}>Email</th><th style={th}>Public</th><th style={th} />
             </tr>
           </thead>
           <tbody>
@@ -116,7 +130,12 @@ export function Contacts() {
                 </td>
                 <td style={{ ...td, color: "var(--ink-2)" }}>{c.relationship ?? "—"}</td>
                 <td style={{ ...td, color: "var(--ink-3)" }}>{c.email ?? "—"}</td>
-                <td style={td}><span className="ll-chip" style={{ fontSize: 11 }}>Email</span></td>
+                <td style={td}>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer", fontSize: 13 }}>
+                    <input type="checkbox" checked={c.receives_public} onChange={(e) => void setPublic(c, e.target.checked)} />
+                    {c.receives_public ? "Included" : "Private only"}
+                  </label>
+                </td>
                 <td style={{ ...td, textAlign: "right" }}>
                   <button onClick={() => remove(c)} title={`Remove ${c.full_name}`}
                     style={{ background: "none", border: "none", color: "var(--ink-4)", padding: 4, cursor: "pointer" }}

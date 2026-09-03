@@ -7,7 +7,7 @@ import { Flag, GoogleMark, OutlookMark, AolMark, FacebookMark, AppleMark, page, 
 // Contact import. The connect step is simulated (see apps/api/src/contacts-import.ts)
 // but everything after it is real: the directory is fetched from the API, deduped
 // against contacts already in the database, and the people you tick are written —
-// contact row, group, and membership — before this screen hands off to /contacts.
+// contact row with Public selected — before this screen hands off to /contacts.
 
 type Provider = "google";
 
@@ -16,7 +16,6 @@ interface Row {
   full_name: string;
   email: string;
   relationship: string;
-  group: string;
   already: boolean;
 }
 
@@ -186,7 +185,7 @@ export function ImportContacts() {
 
           <div style={{ ...card, overflow: "hidden" }}>
             <div style={{ display: "grid", gridTemplateColumns: GRID, padding: "0 14px" }} className="mono">
-              {["", "Name", "Email", "Group", "Relationship"].map((h, i) => (
+              {["", "Name", "Email", "Public", "Relationship"].map((h, i) => (
                 <div key={i} style={{ fontSize: 9.5, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-3)", padding: "12px 0 10px" }}>{h}</div>
               ))}
             </div>
@@ -206,7 +205,7 @@ export function ImportContacts() {
                 <div style={{ color: "var(--ink-3)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis" }}>{r.email}</div>
                 <div>
                   <span className="mono" style={{ fontSize: 9.5, letterSpacing: "0.08em", padding: "3px 9px", borderRadius: "var(--r-pill)", background: "var(--line-soft)", color: "var(--ink-3)" }}>
-                    {r.already ? "ALREADY ADDED" : r.group.toUpperCase()}
+                    {r.already ? "ALREADY ADDED" : "INCLUDED"}
                   </span>
                 </div>
                 <div style={{ fontSize: 13, color: "var(--ink-3)" }}>{r.relationship}</div>
@@ -226,8 +225,8 @@ export function ImportContacts() {
       <Flag>
         <b>Demo connector.</b> The Google sign-in is simulated and the directory is a fixed set of
         test users on <b>lastlink.care</b> — but the import is real: it dedupes by email against your
-        saved contacts, and writes each person plus their <b>group</b> (Family, Close friends,
-        Business) to the database. Those groups are what Compose addresses a message to. Wiring the
+        saved contacts, and adds each person to the <b>Public</b> list by default. You can deselect
+        Public for anyone from Contacts. Wiring the
         live Google People API means swapping the fixture for a <code>contacts.readonly</code> fetch —
         the review and save steps stay as they are.
       </Flag>

@@ -51,7 +51,8 @@ export async function getPublicMemorial(req: Request, res: Response): Promise<vo
          from app.messages msg
          left join app.media_assets ma on ma.id = msg.media_asset_id
          join app.memorials m on m.registrant_id = msg.registrant_id
-        where m.id = $1 and msg.visible_on_memorial = true and msg.status in ('ready','released')
+        where m.id = $1 and msg.visible_on_memorial = true
+          and msg.audience_type = 'public' and msg.status in ('ready','released')
         order by msg.created_at`, [memorial.id]),
     query<{ id: string; kind: "flowers" | "donation" | "memorial"; title: string; description: string | null; provider_name: string | null; image_url: string | null; price_label: string | null; cta_label: string | null; sponsor_label: string | null }>(
       `select o.id, o.kind, o.title, o.description, p.name as provider_name,
@@ -193,7 +194,8 @@ export async function setMemorialMessageVisibility(req: Request, res: Response):
 
   const updated = await query<{ id: string }>(
     `update app.messages set visible_on_memorial = $1, updated_at = now()
-      where id = $2 and registrant_id = $3 and status in ('ready','released')
+      where id = $2 and registrant_id = $3 and audience_type = 'public'
+        and status in ('ready','released')
       returning id`,
     [visible, messageId, who.registrantId],
   );

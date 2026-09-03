@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { applyConfirmation, canCancel, isReleasable, type Confirmation } from "../index.js";
+import { HOLD_DURATION_MS } from "@lastlink/shared";
 
 describe("applyConfirmation", () => {
   it("first confirm → awaiting_second", () => {
@@ -31,6 +32,10 @@ describe("applyConfirmation", () => {
 });
 
 describe("safety guards", () => {
+  it("uses the approved one-hour safety hold", () => {
+    expect(HOLD_DURATION_MS).toBe(60 * 60 * 1000);
+  });
+
   it("cancellable until released", () => {
     expect(canCancel("safety_hold")).toBe(true);
     expect(canCancel("both_confirmed")).toBe(true);

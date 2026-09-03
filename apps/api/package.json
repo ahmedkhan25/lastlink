@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts"
+    "start": "tsx src/index.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@lastlink/crypto": "workspace:*",
@@ -17,12 +18,14 @@
     "dotenv": "^16.4.0",
     "express": "^5.0.0",
     "pg": "^8.13.0",
+    "svix": "^2.3.0",
     "tsx": "^4.19.0",
     "uploadthing": "^7.7.4"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
-    "@types/pg": "^8.11.0"
+    "@types/pg": "^8.11.0",
+    "vitest": "^2.1.0"
   }
 }

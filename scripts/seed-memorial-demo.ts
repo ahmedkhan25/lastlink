@@ -107,7 +107,8 @@ async function main(): Promise<void> {
     );
     await query(
       `update app.messages set visible_on_memorial=true where id = (
-         select id from app.messages where registrant_id=$1 and status in ('ready','released')
+         select id from app.messages where registrant_id=$1 and audience_type='public'
+           and status in ('ready','released')
          order by created_at limit 1
        )`, [registrant.id]);
     console.log(`${registrant.legal_name}: ${MEMORIAL_BASE_URL}/${row.slug}`);

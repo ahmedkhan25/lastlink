@@ -67,8 +67,11 @@ create table if not exists app.contacts (
   email          text,
   phone          text,
   reach_channels text[] not null default '{email}',   -- subset of {email,sms}; demo uses email
+  receives_public boolean not null default true,      -- included in Public messages unless deselected
   created_at     timestamptz not null default now()
 );
+
+alter table app.contacts add column if not exists receives_public boolean not null default true;
 
 create table if not exists app.contact_group_members (
   group_id   uuid not null references app.contact_groups(id) on delete cascade,
@@ -100,9 +103,10 @@ create table if not exists app.messages (
   id                uuid primary key default gen_random_uuid(),
   registrant_id     uuid not null references app.registrants(id) on delete cascade,
   group_id          uuid references app.contact_groups(id) on delete set null,
+  audience_type     text not null default 'public' check (audience_type in ('public','private')),
   type              text not null check (type in ('video','audio','letter')),
   title             text,
-  status            text not null default 'draft' check (status in ('draft','ready','released')),
+  status            text not null default 'draft' check (status in ('draft','ready','failed','released')),
   media_asset_id    uuid references app.media_assets(id),
   body_ciphertext   bytea,                             -- letters: AES-256-GCM ciphertext (local key)
   body_iv           bytea,
@@ -182,6 +186,32 @@ select r.id,
   from app.registrants r
 on conflict (registrant_id) do nothing;
 
+alter table app.messages add column if not exists audience_type text not null default 'public';
+do $$ begin
+  alter table app.messages drop constraint if exists messages_audience_type_check;
+  alter table app.messages add constraint messages_audience_type_check
+    check (audience_type in ('public','private'));
+end $$;
+
+-- Private messages name their recipients directly. Public messages fan out to
+-- contacts whose receives_public flag is on. Legacy group tables remain only so
+-- old installations can be migrated without losing targeting information.
+create table if not exists app.message_recipients (
+  message_id uuid not null references app.messages(id) on delete cascade,
+  contact_id uuid not null references app.contacts(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (message_id, contact_id)
+);
+
+-- Preserve existing group-targeted messages when upgrading: they become
+-- Private messages with the group's current members copied into the new join.
+insert into app.message_recipients (message_id, contact_id)
+select m.id, gm.contact_id
+  from app.messages m
+  join app.contact_group_members gm on gm.group_id = m.group_id
+on conflict do nothing;
+update app.messages set audience_type = 'private' where group_id is not null;
+
 -- ============================================================================
 -- app — advocates, verification, release, delivery
 -- ============================================================================
@@ -201,6 +231,8 @@ create table if not exists app.advocates (
   last_login_at     timestamptz,
   unique (registrant_id, slot)
 );
+create unique index if not exists advocates_registrant_email_unique
+  on app.advocates (registrant_id, lower(email));
 
 create table if not exists app.verification_cases (
   id                    uuid primary key default gen_random_uuid(),
@@ -256,13 +288,47 @@ create table if not exists app.deliveries (
   channel            text not null check (channel in ('email','sms')),
   recipient_token_id uuid,                             -- FK added after recipient_tokens
   status             text not null default 'queued'
-                     check (status in ('queued','sent','delivered','bounced','failed')),
+                     check (status in ('queued','sent','delayed','delivered','bounced','complained','failed')),
   provider_message_id text,
   bounce_reason      text,
+  provider_event_type text,
+  provider_error      text,
+  last_provider_event_at timestamptz,
   sent_at            timestamptz,
   delivered_at       timestamptz,
+  opened_at          timestamptz,
   created_at         timestamptz not null default now(),
   unique (release_id, message_id, contact_id, channel) -- idempotent fan-out
+);
+
+-- `create table if not exists` does not update checks/columns on an existing
+-- installation, so keep these upgrades idempotent for db:apply.
+do $$ begin
+  alter table app.messages drop constraint if exists messages_status_check;
+  alter table app.messages add constraint messages_status_check
+    check (status in ('draft','ready','failed','released'));
+end $$;
+
+alter table app.deliveries add column if not exists provider_event_type text;
+alter table app.deliveries add column if not exists provider_error text;
+alter table app.deliveries add column if not exists last_provider_event_at timestamptz;
+alter table app.deliveries add column if not exists opened_at timestamptz;
+do $$ begin
+  alter table app.deliveries drop constraint if exists deliveries_status_check;
+  alter table app.deliveries add constraint deliveries_status_check
+    check (status in ('queued','sent','delayed','delivered','bounced','complained','failed'));
+end $$;
+
+-- Resend retries and can deliver events out of order. Persisting the Svix event
+-- id makes webhook processing idempotent; the event timestamp prevents an old
+-- `sent` event from regressing a later `delivered`/failure state.
+create table if not exists app.provider_webhook_events (
+  event_id            text primary key,
+  provider            text not null,
+  event_type          text not null,
+  provider_message_id text,
+  provider_event_at   timestamptz not null,
+  received_at         timestamptz not null default now()
 );
 
 create table if not exists app.recipient_tokens (

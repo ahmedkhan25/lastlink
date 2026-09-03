@@ -1,20 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import MuxUploader from "@mux/mux-uploader-react";
 import MuxPlayer from "@mux/mux-player-react";
 import * as UpChunk from "@mux/upchunk";
 import { Icon } from "@lastlink/ui";
-import { gql, postApi } from "../lib/api.js";
+import { postApi } from "../lib/api.js";
 import { VideoRecorder } from "./VideoRecorder.js";
 
 interface Tokens { playback: string; thumbnail: string; storyboard: string }
-type Mode = "choose" | "record" | "upload";
+type Mode = "choose" | "record";
 type Status = "idle" | "uploading" | "processing" | "ready" | "error";
 
-const CREATE = `mutation($title: String, $group_id: uuid) {
-  insert_app_messages_one(object: {type: "video", title: $title, group_id: $group_id, status: "draft"}) { id }
-}`;
-
-export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { title: string; groupId: string; onSaved?: () => void; onDirtyChange?: (dirty: boolean) => void }) {
+export function VideoComposer({ title, audienceType, contactIds, onSaved, onDirtyChange }: { title: string; audienceType: "public" | "private"; contactIds: string[]; onSaved?: () => void; onDirtyChange?: (dirty: boolean) => void }) {
   const [mode, setMode] = useState<Mode>("choose");
   const [status, setStatus] = useState<Status>("idle");
   const [progress, setProgress] = useState(0);
@@ -35,13 +30,22 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
   async function ensureUploadUrl(): Promise<string> {
     let id = idRef.current;
     if (!id) {
-      const c = await gql<{ insert_app_messages_one: { id: string } }>(CREATE, { title, group_id: groupId || null });
-      id = c.insert_app_messages_one.id;
+      const created = await postApi<{ messageId: string; uploadUrl: string }>("/api/messages/video/upload-init", {
+        title,
+        audienceType,
+        contactIds,
+      });
+      id = created.messageId;
       idRef.current = id;
-      onSaved?.(); // the message row now exists — it will show on the dashboard even while Mux processes
+      onSaved?.();
+      return created.uploadUrl;
     }
-    const { uploadUrl } = await postApi<{ uploadUrl: string }>(`/api/messages/${id}/upload-init`);
-    return uploadUrl;
+    throw new Error("This upload has already been initialized.");
+  }
+
+  function markFailed(reason: string) {
+    const id = idRef.current;
+    if (id) void postApi(`/api/messages/${id}/upload-failed`, { reason }).catch((e) => console.warn("[lastlink] could not mark failed upload", e));
   }
 
   async function startProcessing() {
@@ -59,7 +63,10 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
           setStatus("ready");
           return;
         }
-        if (r.status === "errored") return setStatus("error");
+        if (r.status === "errored") {
+          setErrorMsg("The video could not be processed. Delete the failed draft from your dashboard and try again.");
+          return setStatus("error");
+        }
       } catch (e) {
         // A transient refresh error must NOT abort the loop — the message row
         // already exists and Mux keeps processing server-side. Keep polling; the
@@ -99,6 +106,7 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
         const msg = typeof d === "string" ? d : (d?.message ?? JSON.stringify(d));
         console.error("[lastlink] upload error", d);
         setErrorMsg(`Upload: ${msg}`);
+        markFailed(msg);
         setStatus("error");
       });
       // Safety net: UpChunk's success/progress events can be missed (the upload
@@ -120,7 +128,7 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
           <MuxPlayer playbackId={playbackId} tokens={tokens} accentColor="#6B2CB0" style={{ height: "100%", width: "100%" }} />
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: "var(--ink-3)" }}>
-          <span>Ready · sealed · plays only with a signed token</span>
+          <span>Ready · secure · plays only with a signed token</span>
           <button className="ll-btn ghost" onClick={() => { idRef.current = null; processingRef.current = false; setStatus("idle"); setMode("choose"); }}>Record another</button>
         </div>
       </div>
@@ -165,25 +173,15 @@ export function VideoComposer({ title, groupId, onSaved, onDirtyChange }: { titl
 
   if (mode === "record") return <VideoRecorder onRecorded={uploadRecorded} onCancel={() => { setHasClip(false); setMode("choose"); }} onClipChange={setHasClip} />;
 
-  if (mode === "upload") {
-    return (
-      <div>
-        <MuxUploader endpoint={ensureUploadUrl} onSuccess={() => startProcessing()} onUploadStart={() => setStatus("uploading")} />
-        <button className="ll-btn ghost" onClick={() => setMode("choose")} style={{ marginTop: 10 }}>← Back</button>
-      </div>
-    );
-  }
-
   // choose
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-      <Choice icon="video" title="Record a video" sub="Use your camera, right here" onClick={() => setMode("record")} primary />
-      <Choice icon="arrow" title="Upload a file" sub="Drag in an existing recording" onClick={() => setMode("upload")} />
+    <div style={{ display: "grid", gap: 14 }}>
+      <Choice icon="video" title="Record a video" sub="Most people find 1–5 minutes is just right — enough time to say everything that matters." onClick={() => setMode("record")} primary />
     </div>
   );
 }
 
-function Choice({ icon, title, sub, onClick, primary }: { icon: "video" | "arrow"; title: string; sub: string; onClick: () => void; primary?: boolean }) {
+function Choice({ icon, title, sub, onClick, primary }: { icon: "video"; title: string; sub: string; onClick: () => void; primary?: boolean }) {
   return (
     <button onClick={onClick}
       style={{ textAlign: "left", padding: 24, border: "1px solid var(--line)", borderRadius: "var(--r-3)", background: primary ? "var(--brand-grad-soft)" : "var(--surface)", cursor: "pointer", display: "flex", flexDirection: "column", gap: 8 }}>

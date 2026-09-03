@@ -85,7 +85,7 @@ const Hero = () => (
       }}>
         <Reassure icon="shield" label="Verified by two independent advocates" />
         <Reassure icon="lock" label="Encrypted at rest · SOC&nbsp;2 audit underway" />
-        <Reassure icon="leaf" label="10 minutes to register · free to begin" />
+        <Reassure icon="leaf" label="A few minutes to register · free to begin" />
       </div>
     </div>
     <HeroCard />
@@ -230,7 +230,7 @@ const HowItWorks = () => {
   // Three user-facing steps. Contact lists are assembled in the background as
   // you go, so collecting them is deliberately not a step of its own.
   const steps = [
-    { n: "01", title: "Sign up", sub: "10 minutes. A lifetime of peace.",
+    { n: "01", title: "Sign up", sub: "A few minutes. A lifetime of peace.",
       body: "Create your account and verify your identity. That's the whole of it — your contacts come together in the background as you go." },
     { n: "02", title: "Pick your advocates", sub: "The people you trust most.",
       body: "Two people you choose, who each confirm independently. Neither can act alone, and either can stop a release." },
@@ -552,16 +552,16 @@ const PricingTeaser = () => (
         Begin your LastLink.
       </h2>
       <p style={{ fontSize: 17, color: "var(--ink-2)", maxWidth: 560, margin: "0 auto" }}>
-        Everyone deserves a verified last word. Premium adds video, multi-group messages, and unlimited storage.
+        Everyone deserves a timely last word. Premium plan details and limits are being finalized.
       </p>
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
       {([
         { name: "Free", price: "$0", per: "to begin", desc: "Everything you need to make sure you're heard.",
-          features: ["1 message · 1 audience group", "Designate two advocates", "Verified, dignified delivery", "Encryption at rest", "Up to 50 contacts"],
+          features: ["1 public or private message", "Designate two advocates", "Verified, dignified delivery", "Encryption at rest", "Up to 50 contacts"],
           cta: "Begin your LastLink", grad: false },
         { name: "Premium", price: "$60", per: "per year", desc: "For when one message isn't enough.",
-          features: ["Unlimited messages — video, audio, letter", "Family, friends, business, and custom groups", "Up to 1,000 contacts", "Memorial page &amp; legacy archive", "Priority advocate support 24/7"],
+          features: ["Video, audio, and letter messages", "Private delivery options", "Expanded contact capacity", "Memorial page &amp; legacy archive", "Priority advocate support"],
           cta: "Go Premium", grad: true },
       ] as const).map((p, i) =>
         <div key={i} style={{
@@ -611,7 +611,7 @@ const FinalCTA = () => (
         <a href={APP} className="ll-btn grad" style={{ padding: "16px 30px", fontSize: 15 }}>
           Begin your LastLink <Icon name="arrow" size={16} color="white" />
         </a>
-        <a href="mailto:dawn@lastlink.com" className="ll-btn" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "var(--bone-soft)", padding: "16px 30px", fontSize: 15 }}>
+        <a href="mailto:dawn.gunther@lastlink.care" className="ll-btn" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "var(--bone-soft)", padding: "16px 30px", fontSize: 15 }}>
           For Partners &amp; HR
         </a>
       </div>

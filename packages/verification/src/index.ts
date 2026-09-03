@@ -14,7 +14,7 @@ export interface Confirmation {
 export interface TransitionResult {
   ok: boolean;
   nextState?: CaseState;
-  /** true when this transition should start the 24h safety hold. */
+  /** true when this transition should start the one-hour safety hold. */
   startsHold?: boolean;
   error?: string;
 }

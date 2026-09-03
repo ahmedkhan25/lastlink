@@ -7,6 +7,7 @@ import { env } from "./env.js";
 import { logEvent } from "./audit.js";
 import { verifyAdvocateInvite, signAdvocateInvite, signRecipientToken } from "./tokens.js";
 import { notifier } from "./notify.js";
+import { isRecipientAuthorized } from "./delivery-policy.js";
 import crypto from "node:crypto";
 
 interface Who { advocateId: string; registrantId: string; slot: AdvocateSlot; advocateName: string; registrantName: string }
@@ -33,6 +34,15 @@ async function activeCase(registrantId: string) {
   return rows[0] ?? null;
 }
 
+async function latestCase(registrantId: string) {
+  const { rows } = await query<{ id: string; state: string; hold_expires_at: string | null; reported_dod: string | null }>(
+    `select id, state, hold_expires_at, reported_dod from app.verification_cases
+       where registrant_id = $1 order by created_at desc limit 1`,
+    [registrantId],
+  );
+  return rows[0] ?? null;
+}
+
 async function caseConfirmations(caseId: string): Promise<{ confirmations: Confirmation[]; mineBy: Record<string, boolean> }> {
   const { rows } = await query<{ slot: string; decision: string }>(
     `select a.slot, c.decision from app.advocate_confirmations c join app.advocates a on a.id = c.advocate_id where c.case_id = $1`,
@@ -48,14 +58,23 @@ async function caseConfirmations(caseId: string): Promise<{ confirmations: Confi
 export async function getCase(req: Request, res: Response): Promise<void> {
   const who = await resolveAdvocate(String(req.params.token));
   if (!who) return void res.status(401).json({ error: "invalid link" });
-  const c = await activeCase(who.registrantId);
+  const c = await latestCase(who.registrantId);
   const advocates = await query<{ slot: string; full_name: string; invite_status: string }>(
     "select slot, full_name, invite_status from app.advocates where registrant_id=$1 order by slot", [who.registrantId],
   );
   let confirmations: Confirmation[] = [];
   let mineBy: Record<string, boolean> = {};
   if (c) ({ confirmations, mineBy } = await caseConfirmations(c.id));
-  const contactCount = await query<{ n: string }>("select count(*) n from app.contacts where registrant_id=$1", [who.registrantId]);
+  const contactCount = await query<{ n: string }>(
+    `select count(distinct c.id) n
+       from app.messages m
+       join app.contacts c on c.registrant_id=m.registrant_id and c.email is not null
+       left join app.message_recipients mr on mr.message_id=m.id and mr.contact_id=c.id
+      where m.registrant_id=$1 and m.status='ready'
+        and ((m.audience_type='public' and c.receives_public)
+          or (m.audience_type='private' and mr.contact_id is not null))`,
+    [who.registrantId],
+  );
 
   res.json({
     registrantName: who.registrantName,
@@ -74,7 +93,9 @@ export async function getCase(req: Request, res: Response): Promise<void> {
 export async function initiateCase(req: Request, res: Response): Promise<void> {
   const who = await resolveAdvocate(String(req.params.token));
   if (!who) return void res.status(401).json({ error: "invalid link" });
-  if (await activeCase(who.registrantId)) return void res.status(409).json({ error: "a case is already open" });
+  if (await activeCase(who.registrantId)) {
+    return void res.status(409).json({ error: "A case is already open. Check your email for the latest confirmation link, then refresh this page." });
+  }
 
   const reportedDod = typeof req.body?.reportedDod === "string" ? req.body.reportedDod : null;
   const ins = await query<{ id: string }>(
@@ -159,7 +180,7 @@ export async function cancelCase(req: Request, res: Response): Promise<void> {
   res.json({ ok: true, state: "cancelled" });
 }
 
-// POST /advocate/:token/release — demo time-warp: advance the hold and release (inline, no worker).
+// POST /advocate/:token/release — release after the real hold has elapsed (inline, no worker).
 // Re-checks state in a transaction with FOR UPDATE so a cancel-a-ms-earlier no-ops.
 export async function releaseNow(req: Request, res: Response): Promise<void> {
   const who = await resolveAdvocate(String(req.params.token));
@@ -173,11 +194,10 @@ export async function releaseNow(req: Request, res: Response): Promise<void> {
     const locked = await client.query<{ state: string; hold_expires_at: string | null }>(
       "select state, hold_expires_at from app.verification_cases where id=$1 for update", [c.id]);
     const row = locked.rows[0];
-    // Time-warp the hold to now, then re-check the guard.
-    await client.query("update app.verification_cases set hold_expires_at = now() where id=$1 and state='safety_hold'", [c.id]);
-    if (!row || !isReleasable(row.state as never, Date.now(), Date.now())) {
+    const holdExpiresAtMs = row?.hold_expires_at ? new Date(row.hold_expires_at).getTime() : null;
+    if (!row || !isReleasable(row.state as never, Date.now(), holdExpiresAtMs)) {
       await client.query("rollback");
-      return void res.status(409).json({ error: `not releasable (state: ${row?.state})` });
+      return void res.status(409).json({ error: row?.state === "safety_hold" ? "The one-hour safety hold is still running." : `not releasable (state: ${row?.state})` });
     }
     await client.query("update app.verification_cases set state='releasing', release_authorized_at=now() where id=$1", [c.id]);
 
@@ -185,19 +205,33 @@ export async function releaseNow(req: Request, res: Response): Promise<void> {
       "insert into app.releases (case_id, registrant_id, status) values ($1,$2,'in_progress') returning id", [c.id, who.registrantId]);
     const releaseId = rel.rows[0]!.id;
 
-    const messages = await client.query<{ id: string; title: string | null; type: string }>(
-      "select id, title, type from app.messages where registrant_id=$1 and status='ready'", [who.registrantId]);
-    const contacts = await client.query<{ id: string; full_name: string; email: string | null }>(
-      "select id, full_name, email from app.contacts where registrant_id=$1 and email is not null", [who.registrantId]);
+    const recipients = await client.query<{
+      message_id: string; audience_type: "public" | "private"; receives_public: boolean;
+      selected_contact_id: string | null; contact_id: string; full_name: string; email: string;
+    }>(
+      `select m.id as message_id, m.audience_type, c.receives_public,
+              mr.contact_id as selected_contact_id,
+              c.id as contact_id, c.full_name, c.email
+         from app.messages m
+         join app.contacts c on c.registrant_id=m.registrant_id and c.email is not null
+         left join app.message_recipients mr
+           on mr.message_id=m.id and mr.contact_id=c.id
+        where m.registrant_id=$1 and m.status='ready'
+          and ((m.audience_type='public' and c.receives_public)
+            or (m.audience_type='private' and mr.contact_id is not null))`,
+      [who.registrantId],
+    );
 
-    const emails: { to: string; recipientName: string; openUrl: string }[] = [];
-    for (const m of messages.rows) {
-      for (const ct of contacts.rows) {
+    const emails: { deliveryId: string; to: string; recipientName: string; openUrl: string }[] = [];
+    for (const recipient of recipients.rows) {
+        // Defense in depth: even if the SQL predicate is edited later, each
+        // audience rule is checked again before a delivery row is created.
+        if (!isRecipientAuthorized(recipient.audience_type, recipient.receives_public, recipient.selected_contact_id)) continue;
         const del = await client.query<{ id: string }>(
           `insert into app.deliveries (release_id, message_id, contact_id, channel, status)
            values ($1,$2,$3,'email','queued')
            on conflict (release_id, message_id, contact_id, channel) do nothing returning id`,
-          [releaseId, m.id, ct.id]);
+          [releaseId, recipient.message_id, recipient.contact_id]);
         if (!del.rows[0]) continue;
         const deliveryId = del.rows[0].id;
         const token = signRecipientToken(deliveryId);
@@ -205,10 +239,9 @@ export async function releaseNow(req: Request, res: Response): Promise<void> {
         const tk = await client.query<{ id: string }>(
           `insert into app.recipient_tokens (delivery_id, contact_id, message_id, token_hash, expires_at)
            values ($1,$2,$3,$4, now() + interval '30 days') returning id`,
-          [deliveryId, ct.id, m.id, tokenHash]);
-        await client.query("update app.deliveries set recipient_token_id=$1, status='sent', sent_at=now() where id=$2", [tk.rows[0]!.id, deliveryId]);
-        emails.push({ to: ct.email!, recipientName: ct.full_name, openUrl: `${env.MESSAGE_BASE_URL}/m/${token}` });
-      }
+          [deliveryId, recipient.contact_id, recipient.message_id, tokenHash]);
+        await client.query("update app.deliveries set recipient_token_id=$1 where id=$2", [tk.rows[0]!.id, deliveryId]);
+        emails.push({ deliveryId, to: recipient.email, recipientName: recipient.full_name, openUrl: `${env.MESSAGE_BASE_URL}/m/${token}` });
     }
 
     await client.query("update app.releases set status='complete', completed_at=now() where id=$1", [releaseId]);
@@ -217,15 +250,38 @@ export async function releaseNow(req: Request, res: Response): Promise<void> {
     await client.query("commit");
 
     // Send recipient emails outside the txn (idempotent per delivery).
+    let accepted = 0;
+    let failed = 0;
     for (const e of emails) {
-      await notifier.send({
-        to: e.to,
-        email: recipientMessageEmail({ recipientName: e.recipientName, registrantName: who.registrantName, openUrl: e.openUrl }),
-        idempotencyKey: `release-${releaseId}-${e.to}-${e.openUrl.slice(-12)}`,
-      });
+      try {
+        const result = await notifier.send({
+          to: e.to,
+          email: recipientMessageEmail({ recipientName: e.recipientName, registrantName: who.registrantName, openUrl: e.openUrl }),
+          idempotencyKey: `release-${releaseId}-${e.deliveryId}`,
+        });
+        if (result.error) {
+          failed++;
+          await query(
+            "update app.deliveries set status='failed', provider_event_type='api.rejected', provider_error=$2, last_provider_event_at=now() where id=$1",
+            [e.deliveryId, result.error],
+          );
+        } else if (!result.sink && result.id) {
+          accepted++;
+          await query(
+            "update app.deliveries set status='sent', provider_message_id=$2, provider_event_type='api.accepted', sent_at=now(), last_provider_event_at=now() where id=$1",
+            [e.deliveryId, result.id],
+          );
+        }
+      } catch (sendError) {
+        failed++;
+        await query(
+          "update app.deliveries set status='failed', provider_event_type='api.error', provider_error=$2, last_provider_event_at=now() where id=$1",
+          [e.deliveryId, sendError instanceof Error ? sendError.message : String(sendError)],
+        );
+      }
     }
-    await logEvent({ actorType: "system", action: "case.released", entityType: "case", entityId: c.id, data: { deliveries: emails.length } });
-    res.json({ ok: true, state: "released", recipientsNotified: emails.length });
+    await logEvent({ actorType: "system", action: "case.released", entityType: "case", entityId: c.id, data: { deliveries: emails.length, accepted, failed } });
+    res.json({ ok: true, state: "released", deliveriesQueued: emails.length, recipientsNotified: accepted, deliveryFailures: failed });
   } catch (err) {
     await client.query("rollback").catch(() => {});
     res.status(500).json({ error: String(err) });

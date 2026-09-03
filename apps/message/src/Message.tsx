@@ -141,7 +141,7 @@ function AuditFooter({ advocates, registrantName }: { advocates: string[]; regis
       <Icon name="shield" size={15} color="var(--ink-3)" />
       <span style={{ fontSize: 12.5, color: "var(--ink-3)", lineHeight: 1.5, textAlign: "center" }}>
         {names.length >= 2
-          ? <>This release was independently confirmed by <strong>{names[0]}</strong> and <strong>{names[1]}</strong>, then held 24 hours before delivery.</>
+          ? <>This release was independently confirmed by <strong>{names[0]}</strong> and <strong>{names[1]}</strong>, then held for one hour before delivery.</>
           : <>This message was released through LastLink's verified confirmation process on behalf of {registrantName}.</>}
       </span>
     </div>

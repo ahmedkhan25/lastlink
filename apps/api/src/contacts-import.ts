@@ -24,7 +24,6 @@ interface DirectoryEntry {
   full_name: string;
   email: string;
   relationship: string;
-  group: string;
 }
 
 interface Directory {
@@ -34,24 +33,24 @@ interface Directory {
 }
 
 // A real address book is mixed, so this one is too: family, friends and work in
-// one list, which is what makes the group assignment on import worth watching.
+// one list. Imported contacts join the Public list by default.
 const DIRECTORY: Record<Provider, Directory> = {
   google: {
     label: "Google Contacts",
     account: "daniel.rourke@lastlink.care",
     contacts: [
-      { external_id: "g-101", full_name: "Marcus Ellery", email: "marcus.ellery@lastlink.care", relationship: "Brother", group: "Family" },
-      { external_id: "g-102", full_name: "Grace Abernathy", email: "grace.abernathy@lastlink.care", relationship: "Aunt", group: "Family" },
-      { external_id: "g-103", full_name: "Ruth Calloway", email: "ruth.calloway@lastlink.care", relationship: "Godmother", group: "Family" },
-      { external_id: "g-104", full_name: "Amara Diallo", email: "amara.diallo@lastlink.care", relationship: "Cousin", group: "Family" },
-      { external_id: "g-105", full_name: "Nadia Okonkwo", email: "nadia.okonkwo@lastlink.care", relationship: "College roommate", group: "Close friends" },
-      { external_id: "g-106", full_name: "Daniel Osei", email: "daniel.osei@lastlink.care", relationship: "Neighbour", group: "Close friends" },
-      { external_id: "g-107", full_name: "Jonah Beckett", email: "jonah.beckett@lastlink.care", relationship: "School friend", group: "Close friends" },
-      { external_id: "g-108", full_name: "Felix Moreau", email: "felix.moreau@lastlink.care", relationship: "Cycling club", group: "Close friends" },
-      { external_id: "g-109", full_name: "Rosa Puente", email: "rosa.puente@lastlink.care", relationship: "Book club", group: "Close friends" },
-      { external_id: "g-110", full_name: "Priya Raman", email: "priya.raman@lastlink.care", relationship: "Business partner", group: "Business" },
-      { external_id: "g-111", full_name: "Theo Lindqvist", email: "theo.lindqvist@lastlink.care", relationship: "Accountant", group: "Business" },
-      { external_id: "g-112", full_name: "Sam Whitfield", email: "sam.whitfield@lastlink.care", relationship: "Client", group: "Business" },
+      { external_id: "g-101", full_name: "Marcus Ellery", email: "marcus.ellery@lastlink.care", relationship: "Brother" },
+      { external_id: "g-102", full_name: "Grace Abernathy", email: "grace.abernathy@lastlink.care", relationship: "Aunt" },
+      { external_id: "g-103", full_name: "Ruth Calloway", email: "ruth.calloway@lastlink.care", relationship: "Godmother" },
+      { external_id: "g-104", full_name: "Amara Diallo", email: "amara.diallo@lastlink.care", relationship: "Cousin" },
+      { external_id: "g-105", full_name: "Nadia Okonkwo", email: "nadia.okonkwo@lastlink.care", relationship: "College roommate" },
+      { external_id: "g-106", full_name: "Daniel Osei", email: "daniel.osei@lastlink.care", relationship: "Neighbour" },
+      { external_id: "g-107", full_name: "Jonah Beckett", email: "jonah.beckett@lastlink.care", relationship: "School friend" },
+      { external_id: "g-108", full_name: "Felix Moreau", email: "felix.moreau@lastlink.care", relationship: "Cycling club" },
+      { external_id: "g-109", full_name: "Rosa Puente", email: "rosa.puente@lastlink.care", relationship: "Book club" },
+      { external_id: "g-110", full_name: "Priya Raman", email: "priya.raman@lastlink.care", relationship: "Business partner" },
+      { external_id: "g-111", full_name: "Theo Lindqvist", email: "theo.lindqvist@lastlink.care", relationship: "Accountant" },
+      { external_id: "g-112", full_name: "Sam Whitfield", email: "sam.whitfield@lastlink.care", relationship: "Client" },
     ],
   },
 };
@@ -113,9 +112,8 @@ export async function previewImport(req: Request, res: Response): Promise<void> 
 }
 
 // POST /api/contacts/import/:provider  { externalIds: string[] }
-// Writes the chosen people in one transaction: the contact row, the group it
-// belongs to (created on first use — nothing else in the app seeds groups), and
-// the membership join. Re-importing someone is a no-op rather than a duplicate.
+// Writes the chosen people in one transaction. Imported contacts are Public by
+// default; the registrant can deselect Public from the Contacts screen.
 export async function commitImport(req: Request, res: Response): Promise<void> {
   const ctx = await gate(req, res);
   if (!ctx) return;
@@ -133,41 +131,15 @@ export async function commitImport(req: Request, res: Response): Promise<void> {
   const fresh = picked.filter((c) => !have.has(c.email.toLowerCase()));
 
   const client = await pool.connect();
-  const groupIds = new Map<string, string>();
   let imported = 0;
   try {
     await client.query("begin");
 
     for (const c of fresh) {
-      const contact = await client.query<{ id: string }>(
-        `insert into app.contacts (registrant_id, full_name, relationship, email, reach_channels)
-         values ($1, $2, $3, $4, '{email}') returning id`,
-        [ctx.registrantId, c.full_name, c.relationship, c.email],
-      );
-
-      let groupId = groupIds.get(c.group);
-      if (!groupId) {
-        // Look before inserting: the registrant may already have this group from
-        // an earlier import, and there's no unique constraint to upsert against.
-        const found = await client.query<{ id: string }>(
-          "select id from app.contact_groups where registrant_id = $1 and name = $2 limit 1",
-          [ctx.registrantId, c.group],
-        );
-        groupId =
-          found.rows[0]?.id ??
-          (
-            await client.query<{ id: string }>(
-              "insert into app.contact_groups (registrant_id, name) values ($1, $2) returning id",
-              [ctx.registrantId, c.group],
-            )
-          ).rows[0]!.id;
-        groupIds.set(c.group, groupId);
-      }
-
       await client.query(
-        `insert into app.contact_group_members (group_id, contact_id)
-         values ($1, $2) on conflict do nothing`,
-        [groupId, contact.rows[0]!.id],
+        `insert into app.contacts (registrant_id, full_name, relationship, email, reach_channels, receives_public)
+         values ($1, $2, $3, $4, '{email}', true)`,
+        [ctx.registrantId, c.full_name, c.relationship, c.email],
       );
       imported++;
     }
@@ -193,6 +165,5 @@ export async function commitImport(req: Request, res: Response): Promise<void> {
     ok: true,
     imported,
     skipped: picked.length - fresh.length,
-    groups: [...groupIds.keys()],
   });
 }

@@ -21,7 +21,7 @@ The full narrated path, in order. "Real" = shipped and hitting Postgres/Mux/Rese
 | 7 | Designate two advocates | ✅ Real | `app` |
 | 8 | Account sealed | ✅ Real | `app` |
 | 9 | Advocate confirms passing (×2) | ✅ Real | `advocate` |
-| 10 | 24-hour cancellable hold | ✅ Real (time-warped for demo) | `advocate` |
+| 10 | One-hour cancellable hold | ✅ Real | `advocate` |
 | 11 | Release (decrypt, tokens, fan-out) | ✅ Real | `api` + workers |
 | 12 | Recipient opens the message | ✅ Real | `message` |
 | 13 | Per-user public memorial + moderated visitor memories | 🟡 **Real demo build; deploy pending** | `memorial` + `api` |
