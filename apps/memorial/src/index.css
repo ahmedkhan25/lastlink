@@ -11,6 +11,8 @@ html, body, #root { height: 100%; }
 .memorial-gallery img { width: 100%; height: 230px; object-fit: cover; border-radius: var(--r-3); }
 .memorial-gallery figcaption { color: var(--ink-3); font-size: 12px; padding: 7px 3px; }
 .message-grid, .offering-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 16px; }
+.browse-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
+.memorial-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; max-width: 720px; }
 .cond-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 32px; align-items: start; }
 .offer-strip {
   width: 100%; margin-top: 46px; padding: 0; display: grid; grid-template-columns: 170px 1fr auto;
@@ -40,4 +42,6 @@ html, body, #root { height: 100%; }
   .memorial-identity { display: block !important; }
   .memorial-identity > div:first-child { margin-bottom: 22px; }
   .memorial-gallery img { height: 200px; }
+  .browse-title { font-size: 40px !important; }
+  .memorial-search { grid-template-columns: 1fr; }
 }

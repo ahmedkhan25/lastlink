@@ -112,6 +112,7 @@ export function MemorialSettings() {
           <TextInput label="Location" value={form.location} onChange={(v) => set("location", v)} />
           <TextInput label="Birth year" value={form.birth_year?.toString()} onChange={(v) => set("birth_year", v ? Number(v) : null)} />
           <TextInput label="Passing year" value={form.death_year?.toString()} onChange={(v) => set("death_year", v ? Number(v) : null)} />
+          <label><FieldLabel>Directory visibility</FieldLabel><select style={field} value={form.visibility ?? "unlisted"} onChange={(e) => set("visibility", e.target.value as Memorial["visibility"])}><option value="unlisted">Unlisted — direct link only</option><option value="public">Public — shown in Find a memorial</option></select></label>
           <TextInput label="Favorite quote" value={form.quote} onChange={(v) => set("quote", v)} wide />
           <TextArea label="Life story" value={form.story} onChange={(v) => set("story", v)} />
           <TextInput label="Service date and time" value={form.service_when} onChange={(v) => set("service_when", v)} wide />

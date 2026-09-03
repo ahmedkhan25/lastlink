@@ -145,6 +145,11 @@ The Remember tab displays three database-backed, real-looking demo offerings:
 flowers, a hospice donation, and a memorial tree. Their handoff is intentionally
 mocked and clearly confirms that no order, donation, or charge occurred.
 
+Published memorials that a family marks **Public** appear in the searchable
+`/search` directory. Visitors can browse all eligible pages or search by name,
+location, or year. **Unlisted** memorials remain available only through their
+direct URL. The marketing site's Your Messages section links into this directory.
+
 This increment is **demo-grade and live on Render**. The production schema and
 Hasura metadata were applied and three investor-demo memorials were seeded on
 September 2, 2026. Abuse controls, malware scanning, durable moderation

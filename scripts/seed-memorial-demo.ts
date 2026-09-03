@@ -85,7 +85,7 @@ async function main(): Promise<void> {
     const memorial = await query<{ id: string; slug: string }>(
       `update app.memorials set headline=$1, location=$2, birth_year=$3, death_year=$4,
               quote=$5, story=$6, service_when=$7, service_details=$8,
-              status='published', published_at=coalesce(published_at, now())
+              status='published', visibility='public', published_at=coalesce(published_at, now())
         where registrant_id=$9 returning id, slug`,
       [content.headline, content.location, 1955 + index * 7, 2026, content.quote, content.story,
         content.serviceWhen, content.serviceDetails, registrant.id],

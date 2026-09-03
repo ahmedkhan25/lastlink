@@ -5,6 +5,7 @@ import { Logo, Icon, ImgSlot, LLPhotos, type IconName } from "@lastlink/ui";
 const APP = import.meta.env.VITE_APP_URL ?? "http://localhost:5273";
 // Advocate re-entry surface — for someone named as an advocate, whenever the day comes.
 const ADVOCATE = import.meta.env.VITE_ADVOCATE_URL ?? "http://localhost:5274";
+const MEMORIAL = import.meta.env.VITE_MEMORIAL_URL ?? "http://localhost:5276";
 
 export function Marketing() {
   return (
@@ -539,6 +540,18 @@ const ScenariosBlock = () => (
       }}>
         You choose which it is, message by message — and you can change your mind at any time before release.
       </div>
+
+      <div className="ll-memorial-callout" style={{
+        marginTop: 24, padding: "28px 32px", background: "var(--ink)", color: "var(--bone-soft)",
+        borderRadius: 18, display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "center",
+      }}>
+        <div>
+          <div className="ll-eyebrow" style={{ color: "var(--ink-4)", marginBottom: 8 }}>Public memorials</div>
+          <h3 className="serif" style={{ fontSize: 30, margin: "0 0 6px", fontWeight: 500 }}>Find a life remembered.</h3>
+          <p style={{ color: "var(--ink-4)", margin: 0 }}>Search public LastLink memorials by name or location and share a memory with the family.</p>
+        </div>
+        <a href={`${MEMORIAL}/search`} className="ll-btn grad" style={{ whiteSpace: "nowrap" }}>Browse memorials <Icon name="arrow" size={16} color="white" /></a>
+      </div>
     </div>
   </section>
 );
@@ -627,6 +640,7 @@ const FOOTER_COLS: readonly (readonly [string, readonly (readonly [string, strin
   ["Product", [
     ["How it works", "#how"],
     ["Your messages", "#messages"],
+    ["Find a memorial", `${MEMORIAL}/search`],
     ["Trust & security", "#trust"],
     ["Plans", "#pricing"],
   ]],

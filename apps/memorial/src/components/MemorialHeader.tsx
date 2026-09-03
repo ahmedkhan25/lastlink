@@ -7,7 +7,10 @@ export function MemorialHeader({ memorial }: { memorial: PublicMemorialPayload["
   return <>
     <header style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 22, paddingBottom: 22 }}>
       <Logo size={22} />
-      <button className="ll-btn secondary" style={{ padding: "7px 14px" }} onClick={() => navigator.clipboard.writeText(window.location.href)}>Share this memorial</button>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <a href="/search" className="ll-btn ghost" style={{ padding: "7px 12px" }}>Find a memorial</a>
+        <button className="ll-btn secondary" style={{ padding: "7px 14px" }} onClick={() => navigator.clipboard.writeText(window.location.href)}>Share this memorial</button>
+      </div>
     </header>
     <section className="memorial-identity" style={{ ...wrap, display: "flex", gap: 28, paddingTop: 24, paddingBottom: 12, alignItems: "center" }}>
       <div style={{ width: 164, height: 190, borderRadius: "var(--r-4)", overflow: "hidden", background: "var(--brand-grad-soft)", flexShrink: 0, boxShadow: "var(--shadow-2)" }}>

@@ -124,6 +124,8 @@ services:
       # CTAs ("Begin your LastLink") point at the registrant app.
       - key: VITE_APP_URL
         value: https://lastlink-web.onrender.com
+      - key: VITE_MEMORIAL_URL
+        value: https://lastlink-memorial.onrender.com
       # "I'm an advocate" points at the advocate re-entry surface.
       - key: VITE_ADVOCATE_URL
         value: https://lastlink-advocate.onrender.com

@@ -18,6 +18,7 @@ import { createAdvocates, inviteAdvocate, getInvite, acceptInvite, requestAdvoca
 import { getCase, initiateCase, confirmCase, cancelCase, releaseNow } from "./case.js";
 import { getRecipient, openRecipient } from "./recipient.js";
 import {
+  browsePublicMemorials,
   createCondolence,
   getPublicMemorial,
   hideDemoMemorial,
@@ -100,6 +101,7 @@ app.get("/recipient/:token", getRecipient);
 app.post("/recipient/:token/open", openRecipient);
 
 // Public memorial read/contribution surface + demo-only owner controls.
+app.get("/public/memorials", browsePublicMemorials);
 app.get("/public/memorial/:slug", getPublicMemorial);
 app.post("/public/memorial/:slug/condolences", createCondolence);
 app.post("/api/memorial/publish-demo", publishDemoMemorial);

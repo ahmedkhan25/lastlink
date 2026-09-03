@@ -24,7 +24,7 @@ The full narrated path, in order. "Real" = shipped and hitting Postgres/Mux/Rese
 | 10 | One-hour cancellable hold | ✅ Real | `advocate` |
 | 11 | Release (decrypt, tokens, fan-out) | ✅ Real | `api` + workers |
 | 12 | Recipient opens the message | ✅ Real | `message` |
-| 13 | Per-user public memorial + moderated visitor memories | ✅ **Real demo build; live** | `memorial` + `api` |
+| 13 | Search/browse public memorials + moderated visitor memories | ✅ **Real demo build; live** | `marketing` + `memorial` + `api` |
 | 14 | Remember them: flowers, donation, memorial tree | 🟡 **Real UI + data; mocked partner handoff** | `memorial` |
 
 The memorial page, gallery, moderation queue, and visitor-submission flow now use

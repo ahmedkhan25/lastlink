@@ -17,6 +17,17 @@ export const createCondolenceSchema = z.object({
 
 export type CreateCondolenceInput = z.infer<typeof createCondolenceSchema>;
 
+export interface PublicMemorialSummary {
+  slug: string;
+  displayName: string;
+  portraitUrl: string | null;
+  coverImageUrl: string | null;
+  headline: string | null;
+  location: string | null;
+  birthYear: number | null;
+  deathYear: number | null;
+}
+
 export interface PublicMemorialPayload {
   memorial: {
     slug: string;

@@ -1,5 +1,9 @@
 import type { Request, Response } from "express";
-import { createCondolenceSchema, type PublicMemorialPayload } from "@lastlink/shared";
+import {
+  createCondolenceSchema,
+  type PublicMemorialPayload,
+  type PublicMemorialSummary,
+} from "@lastlink/shared";
 import { query } from "./db.js";
 import { requireRegistrant } from "./auth.js";
 import { logEvent } from "./audit.js";
@@ -23,6 +27,46 @@ interface MemorialRow {
 function idempotencyKey(req: Request): string | null {
   const key = req.header("idempotency-key")?.trim();
   return key && key.length <= 200 ? key : null;
+}
+
+export async function browsePublicMemorials(req: Request, res: Response): Promise<void> {
+  const search = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
+  const { rows } = await query<{
+    slug: string;
+    display_name: string;
+    portrait_url: string | null;
+    cover_image_url: string | null;
+    headline: string | null;
+    location: string | null;
+    birth_year: number | null;
+    death_year: number | null;
+  }>(
+    `select m.slug, r.legal_name as display_name, r.avatar_url as portrait_url,
+            cover.url as cover_image_url, m.headline, m.location, m.birth_year, m.death_year
+       from app.memorials m
+       join app.registrants r on r.id = m.registrant_id
+       left join lateral (
+         select mm.url from app.memorial_media mm
+          where mm.memorial_id = m.id order by mm.sort_order, mm.created_at limit 1
+       ) cover on true
+      where m.status = 'published' and m.visibility = 'public'
+        and ($1 = '' or concat_ws(' ', r.legal_name, m.headline, m.location,
+              m.birth_year::text, m.death_year::text) ilike '%' || $1 || '%')
+      order by coalesce(m.published_at, m.created_at) desc, r.legal_name
+      limit 24`,
+    [search],
+  );
+  const memorials: PublicMemorialSummary[] = rows.map((item) => ({
+    slug: item.slug,
+    displayName: item.display_name,
+    portraitUrl: item.portrait_url,
+    coverImageUrl: item.cover_image_url,
+    headline: item.headline,
+    location: item.location,
+    birthYear: item.birth_year,
+    deathYear: item.death_year,
+  }));
+  res.json({ memorials, query: search });
 }
 
 export async function getPublicMemorial(req: Request, res: Response): Promise<void> {
