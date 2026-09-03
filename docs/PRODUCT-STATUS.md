@@ -28,7 +28,7 @@ only) and share one **Neon Postgres** database + one **Hasura** GraphQL engine.
 | **Registrant app** | https://lastlink-web.onrender.com | The core product. Sign up, onboard, write/record messages, add contacts, designate advocates, dashboard. Also hosts the **API** and the browser→Hasura proxy. | ✅ |
 | **Advocate** | https://lastlink-advocate.onrender.com | Token-gated. An advocate accepts their role, and later initiates + confirms a passing and watches the one-hour hold. Reached via email link. | ✅ |
 | **Recipient message** | https://lastlink-message.onrender.com | Token-gated. Where a recipient opens the private message left for them (video or letter) + the audit footer. Reached via email link. | ✅ |
-| **Public memorial** | https://lastlink-memorial.onrender.com | Slug-based memorial for each test user: story, gallery, moderated visitor memories, public message cards, and demo offerings. | 🟡 Built; deploy pending |
+| **Public memorial** | https://lastlink-memorial.onrender.com | Slug-based memorial for each test user: story, gallery, moderated visitor memories, public message cards, and demo offerings. | ✅ Demo live |
 | Hasura (internal) | https://lastlink-hasura.onrender.com | GraphQL engine over Neon. Admin-secret gated; console + introspection off. **Not user-facing** — infra only. | ✅ |
 
 **Notes**
@@ -145,10 +145,10 @@ The Remember tab displays three database-backed, real-looking demo offerings:
 flowers, a hospice donation, and a memorial tree. Their handoff is intentionally
 mocked and clearly confirms that no order, donation, or charge occurred.
 
-This increment is **demo-grade and not yet deployed**. Apply `db/schema.sql`, run
-the Hasura metadata setup, seed with `pnpm db:seed:memorial`, and deploy the API,
-registrant app, and memorial site before describing it as live. Abuse controls,
-malware scanning, durable moderation operations, and real commerce are deferred.
+This increment is **demo-grade and live on Render**. The production schema and
+Hasura metadata were applied and three investor-demo memorials were seeded on
+September 2, 2026. Abuse controls, malware scanning, durable moderation
+operations, and real commerce remain intentionally deferred.
 
 ---
 

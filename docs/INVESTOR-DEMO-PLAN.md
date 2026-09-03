@@ -24,7 +24,7 @@ The full narrated path, in order. "Real" = shipped and hitting Postgres/Mux/Rese
 | 10 | One-hour cancellable hold | ✅ Real | `advocate` |
 | 11 | Release (decrypt, tokens, fan-out) | ✅ Real | `api` + workers |
 | 12 | Recipient opens the message | ✅ Real | `message` |
-| 13 | Per-user public memorial + moderated visitor memories | 🟡 **Real demo build; deploy pending** | `memorial` + `api` |
+| 13 | Per-user public memorial + moderated visitor memories | ✅ **Real demo build; live** | `memorial` + `api` |
 | 14 | Remember them: flowers, donation, memorial tree | 🟡 **Real UI + data; mocked partner handoff** | `memorial` |
 
 The memorial page, gallery, moderation queue, and visitor-submission flow now use
@@ -111,9 +111,10 @@ Advocate invites and recipient notifications **do not send in prod** — the Res
 
 ## 6. Status & next step
 
-**Option C is implemented locally.** Before the investor demo, integrate the
-parallel Aug 30 issue-fix branch, apply the schema and Hasura metadata to the
-demo environment, run `pnpm db:seed:memorial`, deploy the three affected
-services, and execute the smoke script in
-`docs/DEV-PLAN-MEMORIAL-DEMO-2026-09-02.md`. Production email domain verification
-is still a separate prerequisite for email-driven portions of the demo.
+**Option C is deployed.** Commit `69fb196` integrates the Aug. 30 fixes with the
+database-backed memorial work. The production schema and Hasura metadata are
+applied, all existing registrants have memorial records, three demo memorials
+and three remembrance offerings are seeded, and the live smoke test in
+`docs/DEV-PLAN-MEMORIAL-DEMO-2026-09-02.md` has passed. Production email domain
+verification remains a separate prerequisite for email-driven portions of the
+demo.

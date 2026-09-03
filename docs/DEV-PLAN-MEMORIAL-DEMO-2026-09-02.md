@@ -2,7 +2,7 @@
 
 **Date:** September 2, 2026
 
-**Status:** Implemented in `codex/memorial-demo`; integration and demo deployment pending
+**Status:** Implemented, merged, and deployed from `69fb196` on September 2, 2026
 
 **Target:** Investor and limited product demos only
 **Not a productionization plan**
