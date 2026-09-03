@@ -8,6 +8,7 @@ import { query } from "./db.js";
 import { requireRegistrant } from "./auth.js";
 import { logEvent } from "./audit.js";
 import { env } from "./env.js";
+import { mintPlaybackTokens } from "./video.js";
 
 interface MemorialRow {
   id: string;
@@ -153,6 +154,30 @@ export async function getPublicMemorial(req: Request, res: Response): Promise<vo
     })),
   };
   res.json(payload);
+}
+
+/** Mint short-lived playback tokens only for a video explicitly shared on a published memorial. */
+export async function getPublicMemorialPlayback(req: Request, res: Response): Promise<void> {
+  const slug = String(req.params.slug).toLowerCase();
+  const messageId = String(req.params.messageId);
+  const { rows } = await query<{ mux_playback_id: string }>(
+    `select ma.mux_playback_id
+       from app.messages msg
+       join app.media_assets ma on ma.id = msg.media_asset_id
+       join app.memorials m on m.registrant_id = msg.registrant_id
+      where m.slug = $1 and m.status = 'published'
+        and msg.id = $2 and msg.type = 'video'
+        and msg.visible_on_memorial = true and msg.audience_type = 'public'
+        and msg.status in ('ready','released')
+        and ma.status = 'ready' and ma.mux_playback_id is not null`,
+    [slug, messageId],
+  );
+  const media = rows[0];
+  if (!media) return void res.status(404).json({ error: "Public video not found" });
+
+  const tokens = await mintPlaybackTokens(media.mux_playback_id);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json({ playbackId: media.mux_playback_id, tokens });
 }
 
 export async function createCondolence(req: Request, res: Response): Promise<void> {

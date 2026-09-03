@@ -21,6 +21,7 @@ import {
   browsePublicMemorials,
   createCondolence,
   getPublicMemorial,
+  getPublicMemorialPlayback,
   hideDemoMemorial,
   publishDemoMemorial,
   setMemorialMessageVisibility,
@@ -103,6 +104,7 @@ app.post("/recipient/:token/open", openRecipient);
 // Public memorial read/contribution surface + demo-only owner controls.
 app.get("/public/memorials", browsePublicMemorials);
 app.get("/public/memorial/:slug", getPublicMemorial);
+app.get("/public/memorial/:slug/message/:messageId/playback", getPublicMemorialPlayback);
 app.post("/public/memorial/:slug/condolences", createCondolence);
 app.post("/api/memorial/publish-demo", publishDemoMemorial);
 app.post("/api/memorial/hide-demo", hideDemoMemorial);
