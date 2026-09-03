@@ -54,6 +54,64 @@ async function createMuxUpload(messageId: string) {
   });
 }
 
+const DEMO_MEMORIAL_VIDEO_URL =
+  "https://lastlink-marketing.onrender.com/assets/video/LastLink_30s_Marketing_v2.mp4";
+
+/**
+ * Import the approved investor-demo clip directly from the LastLink marketing
+ * service. This avoids browser/CORS upload configuration while still creating
+ * an independent signed Mux asset. It is unavailable outside demo mode and the
+ * source URL is intentionally not caller-selectable.
+ */
+export async function createDemoVideoImport(req: Request, res: Response): Promise<void> {
+  if (!env.DEMO_MEMORIAL) return void res.status(404).json({ error: "not found" });
+  const who = await requireRegistrant(req.headers);
+  if (!who) return void res.status(401).json({ error: "unauthorized" });
+  if (req.body?.sourceUrl !== DEMO_MEMORIAL_VIDEO_URL) {
+    return void res.status(400).json({ error: "unsupported demo video" });
+  }
+
+  const messageId = crypto.randomUUID();
+  const title = typeof req.body?.title === "string" ? req.body.title.trim().slice(0, 300) : null;
+  const asset = await mux.video.assets.create({
+    inputs: [{ url: DEMO_MEMORIAL_VIDEO_URL }],
+    playback_policies: ["signed"],
+    video_quality: "basic",
+    passthrough: messageId,
+  } as never);
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const inserted = await client.query<{ id: string }>(
+      `insert into app.media_assets (registrant_id, mux_asset_id, status)
+       values ($1,$2,'processing') returning id`,
+      [who.registrantId, asset.id],
+    );
+    const mediaAssetId = inserted.rows[0]!.id;
+    await client.query(
+      `insert into app.messages (id, registrant_id, audience_type, type, title, status, media_asset_id)
+       values ($1,$2,'public','video',$3,'draft',$4)`,
+      [messageId, who.registrantId, title || null, mediaAssetId],
+    );
+    await client.query("commit");
+    await logEvent({
+      actorType: "registrant",
+      actorId: who.userId,
+      action: "video.demo_import.init",
+      entityType: "message",
+      entityId: messageId,
+      data: { source: "lastlink-marketing" },
+    }).catch((err) => console.error("[video-demo-import] audit log failed", err));
+    res.json({ messageId, mediaAssetId });
+  } catch (err) {
+    await client.query("rollback").catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 // POST /api/messages/video/upload-init → initialize Mux first, then create the
 // media + message rows in one DB transaction. A failed Mux request therefore
 // cannot leave a dashboard-visible orphan draft.

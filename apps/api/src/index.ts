@@ -12,7 +12,7 @@ import { sealAccount, demoReset, getMe } from "./account.js";
 import { createRouteHandler } from "uploadthing/express";
 import { uploadRouter } from "./uploadthing.js";
 import { previewImport, commitImport } from "./contacts-import.js";
-import { createVideoUpload, markVideoUploadFailed, mediaRefresh, playbackToken, muxWebhook } from "./video.js";
+import { createDemoVideoImport, createVideoUpload, markVideoUploadFailed, mediaRefresh, playbackToken, muxWebhook } from "./video.js";
 import { resendWebhook } from "./resend-webhook.js";
 import { createAdvocates, inviteAdvocate, getInvite, acceptInvite, requestAdvocateLink } from "./advocates.js";
 import { getCase, initiateCase, confirmCase, cancelCase, releaseNow } from "./case.js";
@@ -79,6 +79,7 @@ app.get("/api/contacts/import/:provider", previewImport);
 app.post("/api/contacts/import/:provider", commitImport);
 // Video (Mux). Local dev polls /media/refresh; prod adds the /webhooks/mux handler.
 app.post("/api/messages/video/upload-init", createVideoUpload);
+app.post("/api/messages/video/demo-import", createDemoVideoImport);
 app.post("/api/messages/:id/upload-failed", markVideoUploadFailed);
 app.post("/api/messages/:id/media/refresh", mediaRefresh);
 app.post("/api/messages/:id/playback-token", playbackToken);
