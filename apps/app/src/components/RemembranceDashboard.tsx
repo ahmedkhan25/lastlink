@@ -114,8 +114,8 @@ export function RemembranceDashboard({ messages }: { messages: Message[] }) {
           Messages left with love
         </h2>
         <p style={{ fontSize: 13, color: "var(--ink-3)" }}>
-          Read-only after passing. Messages cannot be changed, deleted, or newly sent from this
-          account.
+          No new messages can be created. Existing messages stay unchanged; administrators can
+          send the released Public messages to contacts who were missed.
         </p>
         {messages.map((m) => (
           <div

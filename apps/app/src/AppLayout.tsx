@@ -100,7 +100,7 @@ export function AppLayout() {
         <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {NAV.filter(n => !admin || !["Advocates","Account"].includes(n.label)).map((original) => { const n=original.label==="Messages" && locked ? {...original,to:"/dashboard#messages"} : original; return (
             <NavLink key={n.to} to={n.to} style={{ textDecoration: "none" }}>
-              {({ isActive }) => (
+              {({ isActive: routeActive }) => { const isActive=routeActive && (n.label==="Messages" && locked ? location.hash==="#messages" : n.label!=="Dashboard" || location.hash!=="#messages"); return (
                 <div
                   style={{
                     display: "flex",
@@ -117,7 +117,7 @@ export function AppLayout() {
                   <Icon name={n.icon} size={18} color={isActive ? "var(--brand-purple)" : "var(--ink-3)"} />
                   {n.label}
                 </div>
-              )}
+              ); }}
             </NavLink>
           ); })}
         </nav>
