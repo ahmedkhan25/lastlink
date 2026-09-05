@@ -30,6 +30,23 @@ export interface Email {
   html: string;
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
+export function administratorAccessEmail(o: { advocateName: string; registrantName: string; url: string }): Email {
+  return {
+    subject: `Account administrator access for ${o.registrantName}`,
+    html: WRAP(`<h1 style="font-family:Georgia,serif;font-weight:500">${escapeHtml(o.advocateName)}, your administrator access is ready.</h1>
+      <p>Both advocates have confirmed ${escapeHtml(o.registrantName)}'s passing and the release has been recorded.</p>
+      <p>You are an account administrator, signed in as yourself — not as ${escapeHtml(o.registrantName)}.
+      You can manage the memorial and visitor memories, review delivery status, and add contacts to receive already released Public messages.
+      Private message contents, private recipient changes, new message authoring and billing are not included.</p>
+      ${BUTTON(o.url, "Open account administration")}${FALLBACK_LINK(o.url)}
+      <p>This link expires in one hour. For a fresh link, use “Email me my link” on the advocate sign-in page.</p>`),
+  };
+}
+
 export function advocateInviteEmail(o: { advocateName: string; registrantName: string; acceptUrl: string }): Email {
   return {
     subject: `${o.registrantName} has asked you to be their LastLink advocate`,

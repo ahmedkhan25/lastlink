@@ -6,6 +6,7 @@ import { requireRegistrant } from "./auth.js";
 import { logEvent } from "./audit.js";
 import { signAdvocateInvite, verifyAdvocateInvite } from "./tokens.js";
 import { notifier } from "./notify.js";
+import { emailAdministratorLink } from "./admin-access.js";
 
 interface NewAdvocate {
   slot: "A" | "B" | null;
@@ -116,19 +117,28 @@ export async function getInvite(req: Request, res: Response): Promise<void> {
 // won't have the year-old email; they enter their address and we mint a FRESH
 // secure link and email it. Always 200 (never reveal whether the email exists).
 export async function requestAdvocateLink(req: Request, res: Response): Promise<void> {
+  const key = req.header("idempotency-key")?.trim();
+  if (!key || key.length > 200) return void res.status(400).json({ error: "Idempotency-Key required" });
   const email = String(req.body?.email ?? "").trim().toLowerCase();
   if (!email || !email.includes("@")) return void res.status(400).json({ error: "Enter a valid email." });
 
-  const r = await query<{ id: string; full_name: string; legal_name: string }>(
-    `select a.id, a.full_name, reg.legal_name
+  const r = await query<{ id: string; full_name: string; legal_name: string; account_state: string }>(
+    `select a.id, a.full_name, reg.legal_name, reg.account_state
        from app.advocates a join app.registrants reg on reg.id = a.registrant_id
-      where lower(a.email) = $1 and reg.account_state in ('active_sealed','in_verification')`,
+      where lower(a.email) = $1 and reg.account_state in ('active_sealed','in_verification','released')`,
     [email],
   );
   for (const adv of r.rows) {
+    if (adv.account_state === "released") {
+      // Persisted cooldown prevents repeated clicks from spamming the inbox.
+      const recent = await query("select id from app.administrator_links where advocate_id=$1 and sent_at>now()-interval '1 minute' and revoked=false", [adv.id]);
+      if (!recent.rowCount) await emailAdministratorLink(adv.id, `request-${key}`);
+      continue;
+    }
     const url = `${env.ADVOCATE_BASE_URL}/confirm/${signAdvocateInvite(adv.id)}`;
     await notifier.send({
       to: email,
+      idempotencyKey: `advocate-request-${adv.id}-${key}`,
       email: {
         subject: `Your LastLink advocate link for ${adv.legal_name}`,
         html: `<p>${adv.full_name}, here is your secure link to act as <strong>${adv.legal_name}</strong>'s advocate. `

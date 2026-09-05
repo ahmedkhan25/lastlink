@@ -9,6 +9,7 @@ import { verifyAdvocateInvite, signAdvocateInvite, signRecipientToken } from "./
 import { notifier } from "./notify.js";
 import { isRecipientAuthorized } from "./delivery-policy.js";
 import crypto from "node:crypto";
+import { notifyCaseAdministrators } from "./admin-access.js";
 
 interface Who { advocateId: string; registrantId: string; slot: AdvocateSlot; advocateName: string; registrantName: string }
 
@@ -68,7 +69,7 @@ export async function getCase(req: Request, res: Response): Promise<void> {
   const contactCount = await query<{ n: string }>(
     `select count(distinct c.id) n
        from app.messages m
-       join app.contacts c on c.registrant_id=m.registrant_id and c.email is not null
+       join app.contacts c on c.registrant_id=m.registrant_id and c.email is not null and c.archived_at is null
        left join app.message_recipients mr on mr.message_id=m.id and mr.contact_id=c.id
       where m.registrant_id=$1 and m.status='ready'
         and ((m.audience_type='public' and c.receives_public)
@@ -207,10 +208,14 @@ export async function releaseNow(req: Request, res: Response): Promise<void> {
       return void res.status(409).json({ error: row?.state === "safety_hold" ? "The one-hour safety hold is still running." : `not releasable (state: ${row?.state})` });
     }
     await client.query("update app.verification_cases set state='releasing', release_authorized_at=now() where id=$1", [c.id]);
+    // Serialize message authoring against release fan-out.
+    await client.query("select id from app.registrants where id=$1 for update", [who.registrantId]);
 
     const rel = await client.query<{ id: string }>(
       "insert into app.releases (case_id, registrant_id, status) values ($1,$2,'in_progress') returning id", [c.id, who.registrantId]);
     const releaseId = rel.rows[0]!.id;
+    await client.query(`insert into app.release_messages(release_id,message_id,audience_type)
+      select $1,id,audience_type from app.messages where registrant_id=$2 and status='ready'`,[releaseId,who.registrantId]);
 
     const recipients = await client.query<{
       message_id: string; audience_type: "public" | "private"; receives_public: boolean;
@@ -220,7 +225,7 @@ export async function releaseNow(req: Request, res: Response): Promise<void> {
               mr.contact_id as selected_contact_id,
               c.id as contact_id, c.full_name, c.email
          from app.messages m
-         join app.contacts c on c.registrant_id=m.registrant_id and c.email is not null
+         join app.contacts c on c.registrant_id=m.registrant_id and c.email is not null and c.archived_at is null
          left join app.message_recipients mr
            on mr.message_id=m.id and mr.contact_id=c.id
         where m.registrant_id=$1 and m.status='ready'
@@ -235,10 +240,10 @@ export async function releaseNow(req: Request, res: Response): Promise<void> {
         // audience rule is checked again before a delivery row is created.
         if (!isRecipientAuthorized(recipient.audience_type, recipient.receives_public, recipient.selected_contact_id)) continue;
         const del = await client.query<{ id: string }>(
-          `insert into app.deliveries (release_id, message_id, contact_id, channel, status)
-           values ($1,$2,$3,'email','queued')
+          `insert into app.deliveries (release_id, message_id, contact_id, channel, status, recipient_email)
+           values ($1,$2,$3,'email','queued',$4)
            on conflict (release_id, message_id, contact_id, channel) do nothing returning id`,
-          [releaseId, recipient.message_id, recipient.contact_id]);
+          [releaseId, recipient.message_id, recipient.contact_id, recipient.email]);
         if (!del.rows[0]) continue;
         const deliveryId = del.rows[0].id;
         const token = signRecipientToken(deliveryId);
@@ -298,6 +303,10 @@ export async function releaseNow(req: Request, res: Response): Promise<void> {
       });
     }
     await logEvent({ actorType: "system", action: "case.released", entityType: "case", entityId: c.id, data: { deliveries: emails.length, accepted, failed, demoBypassUsed } });
+    // Access invitations must not turn an already committed release into a
+    // failure. Advocates can request a fresh link if the mail provider is down.
+    await notifyCaseAdministrators(who.registrantId, c.id).catch(() =>
+      logEvent({ actorType: "system", action: "administrator.invitation_failed", entityType: "case", entityId: c.id }));
     res.json({ ok: true, state: "released", deliveriesQueued: emails.length, recipientsNotified: accepted, deliveryFailures: failed, demoBypassUsed });
   } catch (err) {
     await client.query("rollback").catch(() => {});

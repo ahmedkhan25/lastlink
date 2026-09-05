@@ -63,6 +63,8 @@ export async function registrantIdForUser(userId: string): Promise<string | null
 export async function requireRegistrant(
   headers: IncomingHttpHeaders,
 ): Promise<{ userId: string; registrantId: string; email: string } | null> {
+  // A scoped administrator request must never fall back to an owner cookie.
+  if (headers.authorization) return null;
   const session = await auth.api.getSession({ headers: fromNodeHeaders(headers) });
   if (!session?.user) return null;
   const registrantId = await registrantIdForUser(session.user.id);

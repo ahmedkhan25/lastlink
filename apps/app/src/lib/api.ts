@@ -1,8 +1,13 @@
 // Single place every API call resolves its base URL (see SKILL: getApiUrl()).
+import { administratorHeaders, isAdministrator } from "./administrator.js";
 // In dev this is "" — the Vite proxy forwards /api and /graphql to the API on
 // the same origin (first-party cookies, no CORS). In prod, set VITE_API_URL.
 export function getApiUrl(): string {
   return import.meta.env.VITE_API_URL ?? "";
+}
+
+export function manageAccount(body: Record<string, unknown>): Promise<{ok: boolean;emails:{accepted:number;failed:number}}> {
+  return postIdempotent("/api/administrator/manage",body);
 }
 
 /** Public marketing homepage (the logo links back to it). */
@@ -27,8 +32,8 @@ export interface GqlError {
 export async function gql<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
   const res = await fetch(`${getApiUrl()}/graphql`, {
     method: "POST",
-    credentials: "include",
-    headers: { "content-type": "application/json" },
+    credentials: isAdministrator() ? "omit" : "include",
+    headers: { "content-type": "application/json", ...administratorHeaders() },
     body: JSON.stringify({ query, variables }),
   });
   const json = (await res.json()) as { data?: T; errors?: GqlError[] };
@@ -38,7 +43,7 @@ export async function gql<T>(query: string, variables?: Record<string, unknown>)
 
 /** GET JSON from an Express endpoint (auth via session cookie). */
 export async function getApi<T = unknown>(path: string): Promise<T> {
-  const res = await fetch(`${getApiUrl()}${path}`, { credentials: "include" });
+  const res = await fetch(`${getApiUrl()}${path}`, { credentials: isAdministrator() ? "omit" : "include", headers: administratorHeaders() });
   if (!res.ok) {
     const e = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(e.error ?? `HTTP ${res.status}`);
@@ -50,8 +55,8 @@ export async function getApi<T = unknown>(path: string): Promise<T> {
 export async function postApi<T = unknown>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${getApiUrl()}${path}`, {
     method: "POST",
-    credentials: "include",
-    headers: { "content-type": "application/json" },
+    credentials: isAdministrator() ? "omit" : "include",
+    headers: { "content-type": "application/json", ...administratorHeaders() },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
@@ -64,8 +69,8 @@ export async function postApi<T = unknown>(path: string, body?: unknown): Promis
 export async function postIdempotent<T = unknown>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${getApiUrl()}${path}`, {
     method: "POST",
-    credentials: "include",
-    headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+    credentials: isAdministrator() ? "omit" : "include",
+    headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID(), ...administratorHeaders() },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {

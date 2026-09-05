@@ -15,7 +15,7 @@ export function Landing() {
     setState("sending");
     try {
       const r = await fetch(`${getApiUrl()}/advocate/request-link`, {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email }),
+        method: "POST", headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ email }),
       });
       setState(r.ok ? "sent" : "error");
     } catch { setState("error"); }
@@ -39,7 +39,7 @@ export function Landing() {
               <p style={{ fontSize: 16, color: "var(--ink-2)", lineHeight: 1.6, margin: "0 0 28px" }}>
                 If someone named you as their LastLink advocate and the time has come, enter the
                 email they used for you. We'll send a secure link to begin — you don't need the
-                original message.
+                original message. After release, your link opens the same LastLink account as an account administrator.
               </p>
 
               <div style={{ display: "flex", gap: 10, maxWidth: 440, margin: "0 auto", flexWrap: "wrap" }}>

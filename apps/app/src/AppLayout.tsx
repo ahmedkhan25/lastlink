@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, Navigate, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { Logo, Icon, type IconName } from "@lastlink/ui";
 import { useSession, signOut } from "./lib/auth.js";
-import { getMarketingUrl, postApi, gql } from "./lib/api.js";
+import { getMarketingUrl, getAdvocateUrl, getApi, postApi } from "./lib/api.js";
+import { AccountContext, type AccountContextValue } from "./lib/account-context.js";
+import { clearAdminToken, isAdministrator } from "./lib/administrator.js";
+import type { AccountStatus } from "@lastlink/shared";
 import { useConfirm } from "./components/ConfirmProvider.js";
 
 const NAV: { to: string; label: string; icon: IconName }[] = [
@@ -17,6 +20,10 @@ const NAV: { to: string; label: string; icon: IconName }[] = [
 export function AppLayout() {
   const { data: session, isPending } = useSession();
   const navigate = useNavigate();
+  const location = useLocation();
+  const admin = isAdministrator();
+  const [account, setAccount] = useState<AccountContextValue | null>(null);
+  const [accessError, setAccessError] = useState("");
   const confirm = useConfirm();
   const [resetting, setResetting] = useState(false);
   const demo = import.meta.env.VITE_DEMO === "true";
@@ -28,13 +35,20 @@ export function AppLayout() {
   const [acctState, setAcctState] = useState<string | null | "loading">("loading");
   const userId = session?.user?.id;
   useEffect(() => {
-    if (!userId) return;
+    if (!userId && !admin) return;
     let active = true;
-    gql<{ app_registrants: { account_state: string }[] }>("query { app_registrants { account_state } }")
-      .then((d) => active && setAcctState(d.app_registrants[0]?.account_state ?? null))
-      .catch(() => active && setAcctState(null)); // fail open — don't lock out on a transient error
-    return () => { active = false; };
-  }, [userId]);
+    async function refresh() {
+      try {
+        const d = admin
+          ? await getApi<{ account: AccountStatus; administrator: {name: string; role: string} }>("/api/administrator/account")
+          : { account: await getApi<AccountStatus>("/api/account/status"), administrator: null };
+        if(active) { setAccount({status:d.account,administrator:d.administrator}); setAcctState(d.account.accountState); setAccessError(""); }
+      } catch(e) { if(active) { setAccessError(e instanceof Error ? e.message : "Unable to load account"); setAcctState(null); } }
+    }
+    void refresh();
+    const timer=window.setInterval(refresh,15000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [userId,admin]);
 
   async function resetDemo() {
     const ok = await confirm({
@@ -52,16 +66,19 @@ export function AppLayout() {
     }
   }
 
-  if (isPending) {
+  if (isPending && !admin) {
     return <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--ink-3)" }}>Loading…</div>;
   }
-  if (!session) return <Navigate to="/signin" replace />;
+  if (!session && !admin) return <Navigate to="/signin" replace />;
+  if (accessError) return <div style={{padding:48}}><h1>Unable to open this account</h1><p>{accessError}</p>{admin ? <a href={getAdvocateUrl()}>Email me a fresh administrator link</a> : <button onClick={()=>window.location.reload()}>Try again</button>}<p><button onClick={()=>{clearAdminToken();window.location.assign("/signin");}}>Return to sign in</button></p></div>;
   if (acctState === "loading") {
     return <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--ink-3)" }}>Loading…</div>;
   }
   if (acctState === "onboarding") return <Navigate to="/onboarding" replace />;
+  const locked = admin || acctState === "released" || acctState === "closed";
+  if ((locked && location.pathname === "/compose") || (admin && !["/dashboard","/contacts","/memorial/settings","/condolences"].includes(location.pathname) && !location.pathname.startsWith("/messages/"))) return <Navigate to="/dashboard" replace />;
 
-  const displayName = session.user.name || session.user.email;
+  const displayName = account?.administrator?.name || session?.user.name || session?.user.email || "Administrator";
   const initial = (displayName || "?").charAt(0).toUpperCase();
 
   return (
@@ -81,7 +98,7 @@ export function AppLayout() {
           </a>
         </div>
         <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {NAV.map((n) => (
+          {NAV.filter(n => !admin || !["Advocates","Account"].includes(n.label)).map((original) => { const n=original.label==="Messages" && locked ? {...original,to:"/dashboard#messages"} : original; return (
             <NavLink key={n.to} to={n.to} style={{ textDecoration: "none" }}>
               {({ isActive }) => (
                 <div
@@ -102,7 +119,7 @@ export function AppLayout() {
                 </div>
               )}
             </NavLink>
-          ))}
+          ); })}
         </nav>
 
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
@@ -127,11 +144,11 @@ export function AppLayout() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--ink-2)", fontWeight: 500 }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--ok)" }} />
-              Active &amp; secure
+              {acctState === "released" ? "In loving memory" : acctState === "in_verification" ? "Verification in progress" : acctState === "closed" ? "Account closed" : "Active & secure"}
             </div>
-            <div style={{ marginTop: 4 }}>Nothing you need to do today.</div>
+            <div style={{ marginTop: 4 }}>{acctState === "released" ? "Messages preserved. Memories live on." : acctState === "in_verification" ? "Check the confirmation status." : "Nothing you need to do today."}</div>
           </div>
-          {demo && (
+          {demo && !admin && (
             <button
               onClick={resetDemo}
               disabled={resetting}
@@ -165,8 +182,9 @@ export function AppLayout() {
             </div>
             <div style={{ fontSize: 12, flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
+              <div style={{fontSize:11,color:"var(--brand-purple)"}}>{admin ? "Account administrator" : "Account owner login"}</div>
               <button
-                onClick={() => signOut().then(() => navigate("/signin"))}
+                onClick={() => admin ? (clearAdminToken(), window.location.assign("/signin")) : signOut().then(() => navigate("/signin"))}
                 style={{ background: "none", border: "none", padding: 0, color: "var(--ink-3)", fontSize: 12 }}
               >
                 Sign out
@@ -177,7 +195,8 @@ export function AppLayout() {
       </aside>
 
       <main style={{ overflow: "auto" }}>
-        <Outlet />
+        {admin && <div style={{padding:"12px 32px",background:"var(--brand-grad-soft)",fontSize:13}}><strong>{displayName} · Account administrator</strong><span> — Caring for {account?.status.legalName}'s account. Messages are read-only.</span></div>}
+        <AccountContext.Provider value={account}><Outlet /></AccountContext.Provider>
       </main>
     </div>
   );

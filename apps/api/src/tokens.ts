@@ -21,8 +21,8 @@ export function verifyAdvocateInvite(token: string): string | null {
 const RECIPIENT_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days ("the link expires; the message stays")
 
 /** Recipient access token encoding the delivery id. */
-export function signRecipientToken(deliveryId: string): string {
-  const payload = `${deliveryId}.${Date.now() + RECIPIENT_TTL_MS}`;
+export function signRecipientToken(deliveryId: string, expiresAtMs = Date.now() + RECIPIENT_TTL_MS): string {
+  const payload = `${deliveryId}.${expiresAtMs}`;
   return `${Buffer.from(payload).toString("base64url")}.${sign(payload, env.ADVOCATE_TOKEN_SECRET)}`;
 }
 export function verifyRecipientToken(token: string): string | null {

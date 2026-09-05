@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Icon } from "@lastlink/ui";
-import { gql } from "../lib/api.js";
+import { gql, manageAccount } from "../lib/api.js";
+import { isAdministrator } from "../lib/administrator.js";
+import { useAccountContext } from "../lib/account-context.js";
 import { useConfirm } from "../components/ConfirmProvider.js";
 
 interface Contact {
@@ -24,6 +26,10 @@ const SET_PUBLIC = `mutation SetPublic($id: uuid!, $enabled: Boolean!) {
 }`;
 
 export function Contacts() {
+  const admin=isAdministrator();
+  const account=useAccountContext();
+  const [notifyPublic,setNotifyPublic]=useState(true);
+  const [sentNote,setSentNote]=useState("");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ full_name: "", relationship: "", email: "" });
@@ -48,7 +54,8 @@ export function Contacts() {
     setBusy(true);
     setError(null);
     try {
-      await gql(ADD, { full_name: form.full_name, relationship: form.relationship || null, email: form.email || null });
+      if(admin) {const result=await manageAccount({action:"contact-add",name:form.full_name,relationship:form.relationship,email:form.email,notifyPublic});setSentNote(result.emails.failed ? `Contact added. ${result.emails.failed} email(s) could not be sent; check delivery status.` : `Contact added. ${result.emails.accepted} public message email(s) sent.`);}
+      else await gql(ADD, { full_name: form.full_name, relationship: form.relationship || null, email: form.email || null });
       setForm({ full_name: "", relationship: "", email: "" });
       await refresh();
     } catch (err) {
@@ -67,13 +74,14 @@ export function Contacts() {
   async function remove(c: Contact) {
     const ok = await confirm({
       title: `Remove ${c.full_name}?`,
-      message: "They'll no longer receive a message from you. You can add them again anytime.",
+      message: admin ? "Remove this person from the active contact list? Previously released messages and delivery records will be preserved." : "They'll no longer receive a message from you. You can add them again anytime.",
       confirmLabel: "Remove contact",
       tone: "danger",
     });
     if (!ok) return;
     setContacts((cs) => cs.filter((x) => x.id !== c.id)); // optimistic
-    await gql(REMOVE, { id: c.id }).catch(() => {});
+    try { if(admin) await manageAccount({action:"contact-remove",id:c.id}); else await gql(REMOVE, { id: c.id }); }
+    catch(e) { setError(e instanceof Error ? e.message : "Could not remove contact"); }
     await refresh(); // authoritative reconcile with the DB
   }
 
@@ -91,12 +99,12 @@ export function Contacts() {
     <div style={{ padding: "56px 64px", maxWidth: 1100, margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
         <h1 className="serif" style={{ fontSize: 38, fontWeight: 500, letterSpacing: "-0.01em", margin: 0 }}>Contacts</h1>
-        <Link to="/contacts/import" className="ll-btn secondary" style={{ textDecoration: "none" }}>
+        {!admin && <Link to="/contacts/import" className="ll-btn secondary" style={{ textDecoration: "none" }}>
           <Icon name="users" size={15} color="var(--ink)" /> Import
-        </Link>
+        </Link>}
       </div>
       <p style={{ fontSize: 15, color: "var(--ink-3)", margin: "8px 0 28px" }}>
-        {loading ? "Loading…" : `${contacts.length} ${contacts.length === 1 ? "person" : "people"}. Public is selected by default; turn it off for anyone who should receive only private messages.`}
+        {loading ? "Loading…" : admin ? `${contacts.length} contacts. Add someone who was missed and send them the released Public messages. Private messages keep their original recipients.` : `${contacts.length} ${contacts.length === 1 ? "person" : "people"}. Public is selected by default; turn it off for anyone who should receive only private messages.`}
       </p>
 
       <form onSubmit={add} style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
@@ -107,9 +115,12 @@ export function Contacts() {
         <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
           style={inputStyle} />
         <button className="ll-btn" type="submit" disabled={busy || !form.full_name.trim()}>
-          <Icon name="plus" size={14} color="white" /> {busy ? "Adding…" : "Add contact"}
+          <Icon name="plus" size={14} color="white" /> {busy ? "Adding…" : admin && notifyPublic ? "Add contact & send public messages" : "Add contact"}
         </button>
       </form>
+      {admin && <label style={{display:"block",fontSize:13,marginBottom:16}}><input type="checkbox" checked={notifyPublic} disabled={busy} onChange={e=>setNotifyPublic(e.target.checked)} /> Send already released Public messages to this contact. No private messages will be sent.</label>}
+      {admin && notifyPublic && <p style={{fontSize:13,color:"var(--ink-3)"}}>Messages to send ({account?.status.publicMessages.length ?? 0}): {account?.status.publicMessages.map(m=>`${m.title || "Untitled"} (${m.type})`).join("; ") || "No public messages in this release."}</p>}
+      {sentNote && <p role="status">{sentNote}</p>}
       {error && <div style={{ fontSize: 13, color: "var(--err)", marginBottom: 16 }}>{error}</div>}
 
       <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", overflow: "hidden" }}>
@@ -132,7 +143,7 @@ export function Contacts() {
                 <td style={{ ...td, color: "var(--ink-3)" }}>{c.email ?? "—"}</td>
                 <td style={td}>
                   <label style={{ display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer", fontSize: 13 }}>
-                    <input type="checkbox" checked={c.receives_public} onChange={(e) => void setPublic(c, e.target.checked)} />
+                    <input type="checkbox" disabled={admin} checked={c.receives_public} onChange={(e) => void setPublic(c, e.target.checked)} />
                     {c.receives_public ? "Included" : "Private only"}
                   </label>
                 </td>

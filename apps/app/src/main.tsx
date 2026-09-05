@@ -15,8 +15,10 @@ import { Condolences } from "./screens/Condolences.js";
 import { MemorialSettings } from "./screens/MemorialSettings.js";
 import { PlanBilling } from "./screens/preview/PlanBilling.js";
 import { Profile } from "./screens/preview/Profile.js";
+import { AdministratorEntry } from "./screens/AdministratorEntry.js";
 
 const router = createBrowserRouter([
+  { path: "/administrator", element: <AdministratorEntry /> },
   { path: "/signin", element: <SignIn /> },
   { path: "/onboarding", element: <Onboarding /> },
   {

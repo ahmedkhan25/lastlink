@@ -5,7 +5,7 @@ import { pool, query } from "./db.js";
 import { env } from "./env.js";
 import { requireRegistrant } from "./auth.js";
 import { logEvent } from "./audit.js";
-import { assertOwnedAudience, insertMessageRecipients, parseMessageAudience } from "./audience.js";
+import { assertOwnedAudience, assertMessageAuthoringOpen, insertMessageRecipients, parseMessageAudience } from "./audience.js";
 
 const mux = new Mux({ tokenId: env.MUX_TOKEN_ID, tokenSecret: env.MUX_TOKEN_SECRET });
 const CORS_ORIGIN = process.env.MUX_CORS_ORIGIN ?? process.env.RENDER_EXTERNAL_URL ?? "*"; // exact origin in prod
@@ -70,6 +70,8 @@ export async function createDemoVideoImport(req: Request, res: Response): Promis
   if (req.body?.sourceUrl !== DEMO_MEMORIAL_VIDEO_URL) {
     return void res.status(400).json({ error: "unsupported demo video" });
   }
+  try { await assertMessageAuthoringOpen(pool, who.registrantId); }
+  catch(e) { return void res.status(409).json({error:e instanceof Error ? e.message : "Messages are read-only"}); }
 
   const messageId = crypto.randomUUID();
   const title = typeof req.body?.title === "string" ? req.body.title.trim().slice(0, 300) : null;
@@ -94,6 +96,7 @@ export async function createDemoVideoImport(req: Request, res: Response): Promis
   const client = await pool.connect();
   try {
     await client.query("begin");
+    await assertMessageAuthoringOpen(client,who.registrantId);
     const inserted = await client.query<{ id: string }>(
       `insert into app.media_assets (registrant_id, mux_asset_id, status)
        values ($1,$2,'processing') returning id`,

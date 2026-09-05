@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { gql } from "../lib/api.js";
+import { gql, manageAccount } from "../lib/api.js";
+import { isAdministrator } from "../lib/administrator.js";
 import { MemorialHead, MemorialTabs, card, page } from "./memorial/shared.js";
 
 interface Condolence {
@@ -24,7 +25,7 @@ export function Condolences() {
   useEffect(() => { load().catch((err) => setError(String(err))); }, [load]);
   async function review(id: string, status: "approved" | "hidden") {
     setBusy(id); setError(null);
-    try { await gql(REVIEW, { id, status, at: new Date().toISOString() }); await load(); }
+    try { if(isAdministrator()) await manageAccount({action:"condolence-review",id,status}); else await gql(REVIEW, { id, status, at: new Date().toISOString() }); await load(); }
     catch (err) { setError(String(err)); } finally { setBusy(null); }
   }
   const pending = items.filter((item) => item.status === "pending");

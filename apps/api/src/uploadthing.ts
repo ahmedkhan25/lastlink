@@ -3,6 +3,7 @@ import { UploadThingError } from "uploadthing/server";
 import { query } from "./db.js";
 import { requireRegistrant } from "./auth.js";
 import { logEvent } from "./audit.js";
+import { resolveAdministrator } from "./admin-access.js";
 
 // Profile photo upload (issues-sheet round, 2026-08-10). UploadThing is the
 // interim storage provider — the stored value is just a URL on the registrant
@@ -41,6 +42,11 @@ export const uploadRouter: FileRouter = {
     image: { maxFileSize: "8MB", maxFileCount: 6 },
   })
     .middleware(async ({ req }) => {
+      if(req.headers.authorization) {
+        const administrator=await resolveAdministrator(String(req.headers.authorization).replace(/^Bearer /,""));
+        if(!administrator) throw new UploadThingError("Administrator access expired");
+        return {registrantId:administrator.registrantId};
+      }
       const who = await requireRegistrant(req.headers);
       if (!who) throw new UploadThingError("Unauthorized");
       return { registrantId: who.registrantId };

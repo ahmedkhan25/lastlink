@@ -115,9 +115,10 @@ export function Confirm() {
         );
 
         if (c.state === "released") return (
-          <Centered title="The messages have been delivered." icon="check" grad>
-            {data.registrantName}'s recipients have each received a private link to the words left for them.
-            Thank you for the care you gave at the hardest moment.
+          <Centered title="The release has been recorded." icon="check" grad>
+            {data.registrantName}'s message emails have entered the delivery process. This does not yet confirm inbox delivery.
+            Both advocates can now administer the account using their own emailed access links.
+            <p><a className="ll-btn grad" href="/">Email me my administrator link</a></p>
           </Centered>
         );
 

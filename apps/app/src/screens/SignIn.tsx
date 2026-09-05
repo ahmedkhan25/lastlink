@@ -89,9 +89,9 @@ export function SignIn() {
         </p>
         <div style={{ textAlign: "center", marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--line)" }}>
           <a href={getAdvocateUrl()} className="ll-btn secondary" style={{ textDecoration: "none" }}>
-            <Icon name="shield" size={15} color="var(--ink)" /> I'm an advocate
+            <Icon name="shield" size={15} color="var(--ink)" /> Advocate / administrator sign in
           </a>
-          <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 10 }}>Named as someone's advocate? Enter here — no account needed.</p>
+          <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 10 }}>Get an email link to confirm a passing or administer the account after release.</p>
         </div>
       </div>
     </div>

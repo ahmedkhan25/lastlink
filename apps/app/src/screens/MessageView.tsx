@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import MuxPlayer from "@mux/mux-player-react";
 import { Icon } from "@lastlink/ui";
 import { gql, postApi } from "../lib/api.js";
+import { isAdministrator } from "../lib/administrator.js";
+import { MessageAudienceEditor } from "../components/MessageAudienceEditor.js";
 
 interface Msg { id: string; type: string; title: string | null; status: string; audience_type: "public" | "private" }
 interface Tokens { playback: string; thumbnail: string; storyboard: string }
@@ -41,6 +43,7 @@ export function MessageView() {
       if (!active) return;
       const m = d.app_messages_by_pk;
       setMsg(m);
+      if(isAdministrator()) { setNote("Messages are preserved. Administrator access does not include private message playback."); return; }
       if (m?.type !== "video") return;
       if (m.status === "ready") return void playIfReady();
 
@@ -76,6 +79,7 @@ export function MessageView() {
           <h1 className="serif" style={{ fontSize: 38, fontWeight: 500, letterSpacing: "-0.015em", margin: "6px 0 24px" }}>
             {msg.title ?? "Untitled message"}
           </h1>
+          <MessageAudienceEditor id={msg.id} audience={msg.audience_type} onSaved={audience_type=>setMsg({...msg,audience_type})} />
 
           {msg.type === "video" && tokens && playbackId && (
             <>

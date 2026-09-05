@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Icon } from "@lastlink/ui";
-import { gql, getMemorialUrl, postIdempotent } from "../lib/api.js";
+import { gql, getMemorialUrl, postIdempotent, manageAccount } from "../lib/api.js";
+import { isAdministrator, administratorHeaders } from "../lib/administrator.js";
 import { useUploadThing } from "../lib/uploadthing.js";
 import { MemorialHead, MemorialTabs, FieldLabel, card, field, page } from "./memorial/shared.js";
 
@@ -56,13 +57,15 @@ export function MemorialSettings() {
   useEffect(() => { load().catch((err) => setNote(String(err))); }, [load]);
 
   const { startUpload, isUploading } = useUploadThing("memorialGalleryPhoto", {
+    headers: administratorHeaders,
     onClientUploadComplete: async (files: Array<{ key?: string; ufsUrl?: string; serverData?: { url?: string; key?: string } }>) => {
       const memorial = data?.app_memorials[0];
       if (!memorial) return;
       for (const [offset, file] of files.entries()) {
         const url = file.serverData?.url ?? file.ufsUrl;
         if (!url) continue;
-        await gql(INSERT_MEDIA, { memorialId: memorial.id, url, key: file.serverData?.key ?? file.key ?? null, sort: data.app_memorial_media.length + offset });
+        if(isAdministrator()) await manageAccount({action:"gallery-add",url,key:file.serverData?.key ?? file.key ?? null});
+        else await gql(INSERT_MEDIA, { memorialId: memorial.id, url, key: file.serverData?.key ?? file.key ?? null, sort: data.app_memorial_media.length + offset });
       }
       await load();
       setNote("Gallery updated.");
@@ -79,7 +82,8 @@ export function MemorialSettings() {
     setBusy(true); setNote(null);
     try {
       const { id: _id, slug: _slug, status: _status, ...editable } = form;
-      await gql(UPDATE, { id: memorial.id, set: editable });
+      if(isAdministrator()) await manageAccount({action:"memorial-save",set:editable});
+      else await gql(UPDATE, { id: memorial.id, set: editable });
       await load(); setNote("Memorial saved.");
     } catch (err) { setNote(String(err)); } finally { setBusy(false); }
   }
@@ -87,7 +91,8 @@ export function MemorialSettings() {
   async function changeStatus(action: "publish" | "hide") {
     setBusy(true); setNote(null);
     try {
-      await postIdempotent(`/api/memorial/${action}-demo`);
+      if(isAdministrator()) await manageAccount({action:"memorial-status",status:action==="publish"?"published":"hidden"});
+      else await postIdempotent(`/api/memorial/${action}-demo`);
       await load(); setNote(action === "publish" ? "Memorial published for the demo." : "Memorial hidden.");
     } catch (err) { setNote(String(err)); } finally { setBusy(false); }
   }
@@ -140,8 +145,8 @@ export function MemorialSettings() {
 }
 
 function Gallery({ media, uploading, onUpload, onRefresh }: { media: Media[]; uploading: boolean; onUpload: (files: FileList) => void; onRefresh: () => Promise<void> }) {
-  async function remove(id: string) { await gql(DELETE_MEDIA, { id }); await onRefresh(); }
-  async function update(item: Media, caption: string) { await gql(UPDATE_MEDIA, { id: item.id, caption, alt: caption }); await onRefresh(); }
+  async function remove(id: string) { if(isAdministrator()) await manageAccount({action:"gallery-remove",id}); else await gql(DELETE_MEDIA, { id }); await onRefresh(); }
+  async function update(item: Media, caption: string) { if(isAdministrator()) await manageAccount({action:"gallery-caption",id:item.id,caption}); else await gql(UPDATE_MEDIA, { id: item.id, caption, alt: caption }); await onRefresh(); }
   return <section style={{ ...card, padding: 24, marginTop: 16 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}><div><div className="serif" style={{ fontSize: 24 }}>Photo gallery</div><div style={{ color: "var(--ink-3)", fontSize: 13 }}>Add warm, personal images to the public page.</div></div>
       <label className="ll-btn secondary">{uploading ? "Uploading…" : "Add photos"}<input type="file" accept="image/*" multiple hidden disabled={uploading} onChange={(e) => e.target.files && onUpload(e.target.files)} /></label></div>
@@ -160,7 +165,7 @@ function Messages({ messages, onRefresh }: { messages: Message[]; onRefresh: () 
     });
     await onRefresh();
   }
-  return <section style={{ ...card, padding: 24, marginTop: 16 }}><div className="serif" style={{ fontSize: 24 }}>Shared with everyone</div><p style={{ color: "var(--ink-3)", fontSize: 13 }}>Choose message cards to show publicly. Published public videos can be played directly on the memorial.</p>{messages.map((message) => <label key={message.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderTop: "1px solid var(--line-soft)" }}><input type="checkbox" checked={message.visible_on_memorial} onChange={() => toggle(message)} /><span style={{ flex: 1 }}>{message.title || `Untitled ${message.type}`}</span><span className="mono" style={{ color: "var(--ink-3)", fontSize: 10 }}>{message.type.toUpperCase()}</span></label>)}{!messages.length && <div style={{ color: "var(--ink-3)", fontSize: 13 }}>No ready messages yet.</div>}</section>;
+  return <section style={{ ...card, padding: 24, marginTop: 16 }}><div className="serif" style={{ fontSize: 24 }}>Shared with everyone</div><p style={{ color: "var(--ink-3)", fontSize: 13 }}>{isAdministrator() ? "These are the owner's saved message-sharing choices. Administrators cannot change existing messages." : "Choose message cards to show publicly. Published public videos can be played directly on the memorial."}</p>{messages.map((message) => <label key={message.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderTop: "1px solid var(--line-soft)" }}><input type="checkbox" disabled={isAdministrator()} checked={message.visible_on_memorial} onChange={() => toggle(message)} /><span style={{ flex: 1 }}>{message.title || `Untitled ${message.type}`}</span><span className="mono" style={{ color: "var(--ink-3)", fontSize: 10 }}>{message.type.toUpperCase()}</span></label>)}{!messages.length && <div style={{ color: "var(--ink-3)", fontSize: 13 }}>No ready messages yet.</div>}</section>;
 }
 
 function TextInput({ label, value, onChange, wide }: { label: string; value?: string | null; onChange: (value: string) => void; wide?: boolean }) { return <label style={{ gridColumn: wide ? "1 / -1" : undefined }}><FieldLabel>{label}</FieldLabel><input style={field} value={value ?? ""} onChange={(e) => onChange(e.target.value)} /></label>; }

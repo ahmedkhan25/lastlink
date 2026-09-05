@@ -4,6 +4,9 @@ import { Icon, type IconName } from "@lastlink/ui";
 import { gql, getApi } from "../lib/api.js";
 import { useUploadThing } from "../lib/uploadthing.js";
 import { useConfirm } from "../components/ConfirmProvider.js";
+import { RemembranceDashboard } from "../components/RemembranceDashboard.js";
+import { useAccountContext } from "../lib/account-context.js";
+import { passingHeading } from "@lastlink/shared";
 
 interface Data {
   app_registrants: { legal_name: string; account_state: string }[];
@@ -92,6 +95,7 @@ const TYPE_ICON: Record<string, IconName> = { video: "video", audio: "mic", lett
 const DELETE_MSG = `mutation($id: uuid!) { delete_app_messages_by_pk(id: $id) { id } }`;
 
 export function Dashboard() {
+  const account=useAccountContext();
   const navigate = useNavigate();
   const [d, setD] = useState<Data | null>(null);
   const confirm = useConfirm();
@@ -122,21 +126,22 @@ export function Dashboard() {
   const ready = d?.app_messages.filter((m) => m.status === "ready").length ?? 0;
   const failedMessages = d?.app_messages.filter((m) => m.status === "failed").length ?? 0;
   const processingMessages = (d?.app_messages.length ?? 0) - ready - failedMessages;
+  if(account?.status.accountState === "released") return <RemembranceDashboard messages={d?.app_messages ?? []} />;
 
   return (
     <div style={{ padding: "56px 64px 80px", maxWidth: 1020, margin: "0 auto" }}>
       <header style={{ marginBottom: 48, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
         <div>
-          {!sealed && (
+          {reg?.account_state === "onboarding" && (
             <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.14em" }}>
               SETUP IN PROGRESS
             </div>
           )}
           <h1 className="serif" style={{ fontSize: 56, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.04, margin: "8px 0 0" }}>
-            Good morning, {firstName}.
+            {account?.status.accountState === "in_verification" ? passingHeading(account.status) : `Good morning, ${firstName}.`}
           </h1>
           <p className="serif" style={{ fontSize: 22, fontStyle: "italic", color: "var(--ink-2)", lineHeight: 1.4, maxWidth: 620, margin: "12px 0 0", fontWeight: 400 }}>
-            {sealed
+            {account?.status.accountState === "in_verification" ? "A passing report is being verified. Check with the advocates before making changes." : sealed
               ? "Everything is in place. There's nothing you need to do today — unless you want to add a thought."
               : "A few steps left. Finish setting up to seal your account."}
           </p>

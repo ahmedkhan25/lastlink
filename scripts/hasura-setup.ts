@@ -47,6 +47,8 @@ function ownedTable(name: keyof typeof COLS, opts: { writable?: boolean; filter?
 }
 
 const messages = ownedTable("messages", { writable: true });
+messages.object_relationships = [{ name: "registrant", using: { foreign_key_constraint_on: "registrant_id" } }];
+messages.delete_permissions = [{ role: "registrant", permission: { filter: { ...OWN, registrant: { account_state: { _in: ["onboarding", "active_sealed"] } } } } }];
 (messages.array_relationships = [{ name: "recipients", using: { foreign_key_constraint_on: { table: { schema: "app", name: "message_recipients" }, column: "message_id" } } }]);
 // Message creation and audience assignment are transactional API operations.
 // Hasura remains the read/delete path for the registrant dashboard.
@@ -64,7 +66,7 @@ const registrants: TableMeta = {
   table: { schema: "app", name: "registrants" },
   object_relationships: [{ name: "memorial", using: { manual_configuration: { remote_table: { schema: "app", name: "memorials" }, column_mapping: { id: "registrant_id" } } } }],
   select_permissions: [{ role: "registrant", permission: { columns: COLS.registrants, filter: { id: { _eq: "X-Hasura-User-Id" } } } }],
-  update_permissions: [{ role: "registrant", permission: { columns: ["legal_name", "dob", "country", "account_state"], filter: { id: { _eq: "X-Hasura-User-Id" } }, check: {} } }],
+  update_permissions: [{ role: "registrant", permission: { columns: ["legal_name", "dob", "country"], filter: { id: { _eq: "X-Hasura-User-Id" } }, check: {} } }],
 };
 
 const memorials: TableMeta = {
@@ -119,7 +121,7 @@ const metadata = {
       configuration: { connection_info: { database_url: { from_env: "HASURA_GRAPHQL_DATABASE_URL" }, isolation_level: "read-committed", use_prepared_statements: true } },
       tables: [
         registrants,
-        ownedTable("contacts", { writable: true }),
+        ownedTable("contacts", { writable: true, filter: { ...OWN, archived_at: { _is_null: true } } }),
         messages,
         messageRecipients,
         advocates,
@@ -131,6 +133,14 @@ const metadata = {
     },
   ],
 };
+
+// Same screens, different capabilities: administrators only read through
+// Hasura. Scoped Express actions handle memorial and contact management.
+for (const table of metadata.sources[0]!.tables) {
+  for (const entry of [...table.select_permissions] as { role: string; permission: unknown }[]) {
+    if (entry.role === "registrant") table.select_permissions.push({ role: "advocate", permission: entry.permission });
+  }
+}
 
 const res = await fetch(`${ENDPOINT}/v1/metadata`, {
   method: "POST",

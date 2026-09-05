@@ -26,12 +26,18 @@ export async function assertOwnedAudience(
   registrantId: string,
   audience: MessageAudienceSelection,
 ): Promise<void> {
+  await assertMessageAuthoringOpen(db, registrantId);
   if (audience.audienceType === "public") return;
   const result = await db.query<{ id: string }>(
-    "select id from app.contacts where registrant_id=$1 and email is not null and id = any($2::uuid[])",
+    "select id from app.contacts where registrant_id=$1 and archived_at is null and email is not null and id = any($2::uuid[])",
     [registrantId, audience.contactIds],
   );
   if (result.rows.length !== audience.contactIds.length) throw new Error("selected contacts must belong to you and have an email address");
+}
+
+export async function assertMessageAuthoringOpen(db: Pick<pg.PoolClient,"query">, registrantId: string): Promise<void> {
+  const r=await db.query<{account_state:string}>("select account_state from app.registrants where id=$1 for update",[registrantId]);
+  if(!["onboarding","active_sealed"].includes(r.rows[0]?.account_state ?? "")) throw new Error("Messages are read-only during verification and after passing");
 }
 
 export async function insertMessageRecipients(

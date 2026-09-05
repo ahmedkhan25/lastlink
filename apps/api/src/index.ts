@@ -17,6 +17,10 @@ import { resendWebhook } from "./resend-webhook.js";
 import { createAdvocates, inviteAdvocate, getInvite, acceptInvite, requestAdvocateLink } from "./advocates.js";
 import { getCase, initiateCase, confirmCase, cancelCase, releaseNow } from "./case.js";
 import { getRecipient, openRecipient } from "./recipient.js";
+import { getAccountStatus } from "./account-status.js";
+import { getAdministratorAccount, manageAdministratorAccount } from "./administrator.js";
+import { updateMessageAudience } from "./message-audience.js";
+import { recoverAdditionalDeliveryOutbox } from "./post-release-delivery.js";
 import {
   browsePublicMemorials,
   createCondolence,
@@ -41,7 +45,7 @@ app.use((req, res, next) => {
     res.header("Vary", "Origin");
     if (env.APP_ORIGINS.includes(origin)) res.header("Access-Control-Allow-Credentials", "true");
   }
-  res.header("Access-Control-Allow-Headers", "content-type,idempotency-key,x-uploadthing-package,x-uploadthing-version");
+  res.header("Access-Control-Allow-Headers", "content-type,authorization,idempotency-key,x-uploadthing-package,x-uploadthing-version");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   if (req.method === "OPTIONS") {
     res.sendStatus(204);
@@ -70,7 +74,11 @@ app.post("/graphql", graphqlProxy);
 
 // Sensitive consequence endpoints (Express, never Hasura).
 app.post("/api/messages/letter", createLetter);
+app.post("/api/messages/:id/audience", updateMessageAudience);
 app.get("/api/account/me", getMe);
+app.get("/api/account/status", getAccountStatus);
+app.get("/api/administrator/account", getAdministratorAccount);
+app.post("/api/administrator/manage", manageAdministratorAccount);
 app.post("/api/account/seal", sealAccount);
 app.post("/api/demo/reset", demoReset); // DEMO ONLY (DEMO_RESET=true) — resurrect the registrant to re-run the flow
 // Contact import from a connected account. DEMO ONLY (DEMO_CONTACT_IMPORT=true):
@@ -137,4 +145,5 @@ if (existsSync(spaDir)) {
 
 app.listen(env.PORT, "0.0.0.0", () => {
   console.log(`[lastlink-api] listening on :${env.PORT} (${env.NODE_ENV})`);
+  void recoverAdditionalDeliveryOutbox().catch(() => console.error("[delivery-outbox] recovery failed; administrators can retry pending emails"));
 });

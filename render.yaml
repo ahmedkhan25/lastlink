@@ -52,6 +52,8 @@ services:
       # (DEMO_RESET), which resurrect a registrant to re-run the flow. REMOVE for prod.
       - key: VITE_DEMO
         value: "true"
+      # /administrator (email-link entry) and /dashboard use the existing
+      # Express SPA fallback; no separate administrator site or rewrite needed.
       - key: DEMO_RESET
         value: "true"
       # DEMO ONLY — database-backed memorial editor plus manual publish/hide.
