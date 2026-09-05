@@ -31,6 +31,14 @@ Record checked widths, issues found, fixes, screenshots, builds/type checks, and
 - Continue lower-priority owner-only screens, public memorial/search, marketing, advocate entry, long letter content and error states. Do not describe all pages as passed yet.
 - Physical iPhone Safari/Android playback, keyboard and camera behavior require a real-device pass; browser viewport tests alone do not establish these.
 
+### Deployed verification and follow-up
+
+- `5ebe91c` deployed: live dashboard checked at actual 393×852 and 430×932. Main-pane content and scroll widths match (383/383 and 420/420); top navigation and Account menu are visible. Recipient responsive bundle also deployed.
+- Public search at 393px returned the Austin memorial correctly. Its individual memorial and visitor-memory form loaded. Found a 7px public-header overflow; wrapped the header actions in the follow-up patch.
+- Sign-in still had a fixed-width inner card; changed it to width 100% / max-width 420px. Local checks at actual 320/393/430/1280px show no page overflow.
+- Follow-up also stacks owner dashboard message actions beneath the title, wraps the audience-editor action and hides the horizontal advocate timeline connector when steps stack vertically.
+- No screenshots or test fixtures contain reusable access links in this document. Browser screenshot output is available in the task; mobile capture scaling is imperfect, so actual viewport and DOM dimensions were also checked.
+
 ## Previous phase
 
 - Account-administrator implementation: `74f589c`.

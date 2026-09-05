@@ -5,9 +5,9 @@ import { wrap } from "./styles.js";
 export function MemorialHeader({ memorial }: { memorial: PublicMemorialPayload["memorial"] }) {
   const dates = [memorial.birthYear, memorial.deathYear].filter(Boolean).join(" — ");
   return <>
-    <header style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 22, paddingBottom: 22 }}>
+    <header className="flex-wrap gap-3" style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 22, paddingBottom: 22 }}>
       <Logo size={22} />
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <div className="flex-wrap" style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <a href="/search" className="ll-btn ghost" style={{ padding: "7px 12px" }}>Find a memorial</a>
         <button className="ll-btn secondary" style={{ padding: "7px 14px" }} onClick={() => navigator.clipboard.writeText(window.location.href)}>Share this memorial</button>
       </div>

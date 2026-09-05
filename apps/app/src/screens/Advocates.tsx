@@ -154,7 +154,7 @@ function ReleaseTimeline() {
   return (
     <div style={{ position: "relative", paddingTop: 4 }}>
       {/* connector track spanning between the first and last node centers (10%–90%) */}
-      <div style={{ position: "absolute", top: 26, left: "10%", right: "10%", height: 2, background: "var(--line)", borderRadius: 2, overflow: "hidden" }}>
+      <div className="max-sm:hidden" style={{ position: "absolute", top: 26, left: "10%", right: "10%", height: 2, background: "var(--line)", borderRadius: 2, overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${fill}%`, background: "var(--brand-grad)", transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
       </div>
       <div className="max-sm:!grid-cols-1" style={{ display: "grid", gridTemplateColumns: `repeat(${TIMELINE.length}, 1fr)`, gap: 12, position: "relative" }}>

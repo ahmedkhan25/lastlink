@@ -175,7 +175,7 @@ export function Dashboard() {
           const ok = m.status === "ready";
           const failed = m.status === "failed";
           return (
-            <li key={m.id} onClick={() => navigate(`/messages/${m.id}`)}
+            <li className="max-sm:!grid-cols-[auto_minmax(0,1fr)] max-sm:[&>div:last-child]:col-start-2 max-sm:[&>div:last-child]:flex-wrap" key={m.id} onClick={() => navigate(`/messages/${m.id}`)}
               style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 20, alignItems: "center", padding: "18px 0", borderBottom: "1px solid var(--line-soft)", cursor: "pointer" }}>
               <div style={{ width: 40, height: 40, borderRadius: "var(--r-2)", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center" }}>
                 <Icon name={TYPE_ICON[m.type] ?? "pen"} size={16} color="var(--brand-purple)" />

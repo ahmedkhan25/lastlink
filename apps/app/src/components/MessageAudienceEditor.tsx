@@ -82,6 +82,7 @@ export function MessageAudienceEditor({ id, audience, onSaved }: Props) {
       }}
     >
       <div
+        className="max-sm:flex-wrap"
         style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center" }}
       >
         <div>
