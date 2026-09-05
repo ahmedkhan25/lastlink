@@ -5,22 +5,36 @@ import { useSession } from "../lib/auth.js";
 import { VideoComposer } from "./VideoComposer.js";
 import { GoogleMark, OutlookMark, AolMark, FacebookMark, AppleMark } from "./preview/_shared.js";
 
-const STEPS = ["Welcome", "Consent", "Identity", "Contacts", "Advocates", "Message", "Done"];
-const ONBOARDING_STEP_KEY = "lastlink:onboarding-step:v2";
+const STEPS = ["Welcome", "Consent", "Identity", "Advocates", "Message", "Contacts", "Done"];
+const ONBOARDING_STEP_KEY = "lastlink:onboarding-step:v3";
+const PREVIOUS_STEP_KEY = "lastlink:onboarding-step:v2";
 
 function savedStep(): number {
-  const value = Number(window.sessionStorage.getItem(ONBOARDING_STEP_KEY) ?? 0);
+  const current = window.sessionStorage.getItem(ONBOARDING_STEP_KEY);
+  // Resume at the earliest unfinished step when upgrading the previous order.
+  const previous = Number(window.sessionStorage.getItem(PREVIOUS_STEP_KEY) ?? 0);
+  const value = current === null ? ([0, 1, 2, 3, 3, 4, 6][previous] ?? 0) : Number(current);
   return Number.isInteger(value) && value >= 0 && value < STEPS.length ? value : 0;
 }
 
 export function Onboarding() {
   const [step, setStep] = useState(savedStep);
+  const [visited, setVisited] = useState(() => new Set([step]));
+  const [navigationBusy, setNavigationBusy] = useState(false);
+  const [unsavedVideo, setUnsavedVideo] = useState(false);
   const { data: session } = useSession();
   const fullName = session?.user?.name ?? "";
   const firstName = fullName.split(" ")[0] || "there";
-  const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  const previous = () => setStep((s) => Math.max(s - 1, 0));
-  useEffect(() => window.sessionStorage.setItem(ONBOARDING_STEP_KEY, String(step)), [step]);
+  function goTo(target: number) {
+    setVisited((steps) => new Set([...steps, target]));
+    setStep(target);
+  }
+  const next = () => goTo(Math.min(step + 1, STEPS.length - 1));
+  const previous = () => goTo(Math.max(step - 1, 0));
+  useEffect(() => {
+    window.sessionStorage.setItem(ONBOARDING_STEP_KEY, String(step));
+    window.sessionStorage.removeItem(PREVIOUS_STEP_KEY);
+  }, [step]);
 
   function finishOnboarding() {
     window.sessionStorage.removeItem(ONBOARDING_STEP_KEY);
@@ -32,7 +46,7 @@ export function Onboarding() {
       <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 32px", borderBottom: "1px solid var(--line-soft)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <Logo size={22} />
-          {step > 0 && <button type="button" className="ll-btn ghost" onClick={previous}><Icon name="arrowLeft" size={15} /> Back</button>}
+          {step > 0 && <button type="button" className="ll-btn ghost" onClick={previous} disabled={navigationBusy || (step === 4 && unsavedVideo)} title={step === 4 && unsavedVideo ? "Save or discard your recording before going back." : undefined}><Icon name="arrowLeft" size={15} /> Back</button>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", gap: 6 }}>
@@ -45,13 +59,14 @@ export function Onboarding() {
       </header>
 
       <div style={{ display: "grid", placeItems: "center", padding: 40, overflow: "auto" }}>
-        {step === 0 && <Welcome onNext={next} firstName={firstName} />}
-        {step === 1 && <Consent onNext={next} />}
-        {step === 2 && <Identity onNext={next} fullName={fullName} />}
-        {step === 3 && <ContactsStep onNext={next} />}
-        {step === 4 && <AdvocatesStep onNext={next} />}
-        {step === 5 && <MessageStep onNext={next} />}
-        {step === 6 && <Done onDone={finishOnboarding} />}
+        {/* Keep visited forms mounted so Back retains entered values and saved state. */}
+        {visited.has(0) && <div hidden={step !== 0}><Welcome onNext={next} firstName={firstName} /></div>}
+        {visited.has(1) && <div hidden={step !== 1} style={{ width: "100%", maxWidth: 560 }}><Consent onNext={next} /></div>}
+        {visited.has(2) && <div hidden={step !== 2} style={{ width: "100%", maxWidth: 760 }}><Identity onNext={next} fullName={fullName} /></div>}
+        {visited.has(3) && <div hidden={step !== 3} style={{ width: "100%", maxWidth: 760 }}><AdvocatesStep onNext={next} onBusyChange={setNavigationBusy} /></div>}
+        {visited.has(4) && <div hidden={step !== 4} style={{ width: "100%", maxWidth: 800 }}><MessageStep active={step === 4} onNext={next} onDirtyChange={setUnsavedVideo} onBusyChange={setNavigationBusy} /></div>}
+        {visited.has(5) && <div hidden={step !== 5} style={{ width: "100%", maxWidth: 760 }}><ContactsStep onNext={next} /></div>}
+        {step === 6 && <Done onDone={finishOnboarding} onBusyChange={setNavigationBusy} />}
       </div>
     </div>
   );
@@ -60,9 +75,9 @@ export function Onboarding() {
 function Welcome({ onNext, firstName }: { onNext: () => void; firstName: string }) {
   const cards: { icon: IconName; t: string; s: string }[] = [
     { icon: "fingerprint", t: "Verify your identity", s: "So no one can speak for you." },
-    { icon: "users", t: "Build your contact list", s: "Family, friends, business." },
     { icon: "shield", t: "Designate two advocates", s: "They confirm, together." },
     { icon: "pen", t: "Write what matters", s: "Video, audio, or letter." },
+    { icon: "users", t: "Build your contact list", s: "Family, friends, business." },
   ];
   return (
     <div style={{ maxWidth: 600, textAlign: "center" }}>
@@ -284,7 +299,7 @@ function ContactsStep({ onNext }: { onNext: () => void }) {
 
 type MTab = "video" | "audio" | "letter";
 
-function MessageStep({ onNext }: { onNext: () => void }) {
+function MessageStep({ onNext, active, onDirtyChange, onBusyChange }: { onNext: () => void; active: boolean; onDirtyChange: (dirty: boolean) => void; onBusyChange: (busy: boolean) => void }) {
   const [tab, setTab] = useState<MTab>("video");
   const [title, setTitle] = useState("A message for the people I love");
   const [body, setBody] = useState("");
@@ -303,12 +318,14 @@ function MessageStep({ onNext }: { onNext: () => void }) {
 
   async function saveLetter() {
     setStatus("saving");
+    onBusyChange(true);
     try {
       const res = await fetch(`${getApiUrl()}/api/messages/letter`, {
         method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ title, body, audienceType: "public", contactIds: [] }),
       });
       setStatus(res.ok ? "saved" : "error");
     } catch { setStatus("error"); }
+    finally { onBusyChange(false); }
   }
 
   return (
@@ -318,18 +335,18 @@ function MessageStep({ onNext }: { onNext: () => void }) {
       <div style={{ padding: 28, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", marginBottom: 20 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {(["video", "audio", "letter"] as MTab[]).map((t) => (
-            <button key={t} onClick={() => { setTab(t); setNudge(false); }} className={`ll-btn ${tab === t ? "" : "secondary"}`} style={{ fontSize: 13, padding: "8px 14px", textTransform: "capitalize" }}>
+            <button key={t} onClick={() => { setTab(t); setNudge(false); if (t !== "video") { setVideoDirty(false); onDirtyChange(false); } }} className={`ll-btn ${tab === t ? "" : "secondary"}`} style={{ fontSize: 13, padding: "8px 14px", textTransform: "capitalize" }}>
               <Icon name={t === "video" ? "video" : t === "audio" ? "mic" : "pen"} size={14} color={tab === t ? "white" : "var(--ink)"} /> {t}
             </button>
           ))}
         </div>
-        {tab === "video" && (
+        {tab === "video" && active && (
           <VideoComposer
             title={title}
             audienceType="public"
             contactIds={[]}
             onSaved={() => { setVideoSaved(true); setNudge(false); }}
-            onDirtyChange={(d) => { setVideoDirty(d); if (d) setNudge(false); }}
+            onDirtyChange={(d) => { setVideoDirty(d); onDirtyChange(d); if (d) setNudge(false); }}
           />
         )}
         {tab === "video" && videoSaved && (
@@ -341,12 +358,12 @@ function MessageStep({ onNext }: { onNext: () => void }) {
         {tab === "letter" && (
           <div>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--ink-2)", marginBottom: 6 }} htmlFor="message-title">Message title</label>
-            <input id="message-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Give your message a title" className="serif" style={{ width: "100%", fontSize: 20, fontWeight: 500, border: "1.5px solid var(--ink-3)", borderRadius: "var(--r-2)", background: "var(--surface)", padding: "12px 14px", marginBottom: 16 }} />
+            <input id="message-title" readOnly={status === "saved" || status === "saving"} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Give your message a title" className="serif" style={{ width: "100%", fontSize: 20, fontWeight: 500, border: "1.5px solid var(--ink-3)", borderRadius: "var(--r-2)", background: "var(--surface)", padding: "12px 14px", marginBottom: 16 }} />
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--ink-2)", marginBottom: 6 }} htmlFor="message-body">Your message</label>
-            <textarea id="message-body" value={body} onChange={(e) => setBody(e.target.value)} placeholder="My loves,&#10;&#10;" style={{ width: "100%", height: 200, padding: 18, border: "1.5px solid var(--ink-3)", borderRadius: "var(--r-3)", background: "var(--surface)", fontFamily: "var(--font-serif)", fontSize: 16, lineHeight: 1.65, resize: "vertical" }} />
+            <textarea id="message-body" readOnly={status === "saved" || status === "saving"} value={body} onChange={(e) => setBody(e.target.value)} placeholder="My loves,&#10;&#10;" style={{ width: "100%", height: 200, padding: 18, border: "1.5px solid var(--ink-3)", borderRadius: "var(--r-3)", background: "var(--surface)", fontFamily: "var(--font-serif)", fontSize: 16, lineHeight: 1.65, resize: "vertical" }} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
               <span style={{ fontSize: 12, color: "var(--ink-3)" }}>{status === "saved" ? "Saved · encrypted ✓" : "Stored encrypted on save"}</span>
-              <button className="ll-btn grad" onClick={saveLetter} disabled={status === "saving" || !body.trim()}>{status === "saved" ? "Saved ✓" : status === "saving" ? "Saving…" : "Save letter"}</button>
+              <button className="ll-btn grad" onClick={saveLetter} disabled={status === "saving" || status === "saved" || !body.trim()}>{status === "saved" ? "Saved ✓" : status === "saving" ? "Saving…" : "Save letter"}</button>
             </div>
           </div>
         )}
@@ -357,7 +374,7 @@ function MessageStep({ onNext }: { onNext: () => void }) {
             Your video isn't saved yet — click <strong>"Use this video"</strong> (or let the upload finish) first. Or switch tabs to skip it.
           </span>
         )}
-        <button className="ll-btn" onClick={handleContinue}>Continue</button>
+        <button className="ll-btn" onClick={handleContinue} disabled={status === "saving"}>Continue</button>
       </div>
     </div>
   );
@@ -365,22 +382,43 @@ function MessageStep({ onNext }: { onNext: () => void }) {
 
 const obInput = { padding: "11px 14px", border: "1px solid var(--line)", borderRadius: "var(--r-2)", background: "var(--surface)", fontSize: 14, flex: "1 1 180px" } as const;
 
-function AdvocatesStep({ onNext }: { onNext: () => void }) {
+function AdvocatesStep({ onNext, onBusyChange }: { onNext: () => void; onBusyChange: (busy: boolean) => void }) {
   const [a, setA] = useState({ name: "", email: "" });
   const [b, setB] = useState({ name: "", email: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [existingSlots, setExistingSlots] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let mounted = true;
+    gql<{ app_advocates: { slot: string; full_name: string; email: string }[] }>(
+      `query { app_advocates(order_by: {slot: asc}) { slot full_name email } }`,
+    ).then(({ app_advocates }) => {
+      if (!mounted) return;
+      for (const advocate of app_advocates) {
+        const value = { name: advocate.full_name, email: advocate.email };
+        if (advocate.slot === "A") setA(value);
+        if (advocate.slot === "B") setB(value);
+      }
+      setExistingSlots(app_advocates.map((advocate) => advocate.slot));
+      setLoading(false);
+    }).catch(() => { if (mounted) setError("Could not load your advocates. Refresh to try again."); });
+    return () => { mounted = false; };
+  }, []);
 
   async function inviteAndContinue() {
+    if (existingSlots.includes("A") && existingSlots.includes("B")) { onNext(); return; }
     setBusy(true);
+    onBusyChange(true);
     setError(null);
     try {
       const result = await postApi<{ advocates: { id: string; slot: string }[] }>("/api/advocates", {
         advocates: [
           { slot: "A", name: a.name, email: a.email },
           { slot: "B", name: b.name, email: b.email },
-        ],
+        ].filter((advocate) => !existingSlots.includes(advocate.slot)),
       });
+      setExistingSlots((slots) => [...slots, ...result.advocates.map((advocate) => advocate.slot)]);
       // Send each advocate their email invite (real email if Resend is configured).
       await Promise.all(result.advocates.map((advocate) => postApi(`/api/advocates/${advocate.id}/invite`).catch(() => {})));
       onNext();
@@ -388,6 +426,7 @@ function AdvocatesStep({ onNext }: { onNext: () => void }) {
       setError(err instanceof Error ? err.message : "Could not add your advocates.");
     } finally {
       setBusy(false);
+      onBusyChange(false);
     }
   }
 
@@ -403,18 +442,19 @@ function AdvocatesStep({ onNext }: { onNext: () => void }) {
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: 20, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)" }}>
             <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center", fontFamily: "var(--font-serif)", color: "var(--brand-purple)", fontWeight: 600 }}>{(row.v.name[0] ?? "?").toUpperCase()}</div>
             <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10 }}>
-              <input value={row.v.name} onChange={(e) => row.set({ ...row.v, name: e.target.value })} placeholder="Full name"
+              <input disabled={loading || busy || existingSlots.includes(i === 0 ? "A" : "B")} value={row.v.name} onChange={(e) => row.set({ ...row.v, name: e.target.value })} placeholder="Full name"
                 style={inputStyle} />
-              <input value={row.v.email} type="email" onChange={(e) => row.set({ ...row.v, email: e.target.value })} placeholder={`${row.label} email`}
+              <input disabled={loading || busy || existingSlots.includes(i === 0 ? "A" : "B")} value={row.v.email} type="email" onChange={(e) => row.set({ ...row.v, email: e.target.value })} placeholder={`${row.label} email`}
                 style={inputStyle} />
             </div>
           </div>
         ))}
       </div>
       {error && <p style={{ fontSize: 13, color: "var(--err)", margin: "0 0 14px" }}>{error}</p>}
+      {existingSlots.length > 0 && <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Your saved advocates are shown above. You can manage them from Advocates after setup.</p>}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button className="ll-btn" onClick={inviteAndContinue} disabled={busy || !ready}>
-          {busy ? "Sending invites…" : "Send invites & continue"}
+        <button className="ll-btn" onClick={inviteAndContinue} disabled={loading || busy || !ready}>
+          {loading ? "Loading advocates…" : busy ? "Sending invites…" : existingSlots.length === 2 ? "Continue" : "Send invites & continue"}
         </button>
       </div>
     </div>
@@ -423,12 +463,20 @@ function AdvocatesStep({ onNext }: { onNext: () => void }) {
 
 const inputStyle = { padding: "11px 13px", border: "1px solid var(--line)", borderRadius: "var(--r-2)", background: "var(--bg)", fontSize: 14, width: "100%" } as const;
 
-function Done({ onDone }: { onDone: () => void }) {
+function Done({ onDone, onBusyChange }: { onDone: () => void; onBusyChange: (busy: boolean) => void }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   async function finish() {
     setBusy(true);
-    try { await postApi("/api/account/seal"); } catch { /* non-fatal for demo */ }
-    onDone();
+    onBusyChange(true);
+    try {
+      await postApi("/api/account/seal");
+      onDone();
+    } catch {
+      setError("Could not finish setup. Please try again.");
+      setBusy(false);
+      onBusyChange(false);
+    }
   }
   return (
     <div style={{ maxWidth: 600, textAlign: "center" }}>
@@ -439,6 +487,7 @@ function Done({ onDone }: { onDone: () => void }) {
       <p style={{ fontSize: 18, color: "var(--ink-2)", lineHeight: 1.55, margin: "16px 0 28px" }}>
         Your LastLink is active. Come back anytime to make necessary changes.
       </p>
+      {error && <p role="alert" style={{ color: "var(--err)" }}>{error}</p>}
       <button className="ll-btn grad" onClick={finish} disabled={busy}>
         {busy ? "Sealing…" : "Go to your overview"} <Icon name="arrow" size={16} color="white" />
       </button>
