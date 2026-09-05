@@ -51,7 +51,7 @@ export function Compose() {
 
   return (
     <div style={{ padding: "32px 40px 60px", maxWidth: 1100, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+      <div className="flex-wrap gap-4" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div>
           <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>
             {status === "saved" ? "SAVED · READY" : status === "saving" ? "SAVING…" : "DRAFT"}
@@ -67,7 +67,7 @@ export function Compose() {
         )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24 }}>
+      <div className="max-lg:!grid-cols-1" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24 }}>
         <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", padding: 24 }}>
           <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
             {(["video", "audio", "letter"] as Tab[]).map((t) => (

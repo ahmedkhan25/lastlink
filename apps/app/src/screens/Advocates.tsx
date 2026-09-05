@@ -95,7 +95,7 @@ export function Advocates() {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
+      <div className="max-lg:!grid-cols-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
         {loading && <div style={{ color: "var(--ink-3)" }}>Loading…</div>}
         {advocates.map((a) => {
           const accepted = a.invite_status === "accepted";
@@ -157,7 +157,7 @@ function ReleaseTimeline() {
       <div style={{ position: "absolute", top: 26, left: "10%", right: "10%", height: 2, background: "var(--line)", borderRadius: 2, overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${fill}%`, background: "var(--brand-grad)", transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${TIMELINE.length}, 1fr)`, gap: 12, position: "relative" }}>
+      <div className="max-sm:!grid-cols-1" style={{ display: "grid", gridTemplateColumns: `repeat(${TIMELINE.length}, 1fr)`, gap: 12, position: "relative" }}>
         {TIMELINE.map((s, i) => {
           const on = i <= active;
           const current = i === active;

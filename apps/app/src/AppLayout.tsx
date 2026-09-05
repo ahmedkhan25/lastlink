@@ -26,6 +26,7 @@ export function AppLayout() {
   const [accessError, setAccessError] = useState("");
   const confirm = useConfirm();
   const [resetting, setResetting] = useState(false);
+  const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const demo = import.meta.env.VITE_DEMO === "true";
 
   // Onboarding gate: keep an un-sealed registrant in the onboarding flow. Until
@@ -82,8 +83,9 @@ export function AppLayout() {
   const initial = (displayName || "?").charAt(0).toUpperCase();
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", height: "100%" }}>
+    <div className="max-md:!flex max-md:flex-col [&_*]:min-w-0 [overflow-wrap:anywhere] max-md:[&_input]:!text-base max-md:[&_textarea]:!text-base max-md:[&_select]:!text-base max-md:[&_button]:min-h-11 max-md:[&_.ll-btn]:!whitespace-normal max-md:[&_.ll-btn]:max-w-full" style={{ display: "grid", gridTemplateColumns: "240px minmax(0,1fr)", height: "100%" }}>
       <aside
+        className="max-md:!p-3 max-md:shrink-0 max-md:border-b max-md:[&>div:first-child]:!pb-2"
         style={{
           borderRight: "1px solid var(--line)",
           background: "var(--surface)",
@@ -92,12 +94,13 @@ export function AppLayout() {
           padding: "24px 16px",
         }}
       >
-        <div style={{ padding: "0 8px 24px" }}>
+        <div className="flex items-center justify-between gap-3" style={{ padding: "0 8px 24px" }}>
           <a href={getMarketingUrl()} title="Back to lastlink.care" style={{ display: "inline-flex" }}>
             <Logo size={22} />
           </a>
+          <button type="button" className="ll-btn secondary md:!hidden" aria-expanded={mobileAccountOpen} aria-controls="account-menu" onClick={() => setMobileAccountOpen(!mobileAccountOpen)}>Account menu</button>
         </div>
-        <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <nav aria-label="Main navigation" className="max-md:!flex-row max-md:overflow-x-auto max-md:[&>a]:shrink-0 max-md:[&>a]:whitespace-nowrap" style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {NAV.filter(n => !admin || !["Advocates","Account"].includes(n.label)).map((original) => { const n=original.label==="Messages" && locked ? {...original,to:"/dashboard#messages"} : original; return (
             <NavLink key={n.to} to={n.to} style={{ textDecoration: "none" }}>
               {({ isActive: routeActive }) => { const isActive=routeActive && (n.label==="Messages" && locked ? location.hash==="#messages" : n.label!=="Dashboard" || location.hash!=="#messages"); return (
@@ -122,7 +125,7 @@ export function AppLayout() {
           ); })}
         </nav>
 
-        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div id="account-menu" className={mobileAccountOpen ? "max-md:!mt-3 max-md:max-h-[45dvh] max-md:overflow-y-auto" : "max-md:!hidden"} style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
           <button
             type="button"
             onClick={() => window.alert("Support chat is coming soon. For now, email support@lastlink.care.")}
@@ -194,7 +197,7 @@ export function AppLayout() {
         </div>
       </aside>
 
-      <main style={{ overflow: "auto" }}>
+      <main className="max-md:flex-1 max-md:[&>div]:!px-4 max-md:[&>div]:!py-6 max-md:[&_h1]:!text-3xl" style={{ overflow: "auto" }}>
         {admin && <div style={{padding:"12px 32px",background:"var(--brand-grad-soft)",fontSize:13}}><strong>{displayName} · Account administrator</strong><span> — Caring for {account?.status.legalName}'s account. Messages are read-only.</span></div>}
         <AccountContext.Provider value={account}><Outlet /></AccountContext.Provider>
       </main>

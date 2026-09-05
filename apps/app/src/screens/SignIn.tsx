@@ -35,7 +35,7 @@ export function SignIn() {
   }
 
   return (
-    <div style={{ display: "grid", placeItems: "center", height: "100%", padding: 40 }}>
+    <div className="max-sm:!p-4 [&_input]:min-w-0 max-sm:[&_input]:!text-base max-sm:[&_button]:min-h-11 max-sm:[&_.ll-btn]:!whitespace-normal max-sm:[&_.ll-btn]:max-w-full" style={{ display: "grid", placeItems: "safe center", minHeight: "100%", padding: 40 }}>
       <div style={{ width: 420, maxWidth: "100%" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
           <a href={getMarketingUrl()} title="Back to lastlink.care" style={{ display: "inline-flex" }}>

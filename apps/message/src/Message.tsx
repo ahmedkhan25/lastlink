@@ -49,14 +49,14 @@ export function Message() {
     : null;
 
   return (
-    <div style={{ minHeight: "100%", background: "var(--bone)" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 32px", borderBottom: "1px solid var(--line-soft)" }}>
+    <div className="[overflow-wrap:anywhere] [&_svg]:shrink-0" style={{ minHeight: "100%", background: "var(--bone)" }}>
+      <header className="max-sm:!px-4 gap-3 flex-wrap" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 32px", borderBottom: "1px solid var(--line-soft)" }}>
         <Logo size={22} />
         <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em" }}>A MESSAGE FOR YOU</span>
       </header>
 
-      <div style={{ display: "grid", placeItems: "center", padding: "48px 24px" }}>
-        <div style={{ maxWidth: 680, width: "100%" }}>
+      <div className="max-sm:!px-4 max-sm:!py-8" style={{ display: "grid", placeItems: "center", padding: "48px 24px" }}>
+        <div className="min-w-0 [&_h1]:text-balance" style={{ maxWidth: 680, width: "100%" }}>
 
           {state === "loading" && <p style={{ textAlign: "center", color: "var(--ink-3)" }}>One moment…</p>}
 
@@ -99,12 +99,12 @@ export function Message() {
 
               {opened.type === "video" && opened.playbackId && opened.tokens && (
                 <div style={{ borderRadius: "var(--r-4, 18px)", overflow: "hidden", aspectRatio: "16/9", background: "#241D17", boxShadow: "var(--shadow-3, 0 24px 60px rgba(31,24,20,0.18))" }}>
-                  <MuxPlayer playbackId={opened.playbackId} tokens={opened.tokens} accentColor="#6B2CB0" style={{ height: "100%", width: "100%" }} />
+                  <MuxPlayer playbackId={opened.playbackId} tokens={opened.tokens} playsInline accentColor="#6B2CB0" style={{ height: "100%", width: "100%", minWidth: 0 }} />
                 </div>
               )}
 
               {opened.type === "letter" && (
-                <div style={{ background: "white", borderRadius: "var(--r-4, 18px)", padding: "44px 48px", boxShadow: "var(--shadow-2, 0 16px 40px rgba(31,24,20,0.12))", border: "1px solid var(--line-soft)" }}>
+                <div className="max-sm:!px-5 max-sm:!py-7" style={{ background: "white", borderRadius: "var(--r-4, 18px)", padding: "44px 48px", boxShadow: "var(--shadow-2, 0 16px 40px rgba(31,24,20,0.12))", border: "1px solid var(--line-soft)" }}>
                   <p className="serif" style={{ fontSize: 19, lineHeight: 1.75, color: "var(--ink)", whiteSpace: "pre-wrap", margin: 0 }}>{opened.body}</p>
                 </div>
               )}
@@ -141,7 +141,7 @@ function AuditFooter({ advocates, registrantName }: { advocates: string[]; regis
       <Icon name="shield" size={15} color="var(--ink-3)" />
       <span style={{ fontSize: 12.5, color: "var(--ink-3)", lineHeight: 1.5, textAlign: "center" }}>
         {names.length >= 2
-          ? <>This release was independently confirmed by <strong>{names[0]}</strong> and <strong>{names[1]}</strong>, then held for one hour before delivery.</>
+          ? <>This release was independently confirmed by <strong>{names[0]}</strong> and <strong>{names[1]}</strong>.</>
           : <>This message was released through LastLink's verified confirmation process on behalf of {registrantName}.</>}
       </span>
     </div>
@@ -156,6 +156,6 @@ function Halo({ icon, grad }: { icon: "leaf" | "heart"; grad?: boolean }) {
   );
 }
 
-const h1: React.CSSProperties = { fontSize: 36, fontWeight: 500, letterSpacing: "-0.015em", lineHeight: 1.12, margin: "0 0 16px", color: "var(--ink)", textAlign: "center" };
+const h1: React.CSSProperties = { fontSize: "clamp(28px,7vw,36px)", fontWeight: 500, letterSpacing: "-0.015em", lineHeight: 1.12, margin: "0 0 16px", color: "var(--ink)", textAlign: "center" };
 const lede: React.CSSProperties = { fontSize: 16, color: "var(--ink-2)", lineHeight: 1.65, margin: "0 0 28px", textAlign: "center" };
 const primaryBtn: React.CSSProperties = { padding: "14px 30px", fontSize: 15 };

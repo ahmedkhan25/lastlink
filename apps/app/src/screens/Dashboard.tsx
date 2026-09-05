@@ -130,7 +130,7 @@ export function Dashboard() {
 
   return (
     <div style={{ padding: "56px 64px 80px", maxWidth: 1020, margin: "0 auto" }}>
-      <header style={{ marginBottom: 48, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
+      <header className="max-sm:flex-wrap" style={{ marginBottom: 48, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24 }}>
         <div>
           {reg?.account_state === "onboarding" && (
             <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.14em" }}>
@@ -149,7 +149,7 @@ export function Dashboard() {
         <ProfilePhoto />
       </header>
 
-      <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24, padding: "24px 0", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", marginBottom: 56 }}>
+      <section className="max-lg:!grid-cols-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24, padding: "24px 0", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", marginBottom: 56 }}>
         <Status icon="check" label="Identity verified" sub={reg ? reg.legal_name : "—"} ok />
         <Status icon="shield" label="Advocates confirmed"
           sub={(d?.app_advocates.length ?? 0) === 0 ? "Add your advocates →" : `${advAccepted} of ${d?.app_advocates.length} accepted`}

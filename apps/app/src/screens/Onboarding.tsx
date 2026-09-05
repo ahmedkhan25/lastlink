@@ -42,14 +42,14 @@ export function Onboarding() {
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateRows: "auto 1fr", height: "100%" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 32px", borderBottom: "1px solid var(--line-soft)" }}>
+    <div className="[&_*]:min-w-0 [overflow-wrap:anywhere] max-sm:[&_input]:!text-base max-sm:[&_select]:!text-base max-sm:[&_button]:min-h-11 max-sm:[&_h1]:!text-3xl" style={{ display: "grid", gridTemplateRows: "auto minmax(0,1fr)", height: "100%" }}>
+      <header className="max-sm:!px-4 flex-wrap gap-y-3" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 32px", borderBottom: "1px solid var(--line-soft)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <Logo size={22} />
           {step > 0 && <button type="button" className="ll-btn ghost" onClick={previous} disabled={navigationBusy || (step === 4 && unsavedVideo)} title={step === 4 && unsavedVideo ? "Save or discard your recording before going back." : undefined}><Icon name="arrowLeft" size={15} /> Back</button>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div className="max-sm:!hidden" style={{ display: "flex", gap: 6 }}>
             {STEPS.map((_, i) => (
               <span key={i} style={{ width: i === step ? 24 : 7, height: 7, borderRadius: 999, background: i <= step ? "var(--brand-grad)" : "var(--line)", transition: "width 200ms" }} />
             ))}
@@ -58,7 +58,7 @@ export function Onboarding() {
         </div>
       </header>
 
-      <div style={{ display: "grid", placeItems: "center", padding: 40, overflow: "auto" }}>
+      <div className="max-sm:!px-4 max-sm:!py-6 [&>div]:max-w-full" style={{ display: "grid", placeItems: "safe center", padding: 40, overflow: "auto" }}>
         {/* Keep visited forms mounted so Back retains entered values and saved state. */}
         {visited.has(0) && <div hidden={step !== 0}><Welcome onNext={next} firstName={firstName} /></div>}
         {visited.has(1) && <div hidden={step !== 1} style={{ width: "100%", maxWidth: 560 }}><Consent onNext={next} /></div>}
@@ -189,13 +189,13 @@ function Identity({ onNext, fullName }: { onNext: () => void; fullName: string }
     <div style={{ maxWidth: 760, width: "100%" }}>
       <h1 className="serif" style={{ fontSize: 40, fontWeight: 500, margin: 0 }}>First, let's confirm it's really you.</h1>
       <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 28px" }}>We verify identity so that no one else can ever register or speak on your behalf.</p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
+      <div className="max-sm:!grid-cols-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
         <Field label="Legal first name" value={firstName} />
         <Field label="Legal last name" value={lastName} />
         <DateOfBirthField />
         <Field label="Country of residence" value="" />
       </div>
-      <div style={{ padding: 24, border: "1px dashed var(--line)", borderRadius: "var(--r-3)", background: "var(--surface)", display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
+      <div className="max-sm:flex-wrap max-sm:!p-4" style={{ padding: 24, border: "1px dashed var(--line)", borderRadius: "var(--r-3)", background: "var(--surface)", display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
         <div style={{ width: 56, height: 56, borderRadius: "var(--r-3)", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center" }}>
           <Icon name="fingerprint" size={26} color="var(--brand-purple)" />
         </div>
@@ -205,7 +205,7 @@ function Identity({ onNext, fullName }: { onNext: () => void; fullName: string }
         </div>
         <button className="ll-btn secondary">Choose file</button>
       </div>
-      <div style={{ padding: 24, border: "1px solid var(--line)", borderRadius: "var(--r-3)", background: "var(--surface)", display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
+      <div className="max-sm:flex-wrap max-sm:!p-4" style={{ padding: 24, border: "1px solid var(--line)", borderRadius: "var(--r-3)", background: "var(--surface)", display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
         <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center" }}>
           <Icon name="user" size={26} color="var(--brand-purple)" />
         </div>
@@ -215,7 +215,7 @@ function Identity({ onNext, fullName }: { onNext: () => void; fullName: string }
         </div>
         <button className="ll-btn secondary">Add photo</button>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div className="flex-wrap gap-4" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 13, color: "var(--ink-3)", display: "flex", gap: 8, alignItems: "center" }}>
           <Icon name="lock" size={14} color="var(--ink-3)" /> Encrypted with AES-256. Never sold, never shared.
         </span>
@@ -332,7 +332,7 @@ function MessageStep({ onNext, active, onDirtyChange, onBusyChange }: { onNext: 
     <div style={{ maxWidth: 800, width: "100%" }}>
       <h1 className="serif" style={{ fontSize: 40, fontWeight: 500, margin: 0 }}>What do you want to say?</h1>
       <p style={{ fontSize: 16, color: "var(--ink-2)", margin: "12px 0 24px" }}>Record a video, or write a letter. You can add more anytime.</p>
-      <div style={{ padding: 28, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", marginBottom: 20 }}>
+      <div className="max-sm:!p-4" style={{ padding: 28, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", marginBottom: 20 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {(["video", "audio", "letter"] as MTab[]).map((t) => (
             <button key={t} onClick={() => { setTab(t); setNudge(false); if (t !== "video") { setVideoDirty(false); onDirtyChange(false); } }} className={`ll-btn ${tab === t ? "" : "secondary"}`} style={{ fontSize: 13, padding: "8px 14px", textTransform: "capitalize" }}>
@@ -441,7 +441,7 @@ function AdvocatesStep({ onNext, onBusyChange }: { onNext: () => void; onBusyCha
         {[{ v: a, set: setA, label: "First advocate" }, { v: b, set: setB, label: "Second advocate" }].map((row, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: 20, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)" }}>
             <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--brand-grad-soft)", display: "grid", placeItems: "center", fontFamily: "var(--font-serif)", color: "var(--brand-purple)", fontWeight: 600 }}>{(row.v.name[0] ?? "?").toUpperCase()}</div>
-            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10 }}>
+            <div className="max-sm:!grid-cols-1" style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10 }}>
               <input disabled={loading || busy || existingSlots.includes(i === 0 ? "A" : "B")} value={row.v.name} onChange={(e) => row.set({ ...row.v, name: e.target.value })} placeholder="Full name"
                 style={inputStyle} />
               <input disabled={loading || busy || existingSlots.includes(i === 0 ? "A" : "B")} value={row.v.email} type="email" onChange={(e) => row.set({ ...row.v, email: e.target.value })} placeholder={`${row.label} email`}

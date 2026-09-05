@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Icon } from "@lastlink/ui";
 import { emailStatusLabel, type AccountStatus } from "@lastlink/shared";
 import { useAccountContext } from "../lib/account-context.js";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { manageAccount } from "../lib/api.js";
 import { isAdministrator } from "../lib/administrator.js";
 
@@ -24,11 +24,18 @@ interface Message {
 }
 export function RemembranceDashboard({ messages }: { messages: Message[] }) {
   const context = useAccountContext();
+  const location = useLocation();
+  const messagesRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (location.hash === "#messages") messagesRef.current?.scrollIntoView({ block: "start" });
+    else messagesRef.current?.closest("main")?.scrollTo({ top: 0 });
+  }, [location.key, location.hash]);
   if (!context) return null;
   const { status, administrator } = context;
   return (
     <div style={{ padding: "48px 56px 72px", maxWidth: 1100, margin: "0 auto" }}>
       <header
+        className="max-sm:!p-5"
         style={{
           padding: "36px 40px",
           border: "1px solid var(--line)",
@@ -109,7 +116,7 @@ export function RemembranceDashboard({ messages }: { messages: Message[] }) {
           links.
         </p>
       )}
-      <section id="messages">
+      <section id="messages" ref={messagesRef} className="scroll-mt-4">
         <h2 className="serif" style={{ fontSize: 28, fontWeight: 500, marginBottom: 4 }}>
           Messages left with love
         </h2>

@@ -117,7 +117,7 @@ export function MemorialSettings() {
       </section>
 
       <section style={{ ...card, padding: 24, marginTop: 16 }}>
-        <div style={grid}>
+        <div className="max-sm:!grid-cols-1 max-sm:[&>*]:!col-span-1" style={grid}>
           <TextInput label="Headline" value={form.headline} onChange={(v) => set("headline", v)} wide />
           <TextInput label="Location" value={form.location} onChange={(v) => set("location", v)} />
           <TextInput label="Birth year" value={form.birth_year?.toString()} onChange={(v) => set("birth_year", v ? Number(v) : null)} />
@@ -134,7 +134,7 @@ export function MemorialSettings() {
       <Gallery media={data.app_memorial_media} uploading={isUploading} onUpload={(files) => startUpload(Array.from(files))} onRefresh={load} />
       <Messages messages={data.app_messages} onRefresh={load} />
 
-      <section style={{ ...card, padding: 22, marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+      <section className="max-sm:flex-wrap" style={{ ...card, padding: 22, marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
         <div><div className="serif" style={{ fontSize: 21 }}>Demo publishing</div><div style={{ color: "var(--ink-3)", fontSize: 13 }}>Manual for investor demos; not connected to the death-release workflow.</div></div>
         <button className={memorial.status === "published" ? "ll-btn secondary" : "ll-btn grad"} disabled={busy}
           onClick={() => changeStatus(memorial.status === "published" ? "hide" : "publish")}>{memorial.status === "published" ? "Hide memorial" : "Publish memorial"}</button>
@@ -148,7 +148,7 @@ function Gallery({ media, uploading, onUpload, onRefresh }: { media: Media[]; up
   async function remove(id: string) { if(isAdministrator()) await manageAccount({action:"gallery-remove",id}); else await gql(DELETE_MEDIA, { id }); await onRefresh(); }
   async function update(item: Media, caption: string) { if(isAdministrator()) await manageAccount({action:"gallery-caption",id:item.id,caption}); else await gql(UPDATE_MEDIA, { id: item.id, caption, alt: caption }); await onRefresh(); }
   return <section style={{ ...card, padding: 24, marginTop: 16 }}>
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}><div><div className="serif" style={{ fontSize: 24 }}>Photo gallery</div><div style={{ color: "var(--ink-3)", fontSize: 13 }}>Add warm, personal images to the public page.</div></div>
+    <div className="max-sm:flex-wrap" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}><div><div className="serif" style={{ fontSize: 24 }}>Photo gallery</div><div style={{ color: "var(--ink-3)", fontSize: 13 }}>Add warm, personal images to the public page.</div></div>
       <label className="ll-btn secondary">{uploading ? "Uploading…" : "Add photos"}<input type="file" accept="image/*" multiple hidden disabled={uploading} onChange={(e) => e.target.files && onUpload(e.target.files)} /></label></div>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 14, marginTop: 18 }}>
       {media.map((item) => <div key={item.id} style={{ border: "1px solid var(--line)", borderRadius: "var(--r-2)", overflow: "hidden" }}><img src={galleryImageUrl(item.url)} alt={item.alt_text ?? item.caption ?? "Memorial gallery"} style={{ width: "100%", height: 130, objectFit: "cover" }} /><div style={{ padding: 10 }}><input defaultValue={item.caption ?? ""} placeholder="Add a caption" style={{ ...field, padding: "7px 9px", fontSize: 12 }} onBlur={(e) => update(item, e.target.value)} /><button onClick={() => remove(item.id)} style={linkButton}>Remove</button></div></div>)}

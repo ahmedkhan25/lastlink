@@ -147,7 +147,7 @@ export function VideoRecorder({ onRecorded, onCancel, onClipChange }: { onRecord
         )}
       </div>
 
-      <div style={{ display: "flex", gap: 10, marginTop: 14, alignItems: "center" }}>
+      <div className="flex-wrap" style={{ display: "flex", gap: 10, marginTop: 14, alignItems: "center" }}>
         {!previewUrl && !recording && (
           <button className="ll-btn grad" onClick={start}><Icon name="video" size={16} color="white" /> Start recording</button>
         )}

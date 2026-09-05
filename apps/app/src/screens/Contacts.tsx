@@ -123,7 +123,7 @@ export function Contacts() {
       {sentNote && <p role="status">{sentNote}</p>}
       {error && <div style={{ fontSize: 13, color: "var(--err)", marginBottom: 16 }}>{error}</div>}
 
-      <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", overflow: "hidden" }}>
+      <div className="max-md:[&_thead]:hidden max-md:[&_table]:block max-md:[&_tbody]:block max-md:[&_tr]:grid max-md:[&_tr]:grid-cols-1 max-md:[&_td]:block max-md:[&_td]:!px-4 max-md:[&_td]:!py-2" style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r-3)", overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left", fontSize: 11, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
